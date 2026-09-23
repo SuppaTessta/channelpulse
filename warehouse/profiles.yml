@@ -1,0 +1,13 @@
+# Defaults match docker-compose.yml; override via env (.env is loaded by the Makefile).
+channelpulse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | as_number }}"
+      user: "{{ env_var('POSTGRES_USER', 'channelpulse') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'channelpulse') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'channelpulse') }}"
+      schema: public
+      threads: 4

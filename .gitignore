@@ -1,0 +1,20 @@
+# Local-only planning docs and agent config
+CHANNELPULSE_PLAN.md
+CHANNELPULSE_BUILD_PROMPT.md
+.claude/
+
+# Secrets / local overrides
+.env
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# dbt
+warehouse/target/
+warehouse/logs/
+warehouse/dbt_packages/
+warehouse/.user.yml
+logs/

@@ -1,0 +1,8 @@
+# Tool config only; dependencies are in requirements.txt.
+[tool.ruff]
+target-version = "py312"
+src = ["api"]
+
+[tool.pytest.ini_options]
+testpaths = ["api/tests"]
+pythonpath = ["api"]

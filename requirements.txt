@@ -1,0 +1,12 @@
+# Single source for the repo-root .venv (make setup). API runtime deps live in
+# api/requirements.txt so the deploy image doesn't ship dbt or dev tooling.
+# constraints.txt pins every transitive dependency; regenerate with `make lock`.
+-c constraints.txt
+-r api/requirements.txt
+
+dbt-core==1.12.5
+dbt-postgres==1.11.0
+
+ruff==0.16.8
+pytest==9.1.1
+httpx2==2.13.1

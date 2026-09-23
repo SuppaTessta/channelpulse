@@ -1,0 +1,10 @@
+name: channelpulse
+version: "0.1.0"
+config-version: 2
+profile: channelpulse
+
+model-paths: ["models"]
+test-paths: ["tests"]
+
+flags:
+  send_anonymous_usage_stats: false

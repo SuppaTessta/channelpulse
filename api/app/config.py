@@ -12,7 +12,7 @@ AGENT_TIMEOUT_S = float(env("AGENT_TIMEOUT_S", "120"))
 
 ROW_CAP = int(env("AGENT_ROW_CAP", "500"))  # rows any query returns; the API response carries all of them
 MODEL_ROWS = 50  # rows of each tool result shown to the model
-STATEMENT_TIMEOUT_MS = int(env("AGENT_STATEMENT_TIMEOUT_MS", "5000"))
+STATEMENT_TIMEOUT_MS = int(env("AGENT_STATEMENT_TIMEOUT_MS", "10000"))
 
 ASK_RATE_PER_MIN = float(env("ASK_RATE_PER_MIN", "6"))
 ASK_RATE_BURST = int(env("ASK_RATE_BURST", "3"))

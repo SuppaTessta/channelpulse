@@ -1,0 +1,29 @@
+# Render blueprint for the API (build prompt step 8; decisions D25). The web app deploys to Vercel from web/, and the
+# database is a Supabase project holding the marts schema, published nightly by .github/workflows/daily.yml.
+services:
+  - type: web
+    name: channelpulse-api
+    runtime: docker
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Least-privilege connection strings for the Supabase project (roles from api/sql/roles.sql).
+      - key: DATABASE_URL          # used only by /health; point it at the agent role, not an admin
+        sync: false
+      - key: AGENT_DATABASE_URL
+        sync: false
+      - key: OPS_DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CORS_ORIGINS          # the Vercel URL of the web app
+        sync: false
+      - key: TRUST_PROXY           # take the client IP from X-Forwarded-For for the rate limit
+        value: "1"
+      - key: DAILY_SPEND_CAP_USD
+        value: "2.00"
+      - key: ASK_RATE_PER_MIN
+        value: "4"

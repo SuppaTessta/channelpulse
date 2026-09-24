@@ -1,0 +1,66 @@
+name: daily
+
+# Advances the simulated "current day" so the live demo never goes stale and Supabase never auto-pauses
+# (build prompt step 8). The simulator is a pure function of (config, ground truth, as-of) (decisions D14), so every
+# run regenerates through yesterday (IST) from scratch: a missed or doubled run can't drift. Only the marts schema is
+# published; raw, staging and intermediate stay in this job's throwaway Postgres.
+on:
+  schedule:
+    - cron: "0 19 * * *"   # 00:30 IST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: channelpulse
+          POSTGRES_PASSWORD: channelpulse
+          POSTGRES_DB: channelpulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U channelpulse" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Public deployment: the least-privilege roles get real passwords, never the local-dev defaults.
+      AGENT_DB_PASSWORD: ${{ secrets.AGENT_DB_PASSWORD }}
+      OPS_DB_PASSWORD: ${{ secrets.OPS_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m venv .venv && .venv/bin/python -m pip install -q -r requirements.txt
+      - name: Generate through yesterday (IST)
+        run: .venv/bin/python generator/generate.py --as-of "$(TZ=Asia/Kolkata date -d yesterday +%F)"
+      - name: Build the warehouse (deployed copy keeps 60 days of daily channel-inventory detail, decisions D24)
+        run: |
+          .venv/bin/dbt build --no-partial-parse --project-dir warehouse --profiles-dir warehouse \
+            --vars '{"inventory_history_days": 60}'
+      - run: .venv/bin/python -m detectors.run
+      - name: Publish marts to Supabase
+        if: env.SUPABASE_DB_URL != ''
+        run: |
+          test -n "$AGENT_DB_PASSWORD" && test -n "$OPS_DB_PASSWORD" || { echo "set AGENT_DB_PASSWORD and OPS_DB_PASSWORD secrets"; exit 1; }
+          # pg_dump must match the server's major version, so use the image rather than the runner's client.
+          docker run --rm --network host -e PGPASSWORD=channelpulse postgres:17-alpine \
+            pg_dump -h 127.0.0.1 -U channelpulse -d channelpulse --schema=marts --no-owner --no-privileges --clean --if-exists \
+            > marts.sql
+          docker run --rm --network host -i postgres:17-alpine psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q < marts.sql
+          DATABASE_URL="$SUPABASE_DB_URL" .venv/bin/python api/app/admin.py roles
+      - name: Freshness check
+        if: env.SUPABASE_DB_URL != ''
+        run: |
+          latest=$(docker run --rm --network host postgres:17-alpine psql "$SUPABASE_DB_URL" -tAc "select max(date_day) from marts.dim_date")
+          expected=$(TZ=Asia/Kolkata date -d yesterday +%F)
+          echo "published through $latest (expected $expected)"
+          test "$latest" = "$expected"
+      - name: No deployment configured
+        if: env.SUPABASE_DB_URL == ''
+        run: echo "SUPABASE_DB_URL secret not set; built and tested the refresh, published nothing."

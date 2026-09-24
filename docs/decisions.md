@@ -122,3 +122,29 @@ Trade-offs:
 - Stock-out means under 7 days of stock and overstock means over 60 (target cover is 30).
 - Days with no sell-out in the trailing 30 days have no days-of-stock value and count toward neither rate.
 - The trailing average uses the days available at the window start, with a minimum of 14.
+
+**D24. Channel-inventory serving grain.**
+`fct_channel_inventory_daily` (PLAN §6) keeps the daily distributor × SKU detail: 6.5M rows.
+- It was slimmed from 1.16 GB to 723 MB: region and category come through joins, and the region RLS policy looks the distributor up.
+- Its last-day-of-period queries still took far longer than the API's 5 s budget. The governed inventory metrics are therefore served from `mart_channel_inventory_weekly`: 938k rows and 90 MB, holding each week's last available snapshot plus exact day counts, so `stockout_rate` and `overstock_rate` are still true "% of distributor-SKU-days". Days-of-stock by region dropped to about 0.9 s.
+- The deployed copy keeps 60 days of the daily detail (`inventory_history_days`). Local builds and CI keep full history.
+
+**D25. Deployment topology (build prompt "ask me": where to host the API).**
+- **API on Render**, as a Docker web service from `render.yaml`. It bundles MetricFlow, its agent turns run 10–40 s, and it builds its semantic engine once per process. That's a poor fit for serverless Python function limits.
+- **Web on Vercel**, from `web/`.
+- **Supabase** holds only `marts`, published nightly by `.github/workflows/daily.yml` from a throwaway CI Postgres. Raw data never leaves CI. The database stays well inside the free tier, and the nightly write keeps the project from auto-pausing.
+- **Not yet deployed.** Deploying needs the owner's Render, Vercel and Supabase accounts, plus the repository secrets `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD`, `OPS_DB_PASSWORD` and optionally `ANTHROPIC_API_KEY`.
+
+**D26. Generator implementation deviations** (reported by the generator build; verified independently by the acceptance suite).
+1. Distributors order against the 28-day mean of true demand. Trailing lumpy purchases ratcheted stock to 113 days of cover.
+2. Retailers buy in tier-scaled lots, and smaller accounts stock fewer SKUs. This keeps secondary sales inside the row budget.
+3. Tank lines have per-shift capacities: Durgapur Line 2 47, Howrah 90, Guwahati 55. Howrah covers shortfalls, so no tank batch reaches 100 units.
+4. Ship → install is clipped at 120 days (mfg + 155). An unsold unit at the cap installs in its holding distributor's district.
+5. The churn multiplier shrinks each of the account's purchases instead of dropping whole purchases, and its lateness uses evenly spread quantiles of the specified distribution. Otherwise a small account's monthly ratios were too noisy.
+6. Legacy plant stock on 2023-10-01 goes into distributors' opening stock.
+7. The secondary reporting-lag p95 is 19 days, against the 17 assumed by the pre-registered horizon. The horizon stays at 17, and point-in-time visibility still filters on `reported_date`.
+
+## Environment
+
+**E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**
+On the build machine, Smart App Control (enforcement mode) blocks the newest psycopg2-binary 2.9.13's bundled `libcrypto` DLL, a build with no reputation yet. That stops dbt entirely. 2.9.10's DLLs load. No security setting was changed. Linux and CI are unaffected.

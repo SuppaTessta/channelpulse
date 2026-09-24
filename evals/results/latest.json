@@ -1,0 +1,677 @@
+{
+  "status": "not_run",
+  "reason": "No Anthropic credentials resolved (API key, auth token, profile or federation); agent not run.",
+  "model": "claude-opus-5",
+  "effort": "high",
+  "as_of": "2026-09-23",
+  "pinned_as_of": "2026-09-23",
+  "region": "ALL",
+  "git_commit": "df5423178d06f7531313beb67bd040870679af59-dirty",
+  "timestamp": "2026-09-24T22:57:20+00:00",
+  "budget_usd": 5.0,
+  "question_count": 40,
+  "golden_count": 32,
+  "selected": [
+    "SL01",
+    "SL02",
+    "SL03",
+    "SL04",
+    "SL05",
+    "SL06",
+    "SL07",
+    "SL08",
+    "FG01",
+    "FG02",
+    "FG03",
+    "FG04",
+    "FG05",
+    "FG06",
+    "FG07",
+    "FG08",
+    "TC01",
+    "TC02",
+    "TC03",
+    "TC04",
+    "TC05",
+    "TC06",
+    "TC07",
+    "TC08",
+    "MH01",
+    "MH02",
+    "MH03",
+    "MH04",
+    "MH05",
+    "MH06",
+    "MH07",
+    "MH08",
+    "TR01",
+    "TR02",
+    "TR03",
+    "TR04",
+    "TR05",
+    "TR06",
+    "TR07",
+    "TR08"
+  ],
+  "goldens": {
+    "SL01": {
+      "columns": [
+        "primary_sales_value"
+      ],
+      "rows": [
+        [
+          1486188465.12
+        ]
+      ]
+    },
+    "SL02": {
+      "columns": [
+        "secondary_sales_value"
+      ],
+      "rows": [
+        [
+          5657084508.04
+        ]
+      ]
+    },
+    "SL03": {
+      "columns": [
+        "dso_days"
+      ],
+      "rows": [
+        [
+          39.80659911638929
+        ]
+      ]
+    },
+    "SL04": {
+      "columns": [
+        "collections_efficiency"
+      ],
+      "rows": [
+        [
+          0.3279806670146788
+        ]
+      ]
+    },
+    "SL05": {
+      "columns": [
+        "channel_days_of_stock"
+      ],
+      "rows": [
+        [
+          46.98157908041371
+        ]
+      ]
+    },
+    "SL06": {
+      "columns": [
+        "claims_per_1000_units"
+      ],
+      "rows": [
+        [
+          60.58009103201356
+        ]
+      ]
+    },
+    "SL07": {
+      "columns": [
+        "overstock_rate"
+      ],
+      "rows": [
+        [
+          0.34408283562306047
+        ]
+      ]
+    },
+    "SL08": {
+      "columns": [
+        "avg_reporting_lag_days"
+      ],
+      "rows": [
+        [
+          5.35760386708254
+        ]
+      ]
+    },
+    "FG01": {
+      "columns": [
+        "region",
+        "primary_sales_value"
+      ],
+      "rows": [
+        [
+          "Assam",
+          607814433.8
+        ],
+        [
+          "Bihar & Jharkhand",
+          1216378500.25
+        ],
+        [
+          "North Bengal & Sikkim",
+          315931915.57
+        ],
+        [
+          "North East",
+          717739538.46
+        ],
+        [
+          "Odisha",
+          827608436.85
+        ],
+        [
+          "South Bengal",
+          1232996815.44
+        ]
+      ]
+    },
+    "FG02": {
+      "columns": [
+        "category",
+        "secondary_sales_value"
+      ],
+      "rows": [
+        [
+          "fitting",
+          1063001838.57
+        ],
+        [
+          "pipe",
+          3059159349.31
+        ],
+        [
+          "sanitaryware",
+          927704441.32
+        ],
+        [
+          "tank",
+          1010473120.4
+        ]
+      ]
+    },
+    "FG03": {
+      "columns": [
+        "distributor_id",
+        "distributor_name",
+        "dso_days"
+      ],
+      "rows": [
+        [
+          "D0019",
+          "Mishra Agencies",
+          81.52914601101504
+        ],
+        [
+          "D0004",
+          "Rina Pradhan Sales Corporation",
+          79.00587256651126
+        ],
+        [
+          "D0133",
+          "Paul Traders",
+          78.3413798090611
+        ],
+        [
+          "D0199",
+          "Amit Sarkar & Sons",
+          78.17963635724001
+        ],
+        [
+          "D0321",
+          "Roy & Sons",
+          76.51959618114057
+        ]
+      ]
+    },
+    "FG04": {
+      "columns": [
+        "plant_id",
+        "plant_name",
+        "claims_per_1000_units"
+      ],
+      "rows": [
+        [
+          "DGP",
+          "Gangasagar Polymers Durgapur Works",
+          65.60045578480447
+        ],
+        [
+          "GHY",
+          "Gangasagar Polymers Guwahati Works",
+          61.562860438292965
+        ],
+        [
+          "HWH",
+          "Gangasagar Polymers Howrah Works",
+          60.373678070796124
+        ]
+      ]
+    },
+    "FG05": {
+      "columns": [
+        "tier",
+        "collections_efficiency"
+      ],
+      "rows": [
+        [
+          "1",
+          0.3276921118559488
+        ],
+        [
+          "2",
+          0.3391283381191741
+        ],
+        [
+          "3",
+          0.305206225210411
+        ]
+      ]
+    },
+    "FG06": {
+      "columns": [
+        "is_certified",
+        "installer_claim_rate"
+      ],
+      "rows": [
+        [
+          false,
+          56.58215155421859
+        ],
+        [
+          true,
+          60.50931769247902
+        ]
+      ]
+    },
+    "FG07": {
+      "columns": [
+        "region",
+        "distributor_health_score"
+      ],
+      "rows": [
+        [
+          "Assam",
+          49.744897959183675
+        ],
+        [
+          "Bihar & Jharkhand",
+          49.77375
+        ],
+        [
+          "North Bengal & Sikkim",
+          49.855172413793106
+        ],
+        [
+          "North East",
+          49.8
+        ],
+        [
+          "Odisha",
+          49.73170731707317
+        ],
+        [
+          "South Bengal",
+          49.71875
+        ]
+      ]
+    },
+    "FG08": {
+      "columns": [
+        "region",
+        "retailers"
+      ],
+      "rows": [
+        [
+          "Assam",
+          1361.0
+        ],
+        [
+          "Bihar & Jharkhand",
+          2126.0
+        ],
+        [
+          "North Bengal & Sikkim",
+          672.0
+        ],
+        [
+          "North East",
+          1519.0
+        ],
+        [
+          "Odisha",
+          1182.0
+        ],
+        [
+          "South Bengal",
+          2281.0
+        ]
+      ]
+    },
+    "TC01": {
+      "columns": [
+        "fy25",
+        "fy26"
+      ],
+      "rows": [
+        [
+          4594197245.33,
+          4918469640.37
+        ]
+      ]
+    },
+    "TC02": {
+      "columns": [
+        "plant_id",
+        "plant_name",
+        "fy25",
+        "fy26"
+      ],
+      "rows": [
+        [
+          "DGP",
+          "Gangasagar Polymers Durgapur Works",
+          0.9739674776966748,
+          0.975609450726979
+        ],
+        [
+          "GHY",
+          "Gangasagar Polymers Guwahati Works",
+          0.9760893117408906,
+          0.97525428802589
+        ],
+        [
+          "HWH",
+          "Gangasagar Polymers Howrah Works",
+          0.9751266089108911,
+          0.9756191176470588
+        ]
+      ]
+    },
+    "TC03": {
+      "columns": [
+        "q4_fy26",
+        "q1_fy27"
+      ],
+      "rows": [
+        [
+          39.58787452739127,
+          40.08793401941755
+        ]
+      ]
+    },
+    "TC04": {
+      "columns": [
+        "month",
+        "secondary_sales_value"
+      ],
+      "rows": [
+        [
+          "2025-04-01",
+          598685323.18
+        ],
+        [
+          "2025-05-01",
+          605035826.39
+        ],
+        [
+          "2025-06-01",
+          500319107.72
+        ],
+        [
+          "2025-07-01",
+          406845161.85
+        ],
+        [
+          "2025-08-01",
+          392053375.65
+        ],
+        [
+          "2026-04-01",
+          629916372.41
+        ],
+        [
+          "2026-05-01",
+          636009815.54
+        ],
+        [
+          "2026-06-01",
+          546787923.45
+        ],
+        [
+          "2026-07-01",
+          426959125.45
+        ],
+        [
+          "2026-08-01",
+          399123466.89
+        ]
+      ]
+    },
+    "TC05": {
+      "columns": [
+        "plant_id",
+        "plant_name",
+        "fy25",
+        "fy26"
+      ],
+      "rows": [
+        [
+          "DGP",
+          "Gangasagar Polymers Durgapur Works",
+          533,
+          794
+        ],
+        [
+          "GHY",
+          "Gangasagar Polymers Guwahati Works",
+          568,
+          716
+        ],
+        [
+          "HWH",
+          "Gangasagar Polymers Howrah Works",
+          1129,
+          1306
+        ]
+      ]
+    },
+    "TC06": {
+      "columns": [
+        "region",
+        "winter",
+        "monsoon"
+      ],
+      "rows": [
+        [
+          "Assam",
+          0.033544651325313236,
+          0.030938765578016097
+        ],
+        [
+          "Bihar & Jharkhand",
+          0.04167997938675599,
+          0.03054309439725112
+        ],
+        [
+          "North Bengal & Sikkim",
+          0.042289093541134075,
+          0.02840872736579436
+        ],
+        [
+          "North East",
+          0.04206600459690359,
+          0.03299876254640451
+        ],
+        [
+          "Odisha",
+          0.039951573849878935,
+          0.029692629065950462
+        ],
+        [
+          "South Bengal",
+          0.0399906795211604,
+          0.03264636148094109
+        ]
+      ]
+    },
+    "TC07": {
+      "columns": [
+        "fy25",
+        "fy26"
+      ],
+      "rows": [
+        [
+          0.6316534108289997,
+          0.6175580492246713
+        ]
+      ]
+    },
+    "TC08": {
+      "columns": [
+        "fy25_q4",
+        "fy26_q4"
+      ],
+      "rows": [
+        [
+          1.2448880597014924,
+          1.3144650145772594
+        ]
+      ]
+    },
+    "MH01": {
+      "columns": [
+        "resin_lot_id",
+        "units_shipped",
+        "base_crack_claims",
+        "base_crack_per_1000"
+      ],
+      "rows": [
+        [
+          "RL-DGP-L2-250310",
+          3384.0,
+          318,
+          93.97163120567376
+        ]
+      ]
+    },
+    "MH02": {
+      "columns": [
+        "distributor_id",
+        "distributor_name",
+        "region",
+        "health_score",
+        "dso_vs_median",
+        "sell_out_vs_last_year",
+        "sell_in_vs_last_year"
+      ],
+      "rows": [
+        [
+          "D0246",
+          "Mohanty Trading Co.",
+          "Bihar & Jharkhand",
+          27.2,
+          0.596,
+          0.6309167165967645,
+          1.1845238095238095
+        ]
+      ]
+    },
+    "MH03": {
+      "columns": [
+        "install_district",
+        "installer_id",
+        "installer_name",
+        "installs",
+        "claims",
+        "leave_one_out_ratio"
+      ],
+      "rows": [
+        [
+          "Kamrup Metropolitan",
+          "INS0227",
+          "Sunita Mondal",
+          1156.0,
+          150.0,
+          2.4616072469966177
+        ]
+      ]
+    },
+    "MH04": {
+      "columns": [
+        "scheme_window_share",
+        "avg_days_of_stock_rise_60d",
+        "quarters"
+      ],
+      "rows": [
+        [
+          0.21084978920989147,
+          4.406669657544489,
+          10
+        ]
+      ]
+    },
+    "MH05": {
+      "columns": [
+        "failure_mode",
+        "cost_increase_inr"
+      ],
+      "rows": [
+        [
+          "base_crack",
+          6343438.31
+        ]
+      ]
+    },
+    "MH06": {
+      "columns": [
+        "distributor_id",
+        "distributor_name",
+        "overdue_inr"
+      ],
+      "rows": [
+        [
+          "D0219",
+          "Pritam Debbarma Enterprises",
+          3337434.6
+        ]
+      ]
+    },
+    "MH07": {
+      "columns": [
+        "distributor_id",
+        "distributor_name",
+        "q1_fy27_units",
+        "q1_fy26_units",
+        "unit_increase"
+      ],
+      "rows": [
+        [
+          "D0118",
+          "New Biswas Traders",
+          87669,
+          56862,
+          30807
+        ]
+      ]
+    },
+    "MH08": {
+      "columns": [
+        "distributor_id",
+        "distributor_name",
+        "health_score",
+        "weakest_component",
+        "shortfall"
+      ],
+      "rows": [
+        [
+          "D0128",
+          "Sai Marketing",
+          6.5,
+          "sell-out|sell out|secondary",
+          35.0
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,222 @@
+# generator/ground_truth.yaml -- ANSWER KEY for the four planted anomalies.
+# Read only by generator/generate.py and the acceptance suite. Never loaded into Postgres, never
+# readable by the agent/API role, never used to compute eval goldens (those come from marts via SQL),
+# not referenced in the README before the case-study section.
+# Detector definitions are NOT here: they live in detectors/detectors.yaml, committed before the
+# first `make seed` (that commit is the pre-registration). This file holds planted parameters and
+# the outcomes the acceptance suite checks.
+# All dates are absolute and frozen at generation. Month offsets sit alongside and are asserted
+# (month_index(date) == offset). On disagreement the generator fails; it never re-derives.
+
+version: 1
+seed: 20260924              # fixed before the first full generation; never re-rolled to improve a result
+
+anchor:
+  anchor_date: 2026-09-24   # sim "today" at generation (Thu); data runs through as_of
+  as_of: 2026-09-23         # last generated day (Wed, ISO 2026-W39) = EVAL_AS_OF
+  month_1: "2023-10"
+  month_36: "2026-09"       # partial at as_of: 23 of 30 days
+  window_start: 2023-10-01  # = raw start; first date any raw fact, mart, dashboard or eval covers (weekly marts: Mon 2023-10-02, ISO W40)
+  opening_channel_stock_as_of: 2023-10-01  # decisions D5: end state of an internal, unwritten 92-day burn-in (2023-07-01..09-30)
+  legacy_serial_start: 2022-10-01  # decisions D7: tanks made in the 12 months before m1 exist in production_batches and
+                                   # serial_units only (no shipments/installations); their claims appear from window_start
+  month_index: "(year*12 + month) - (2023*12 + 10) + 1"   # 2023-10 -> 1, 2026-09 -> 36, 2023-07 -> -2
+  fiscal_year: {start_month: 4, label: end_year}          # FY26 = 2025-04-01..2026-03-31; Q1 Apr-Jun ... Q4 Jan-Mar
+  reanchor_policy: "manual only, +12 months (each September); re-derive dates from offsets with the per-anomaly rules; bump version; recompute goldens"
+
+# Non-anomaly levers the anomalies' detectability depends on. generate.py asserts config.yaml matches.
+calibration:
+  per_month_days: 30.4375
+  plant_calendar: "Mon-Sat, 2 shifts, no holiday calendar in Phase 1"
+  serialized_categories: [tank]            # pipe and fittings unserialized (no serial, no claims)
+  durgapur_line2:
+    product: "rotomoulded LLDPE tanks, serialized (decisions D2); Line 1 is pipe/CPVC extrusion"
+    annual_units: 25000                    # ~80 per production day; seasonal production index 1.15 in Mar-Apr
+    footprint_states: [West Bengal, Jharkhand, Bihar, Odisha]
+    footprint_excluded_districts: [Darjeeling, Kalimpong, Jalpaiguri, Alipurduar, Cooch Behar, Uttar Dinajpur, Dakshin Dinajpur, Malda]
+  hazards:
+    clock: latent_install_date             # every unit has one; install_date is written for ~70% only
+    tank_year1_all_modes_per_month: 0.0050
+    base_crack_year1_per_month: 0.0020     # base_crack ~40% of year-1 tank claims
+    base_crack_after_year1_factor: 0.02    # 1/50: base_crack is an early-life mode (keeps raw baseline flat)
+    other_modes_after_year1_factor_max: 0.05
+    claim_after_failure_days: [0, 10]
+  lags:
+    mfg_to_ship_days_max: 35
+    ship_to_latent_install: {dist: lognormal, median_days: 35, sigma: 0.6, truncate_days: 120}  # stuffer dwell included, within the cap
+    registration_probability: 0.70         # x ~95% within 90 d of ship => warranty_registration_rate ~66%
+    registration_visible_after_install_days: [0, 30]
+  channel:
+    target_cover_days: 30
+    tier2_payment_terms_days: 45
+    secondary_reporting_lag: {p80_days: 7, p97_days: 21, cap_days: 35, permanent_loss_share: 0.002}  # detectors use sale_date <= as_of - p95 (~17 d), decisions D12
+  power_floor:                             # never cut below these to meet the row budget
+    durgapur_base_crack_baseline_per_month_min: 40
+    resin_lot_units_min: 2600
+
+anomalies:
+
+  resin_lot:
+    enabled: true
+    month_offsets: {production: [18, 19], excess_claims: [19, 34], near_clean: [35, 36]}
+    plant: Durgapur
+    line_no: 2
+    resin_lot_id: RL-DGP-L2-250310         # normal naming rule RL-{plant_code}-L{line}-{first_use:%y%m%d}
+    first_use_date: 2025-03-10             # Mon, ISO 2025-W11
+    last_use_date: 2025-04-20              # Sun, ISO 2025-W16: 42 days = 6 ISO weeks (22 in m18, 20 in m19)
+    last_mfg_date: 2025-04-19              # last Mon-Sat day; 36 production days (19 in Mar, 17 in Apr)
+    exclusive: "only lot on Line 2 for the span; used on no other line or plant"
+    lot_calendar_rule: "Line 2 lots are whole ISO weeks, spans ~U{3..8} weeks, generated backward from 2025-03-09 and forward from 2025-04-21, so this lot has a typical length"
+    reanchor_rule: "Monday of ISO week 11 of the m18 calendar year, 6 ISO weeks"
+    expected_units: 3300                   # 36 d x ~92/d; lot is ~73% of Durgapur Mar-2025 output, ~65% of Apr-2025
+    hazard:
+      failure_mode: base_crack
+      multiplier: 4.0
+      in_service_days_from: 0              # half-open [0, 365) from the latent install date
+      in_service_days_to: 365
+      after_window_multiplier: 1.0
+      other_modes_multiplier: 1.0
+    qc_pass_rate: "normal draw; no manufacture-time tell"
+    latent_install_cap_days_from_mfg: 155  # general rule (35 + 120); every lot hazard window closes by 2026-09-21
+    expected:                              # stdlib Monte Carlo under D7 warm-up, 100 seeds; acceptance ranges, not hardcoded
+      excess_base_crack_claims: 220
+      durgapur_base_crack_baseline_per_month: 50
+      plateau_uplift_pct: [30, 40]         # m21-m31
+      cohort_flag_date: {median: 2025-06-22, range: [2025-05-25, 2025-07-27]}
+      raw_cusum_alarm_month: {median: "2025-08", range: ["2025-06", "2025-12"]}   # monitored 2025-02..2026-08
+      p_raw_cross_by_2026_08: 1.00
+      null_run_false_alarm_rate: 0.03
+      n_weeks: {median: 9.1, p10: 3.7, p90: 14.4}
+      company_wide_all_mode_uplift_pct: 5  # the naive company-wide count barely moves
+
+  distributor_churn:
+    enabled: true
+    month_offsets: {window: [25, 29], primary_flat: [25, 27], primary_falls_collections_lag: [28, 29], hold_from: 30}
+    selection:
+      tier: 2
+      state: West Bengal
+      district: Darjeeling
+      pincode_prefix: "7340"               # Siliguri
+      onboarded_before: 2022-07-01
+      min_qualifying_accounts: 3           # master-data generator guarantees and asserts; the others stay healthy peers
+      pick: "median master-data base_demand among qualifying accounts; tie -> lowest distributor_id"
+    distributor_id: null                   # written back after master data; acceptance asserts it matches the pick rule
+    window: {start: 2025-10-01, end: 2026-02-28}   # Wed..Sat, 151 days; 207 days before as_of
+    reanchor_rule: "first day of m25 .. last day of m29"
+    secondary_multiplier:                  # x the account's own seasonal counterfactual (same-seed, anomaly-off run)
+      by_month: {"2025-10": 0.91, "2025-11": 0.82, "2025-12": 0.73, "2026-01": 0.64, "2026-02": 0.55}
+      hold_after_window: 0.55              # end state from 2026-03-01, persists into the live tail
+    primary:
+      phase_a: {start: 2025-10-01, end: 2025-12-31, rule: "orders computed on counterfactual demand and stock (standing order) => equals counterfactual primary"}
+      phase_b_onward: {start: 2026-01-01, rule: "normal replenishment policy on actual secondary and actual stock"}
+    collections:
+      applies_to_due_date_from: 2026-01-01 # = invoices dated >= 2025-11-17 at 45-day terms
+      days_late: {median: 35, iqr: [25, 50]}
+      baseline_days_late_median: 2
+      persists: true
+    status: active                         # never changes
+    stuffing_propensity: 0.0               # never drawn in any quarter
+    unchanged: [field_visits, reporting_lag, missing_report_rate, retailer_mix]
+    expected:
+      secondary_vs_counterfactual_feb_2026: [0.50, 0.60]
+      primary_vs_counterfactual: {phase_a_each_month: [0.99, 1.01], "2026-01": 0.0, "2026-02": 0.2, "2026-03": 0.55}
+      days_of_stock_month_end: {"2025-10": 36, "2025-11": 47, "2025-12": 64, "2026-01": 42, "2026-02": 30}
+      first_overdue_invoice: 2026-01-02
+      late_payments_land: [2026-02-05, 2026-05-29]
+      health_flag_iso_week: {estimate: [2025-W49, 2025-W52]}   # 2025-12-01..12-28 with the D12 horizon; primary drop visible 2026-W02
+
+  quarter_end_stuffing:
+    enabled: true
+    month_offsets: [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]  # none at m3: programme launches FY24Q4
+    keyed_to: fiscal_quarter_end           # never to the month index
+    window_rule: "start = QE - 14 days, end = QE (15 days)"
+    cycles:   # baseline = [start-90, start-1]; elevated_through = QE+60; cleared_by = QE+72 (4-6 days before next start)
+      - {fq: FY24Q4, m: 6,  start: 2024-03-17, end: 2024-03-31, baseline: [2023-12-18, 2024-03-16], elevated_through: 2024-05-30, cleared_by: 2024-06-11, fy_end: true}
+      - {fq: FY25Q1, m: 9,  start: 2024-06-16, end: 2024-06-30, baseline: [2024-03-18, 2024-06-15], elevated_through: 2024-08-29, cleared_by: 2024-09-10}
+      - {fq: FY25Q2, m: 12, start: 2024-09-16, end: 2024-09-30, baseline: [2024-06-18, 2024-09-15], elevated_through: 2024-11-29, cleared_by: 2024-12-11}
+      - {fq: FY25Q3, m: 15, start: 2024-12-17, end: 2024-12-31, baseline: [2024-09-18, 2024-12-16], elevated_through: 2025-03-01, cleared_by: 2025-03-13}
+      - {fq: FY25Q4, m: 18, start: 2025-03-17, end: 2025-03-31, baseline: [2024-12-17, 2025-03-16], elevated_through: 2025-05-30, cleared_by: 2025-06-11, fy_end: true}
+      - {fq: FY26Q1, m: 21, start: 2025-06-16, end: 2025-06-30, baseline: [2025-03-18, 2025-06-15], elevated_through: 2025-08-29, cleared_by: 2025-09-10}
+      - {fq: FY26Q2, m: 24, start: 2025-09-16, end: 2025-09-30, baseline: [2025-06-18, 2025-09-15], elevated_through: 2025-11-29, cleared_by: 2025-12-11}
+      - {fq: FY26Q3, m: 27, start: 2025-12-17, end: 2025-12-31, baseline: [2025-09-18, 2025-12-16], elevated_through: 2026-03-01, cleared_by: 2026-03-13}
+      - {fq: FY26Q4, m: 30, start: 2026-03-17, end: 2026-03-31, baseline: [2025-12-17, 2026-03-16], elevated_through: 2026-05-30, cleared_by: 2026-06-11, fy_end: true}
+      - {fq: FY27Q1, m: 33, start: 2026-06-16, end: 2026-06-30, baseline: [2026-03-18, 2026-06-15], elevated_through: 2026-08-29, cleared_by: 2026-09-10}
+      - {fq: FY27Q2, m: 36, start: 2026-09-16, end: 2026-09-30, baseline: [2026-06-18, 2026-09-15], elevated_through: 2026-11-29, cleared_by: 2026-12-11, in_progress_at_as_of: true}
+    live_tail_next_starts: [2026-12-17, 2027-03-17, 2027-06-16, 2027-09-16]
+    participation:
+      share_of_active: {dist: uniform, low: 0.15, high: 0.20, keyed: [seed, fiscal_quarter]}
+      n_rule: "round(share x n_active_distributors), sampled without replacement from eligible"
+      weights: "per-distributor propensity ~ Beta(2, 8), drawn at master-data time"
+      eligible: "active; first primary invoice >= 90 days before start; propensity > 0; per category: trailing-90 primary > 0 and 2.3 x own baseline window qty >= slab"
+    multiplier:
+      k: {dist: uniform, low: 2.3, high: 2.7, keyed: [seed, fiscal_quarter, distributor_id]}
+      applies_to: "window daily primary units in each scheme category = k x own trailing-90 daily average"
+    baseline_window: "literal [start - 90, start - 1], identical in generator and detector"  # decisions D13 (amended): theta drain nets the overlap to ~0.97-1.00x
+    post_window:
+      theta: "1 - 15*(k - 1)/72"           # 0.729 at k=2.3, 0.688 at 2.5, 0.646 at 2.7
+      rule: "orders = theta x trailing-30 secondary until implied stock <= target cover, then normal policy"
+    secondary_effect: none                 # no pass-through to retailers
+    schemes:
+      per_window: {categories: [tank, pipe], tiers: [1, 2, 3]}   # 6 schemes rows per window
+      name_pattern: "{fq} {Category} Slab Scheme - Tier {tier}"
+      discount_pct: {default: 0.030, fiscal_year_end: 0.040}   # fraction, unit_price = list x (1 - discount_pct), decisions D9
+      min_slab_units: "ceil to 10 of 1.6 x median over eligible distributors of the tier of (trailing-90 daily avg category primary x 15), fixed at scheme creation"
+      tagging: "per invoice (decisions D9): an in-window invoice whose category lines >= slab carries scheme_id; stuffers consolidate window volume into 1-2 such invoices; at most one scheme per invoice (generator splits multi-category scheme orders)"
+    expected:
+      window_rate_vs_trailing90_stuffer_mean: [2.4, 2.6]
+      scheme_concentration_ratio_n15: {non_stuffer: 1.0, first_time_stuffer: 2.0, repeat_stuffer: 2.5}
+      company_primary_uplift_in_window_pct: [20, 34]      # scheme categories
+      stuffer_days_of_stock_at_qe_x_target: [1.65, 1.85]
+      stuffer_cohort_mean_excess_dos_through_qe_plus_60_min: 3
+      repeat_stuffer_trailing90_ratio: [0.96, 1.01]
+      settled_cycles_at_as_of: [6, 9, 12, 15, 18, 21, 24, 27, 30]   # m33 drain done 2026-09-10 but secondary not settled; m36 in progress
+
+  installer_decoy:
+    enabled: true
+    month_offsets: {active_from: 10, active_to: null}
+    district: Kamrup Metropolitan
+    state: Assam
+    pincode_prefix: "7810"
+    installer_id: null                     # written back after master data; acceptance asserts
+    first_install_date: 2024-07-01         # Mon, ISO 2024-W27
+    last_install_date: null                # open-ended, continues in the live tail
+    reanchor_rule: "first day of m10"
+    volume: {installer_registered_share_of_district: 0.15, expected_per_month: 45}
+    district_min_other_active_installers: 6
+    hazard: {all_modes_multiplier: 3.0, horizon: whole_service_life, clock: install_date}
+    capture: "same installer_app capture probability as district peers; installations.installer_id set iff registered via installer; warranty_claims.installer_id = installations.installer_id of the claimed serial"
+    certified: "drawn like peers"
+    supply:
+      plants: [Guwahati, Howrah]
+      min_share_each_plant: 0.20
+      min_distinct_resin_lots: 5
+      durgapur_line2_units: 0
+      batch_allocation: "FIFO from pooled plant stock across all orders of the day"
+    baseline_definition: "leave-one-out: same district and category, excluding this installer's units, matched on days since install"
+    expected:
+      claim_rate_vs_leave_one_out: [2.6, 3.4]
+      district_lift_installer_registered_units: 1.3
+      max_share_of_any_batch_or_lot: 0.05
+      flag_date: {median: 2025-03-30, p10: 2025-01-26, p90: 2025-08-17}
+
+# make acceptance: same seed, run once with everything on and once per anomaly with enabled: false.
+# Keyed RNG streams (seed, entity[, date]) mean only the anomaly's causal effects differ between runs.
+# Raw CUSUM is monitored 2025-02..2026-08 (its lagged baseline t-15..t-4 must lie inside the window).
+acceptance:
+  resin_lot:
+    - "realized lot units within [2600, 4000]; lot id equals the naming-rule output for (Durgapur, 2, 2025-03-10)"
+    - "lot base_crack claims per 1000 shipped at 12 months since ship >= 3.0x same-line peers of the prior 12 months"
+    - "lot scan flags this lot by 2025-09-28; at as_of it is the only flagged lot, or the top effect size with every other flag < 2x"
+    - "raw CUSUM crosses by 2026-08 in the full run and does not cross in the resin-off run; report N from this seed, or '> X weeks, never crossed' if it does not"
+  distributor_churn:
+    - "Feb-2026 secondary / counterfactual within [0.50, 0.60]; each Oct-Dec 2025 month primary / counterfactual within [0.99, 1.01]"
+    - "Jan+Feb-2026 primary <= 0.35 x counterfactual; median days late for due dates 2026-01-01..02-28 in [28, 42]"
+    - "no scheme_id on any of its invoices; health score crosses by 2026-01-31; fewer than 5% of stuffers cross in any overhang period"
+  quarter_end_stuffing:
+    - "per cycle: stuffers / n_active in [0.15, 0.20]; stuffer-mean window rate / trailing-90 in [2.4, 2.6]"
+    - "stuffer-cohort mean days of stock >= own pre-window median + 3 from QE+1 through QE+60, and <= +1 at the next window start"
+    - "every stuffer has >= 1 in-window invoice at or above its slab; 6 scheme rows exist for each of the 11 windows"
+  installer_decoy:
+    - "leave-one-out claim ratio in [2.6, 3.4] at equal days since install; units from >= 2 plants and >= 5 resin lots"
+    - "installer share of every batch (>= 100 units) and every resin lot <= 5%; no batch or lot outside the resin lot is flagged"
+    - "no Durgapur Line 2 serial has an installation in Assam"

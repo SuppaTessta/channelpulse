@@ -1,0 +1,84 @@
+# Pre-registered anomaly detectors: the rules behind get_anomalies(as_of) (CHANNELPULSE_PLAN.md §8).
+#
+# This file is committed before the first full `make seed`, so every threshold below was fixed before any
+# generated data was seen. The commit is the pre-registration. Changing a rule after seeing data is
+# allowed only as a logged deviation in docs/decisions.md, stating the old rule, the new rule and why.
+# Case-study numbers are reported under both rules.
+#
+# Every detector is a generic scan over all entities of its kind. Nothing here names a lot, installer,
+# distributor or date. Results are reported with their false positives, not just the hits.
+
+version: 1
+
+point_in_time:
+  snapshot_cadence: weekly          # every Sunday
+  first_snapshot: 2024-01-07        # after >= 13 weeks of history
+  visibility: >-
+    A snapshot on date S only sees rows visible by S: claim_date <= S; registrations with
+    installations._loaded_at <= S; payment_date <= S; secondary rows with reported_date <= S.
+  completeness_horizon_days: 17     # decisions D12: secondary facts use sale_date <= S - 17 (p95 reporting lag)
+
+lot_scan:                           # "batch outliers"
+  entities: every (resin_lot_id, failure_mode) with >= 200 shipped serialised units
+  exposure_clock: days_since_ship   # ~30% of units never record install_date (decisions D8)
+  peers: >-
+    lots on the same plant and line whose first use falls in the 12 months before this lot's first
+    use, at equal days-since-ship exposure
+  test: one-sided Poisson, observed claims vs peer rate x this lot's exposure (unit-days)
+  min_claims: 5
+  alpha_family: 0.05
+  correction: Bonferroni over entities x snapshots
+  report: [flag_date, rate_ratio, p_value, claims, units]
+
+installer_scan:
+  entities: every installer_id with >= 50 attributed installs
+  exposure_clock: days_since_install
+  baseline: >-
+    leave-one-out: same district and product category, excluding this installer's own units,
+    matched on days since install
+  test: one-sided Poisson on all failure modes combined
+  min_claims: 5
+  alpha_family: 0.05
+  correction: Bonferroni over entities x snapshots
+  report: [flag_date, rate_ratio, p_value, claims, installs, plants_spanned, resin_lots_spanned]
+
+stuffing:
+  per: [distributor_id, fiscal_quarter, category]
+  window: the quarter's scheme window from schemes (start_date..end_date)
+  rate_ratio: window daily primary units / daily primary units over [start - 90, start - 1]
+  concentration_ratio: >-
+    scheme_concentration_ratio (§7): share of the quarter's primary units booked in the window's last
+    15 days, divided by the distributor's baseline share (leave-one-out median over its other in-window
+    quarters, floored at 15/91)
+  flag: rate_ratio >= 2.0
+  follow_through: days of channel stock above own pre-window median, for the 90 days after quarter-end
+
+distributor_health:                 # distributor_health_score (§7): weekly, 0-100, higher is healthier
+  grain: [distributor_id, iso_week]
+  scoring: each component is a percentile rank among region peers that week, so 0 = worst in region
+  components:
+    secondary_trend:       {weight: 0.35, definition: "trailing-8-week secondary units / same 8 weeks a year earlier"}
+    primary_secondary_gap: {weight: 0.20, definition: "trailing-12-week primary units / secondary units (sell-in vs sell-out)"}
+    days_of_stock_dev:     {weight: 0.15, definition: "channel days of stock / own trailing-52-week median"}
+    dso_trend:             {weight: 0.20, definition: "dso (decisions D13) / own trailing-52-week median"}
+    visit_recency:         {weight: 0.10, definition: "days since last geofence-verified visit"}
+  flag: >-
+    score < 30 AND secondary_trend component < 15, both in each of 3 consecutive weeks. The
+    secondary-trend gate keeps quarter-end stuffers, whose gap and stock run high while sell-out stays
+    normal, from flagging on overhang alone.
+  min_history_weeks: 52             # year-on-year trend needs a year of history
+
+# Case study only, not a product detector. This is the naive "raw monthly count" that the lot scan's lead time is measured against.
+case_study_comparator:
+  series: monthly claim count per (plant, failure_mode), by claim_date month
+  method: >-
+    standardised one-sided CUSUM with z_t = (x_t - mu_t) / sqrt(mu_t) and S_t = max(0, S_(t-1) + z_t - k).
+    It alarms on the first month with S_t > h.
+  k: 1.0
+  h: 4.0
+  mu: mean of months t-15 .. t-4 (trailing 12 months, lagged 3)
+  monitored: from window month 17 through the last complete month before as_of
+  lead_time: >-
+    For a lot flagged by lot_scan, the comparison series is its own plant and failure mode.
+    N weeks = (last day of the first alarm month - lot_scan flag_date) / 7. If the CUSUM never
+    alarms by as_of, report "> (as_of - flag_date) / 7 weeks; the raw count never showed it".

@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: Synthetic landing tables written by generator/generate.py (docs/decisions.md for extensions to PLAN §2).
+    tables:
+      - name: generation_run
+      - name: geo_pincodes
+      - name: plants
+      - name: products
+      - name: production_batches
+      - name: serial_units
+      - name: sales_reps
+      - name: distributors
+      - name: retailers
+      - name: opening_channel_stock
+      - name: schemes
+      - name: primary_invoices
+      - name: primary_invoice_lines
+      - name: secondary_sales
+      - name: shipments
+      - name: installers
+      - name: installations
+      - name: warranty_claims
+      - name: collections
+      - name: field_visits

@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: dim_product
+    description: SKU catalogue. Tanks are serialised; sanitaryware is traded.
+    semantic_model:
+      enabled: true
+      name: products
+    columns:
+      - name: sku
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: product}
+      - name: product_name
+        dimension: {type: categorical}
+      - name: category
+        dimension: {type: categorical}
+      - name: capacity_l
+        dimension: {type: categorical}
+      - name: is_serialised
+        dimension: {type: categorical}

@@ -16,7 +16,7 @@ DBT := "$(VENV_BIN)/dbt"
 DBT_ARGS := --project-dir warehouse --profiles-dir warehouse
 API_PORT ?= 8000
 
-.PHONY: setup lock up down dbt-debug api web lint test
+.PHONY: setup lock up down seed dbt-debug api web lint test
 
 setup:  ## create .venv + install Python and web deps
 	$(BOOTSTRAP_PY) -m venv .venv
@@ -28,6 +28,9 @@ lock:  ## re-pin constraints.txt after editing requirements.txt
 
 up:  ## start Postgres and wait until healthy
 	docker compose up -d --wait
+
+seed:  ## synthetic data -> raw schema at the pinned as-of (idempotent: rebuilds the schema)
+	$(PY) generator/generate.py
 
 down:
 	docker compose down

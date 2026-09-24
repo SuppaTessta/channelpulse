@@ -1,0 +1,23 @@
+version: 2
+
+# The marts schema is the only layer the agent and the dashboard may read (PLAN §6). Distributor-level marts carry a
+# `region` column and a row-level-security policy keyed on the caller's region claim (macros/apply_region_rls.sql).
+# Marts that carry governed metrics are documented, and tested, with their semantic definitions in ../../semantic_models/.
+
+models:
+  - name: dim_date
+    description: Calendar with Indian fiscal (Apr–Mar) and ISO keys; the MetricFlow time spine.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day
+        data_tests: [unique, not_null]
+
+  - name: dim_geo
+    description: Pincode → district → state → sales region (decisions D4).
+    columns:
+      - name: pincode
+        data_tests: [unique, not_null]
+      - name: region
+        data_tests: [not_null]

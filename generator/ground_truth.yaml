@@ -100,7 +100,7 @@ anomalies:
       onboarded_before: 2022-07-01
       min_qualifying_accounts: 3           # master-data generator guarantees and asserts; the others stay healthy peers
       pick: "median master-data base_demand among qualifying accounts; tie -> lowest distributor_id"
-    distributor_id: null                   # written back after master data; acceptance asserts it matches the pick rule
+    distributor_id: D0084                  # written back after master data; acceptance asserts it matches the pick rule
     window: {start: 2025-10-01, end: 2026-02-28}   # Wed..Sat, 151 days; 207 days before as_of
     reanchor_rule: "first day of m25 .. last day of m29"
     secondary_multiplier:                  # x the account's own seasonal counterfactual (same-seed, anomaly-off run)
@@ -177,7 +177,7 @@ anomalies:
     district: Kamrup Metropolitan
     state: Assam
     pincode_prefix: "7810"
-    installer_id: null                     # written back after master data; acceptance asserts
+    installer_id: INS0227                  # written back after master data; acceptance asserts
     first_install_date: 2024-07-01         # Mon, ISO 2024-W27
     last_install_date: null                # open-ended, continues in the live tail
     reanchor_rule: "first day of m10"

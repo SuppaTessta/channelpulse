@@ -1,0 +1,80 @@
+version: 2
+
+# Governed metrics (PLAN §7): primary_sales_value, secondary_sales_value.
+
+models:
+  - name: fct_primary_sales
+    description: Company → distributor invoice lines (sell-in). RLS by region.
+    semantic_model:
+      enabled: true
+      name: primary_sales
+    agg_time_dimension: invoice_date
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: primary_sale_line}
+      - name: invoice_id
+        entity: {type: foreign, name: invoice}
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: sku
+        entity: {type: foreign, name: product}
+      - name: batch_id
+        entity: {type: foreign, name: batch}
+      - name: invoice_date
+        granularity: day
+        dimension: {type: time}
+      - name: is_scheme_invoice
+        dimension: {type: categorical}
+      - name: primary_value_inr
+        data_tests: [not_null]
+    metrics:
+      - name: primary_sales_value
+        label: Primary sales value (₹)
+        description: Σ primary_invoice_lines.qty × unit_price_inr, the company's sell-in to distributors, net of scheme discounts.
+        type: simple
+        agg: sum
+        expr: primary_value_inr
+      - name: primary_units
+        label: Primary units
+        description: Units invoiced to distributors (sell-in).
+        type: simple
+        agg: sum
+        expr: qty
+
+  - name: fct_secondary_sales
+    description: >-
+      Distributor → retailer sell-out as reported, with re-sent uploads removed. Sale dates within the reporting
+      horizon are still filling in (is_settled = false). RLS by region.
+    semantic_model:
+      enabled: true
+      name: secondary_sales
+    agg_time_dimension: sale_date
+    columns:
+      - name: record_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: secondary_sale}
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: sku
+        entity: {type: foreign, name: product}
+      - name: sale_date
+        granularity: day
+        dimension: {type: time}
+      - name: is_settled
+        dimension: {type: categorical}
+      - name: report_source
+        dimension: {type: categorical}
+    metrics:
+      - name: secondary_sales_value
+        label: Secondary sales value (₹)
+        description: Σ secondary_sales.qty × products.list_price_inr, sell-out valued at the current list price.
+        type: simple
+        agg: sum
+        expr: secondary_value_inr
+      - name: secondary_units
+        label: Secondary units
+        description: Units sold by distributors to retailers (sell-out).
+        type: simple
+        agg: sum
+        expr: qty

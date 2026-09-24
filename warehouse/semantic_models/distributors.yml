@@ -1,0 +1,188 @@
+version: 2
+
+# Governed metrics (PLAN §7): distributor_health_score, scheme_concentration_ratio.
+
+models:
+  - name: dim_distributor
+    description: Distributor master with region, rep, lifecycle and first/last invoice dates. RLS by region.
+    semantic_model:
+      enabled: true
+      name: distributors
+    columns:
+      - name: distributor_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: distributor}
+      - name: distributor_name
+        dimension: {type: categorical}
+      - name: tier
+        dimension: {type: categorical}
+      - name: state
+        dimension: {type: categorical}
+      - name: district
+        dimension: {type: categorical}
+      - name: region
+        data_tests: [not_null]
+        dimension: {type: categorical}
+      - name: distributor_status
+        dimension: {type: categorical}
+      - name: rep_name
+        dimension: {type: categorical}
+
+  - name: fct_field_visits
+    description: Sales-rep visits to distributors, with geofence verification. RLS by region.
+    semantic_model:
+      enabled: true
+      name: field_visits
+    agg_time_dimension: visit_date
+    columns:
+      - name: visit_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: visit}
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: visit_date
+        granularity: day
+        dimension: {type: time}
+      - name: is_geofence_verified
+        dimension: {type: categorical}
+      - name: rep_name
+        dimension: {type: categorical}
+    metrics:
+      - name: field_visits
+        label: Field visits
+        type: simple
+        agg: sum
+        expr: "1"
+      - name: verified_field_visits
+        label: Geofence-verified visits
+        type: simple
+        agg: sum
+        expr: "case when is_geofence_verified then 1 else 0 end"
+
+  - name: mart_distributor_health_weekly
+    description: >-
+      distributor_health_score per distributor × completed ISO week: point-in-time, exactly as pre-registered in
+      detectors/detectors.yaml. Five region-peer percentile components (0-100), a weighted score, and is_at_risk
+      after 3 consecutive flag weeks. RLS by region.
+    semantic_model:
+      enabled: true
+      name: distributor_health
+    agg_time_dimension: week_start
+    derived_semantics:
+      entities:
+        - name: distributor_week
+          type: primary
+          expr: "distributor_id || '|' || week_start::text"
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "distributor_id || '|' || week_start"
+    columns:
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: week_start
+        granularity: week
+        dimension: {type: time}
+      - name: is_at_risk
+        dimension: {type: categorical}
+      - name: is_scored
+        dimension: {type: categorical}
+    metrics:
+      - name: distributor_health_score
+        label: Distributor health score
+        description: >-
+          Weighted composite (0-100, higher = healthier) of region-peer percentiles: secondary-sales trend 35%,
+          primary/secondary gap 20%, days-of-stock deviation 15%, DSO trend 20%, visit recency 10%.
+        type: simple
+        agg: average
+        expr: health_score
+      - name: health_secondary_trend_score
+        label: "Health component: sell-out trend (0-100)"
+        description: Region-peer percentile of trailing-8-week secondary units vs the same weeks a year earlier (weight 35%).
+        type: simple
+        agg: average
+        expr: score_secondary_trend
+      - name: health_gap_score
+        label: "Health component: sell-in vs sell-out (0-100)"
+        description: Region-peer percentile of trailing-12-week primary ÷ secondary units, higher gap scores lower (weight 20%).
+        type: simple
+        agg: average
+        expr: score_primary_secondary_gap
+      - name: health_stock_score
+        label: "Health component: days-of-stock deviation (0-100)"
+        description: Region-peer percentile of channel days of stock ÷ own 52-week median, higher scores lower (weight 15%).
+        type: simple
+        agg: average
+        expr: score_days_of_stock_dev
+      - name: health_dso_score
+        label: "Health component: DSO trend (0-100)"
+        description: Region-peer percentile of DSO ÷ own 52-week median, higher scores lower (weight 20%).
+        type: simple
+        agg: average
+        expr: score_dso_trend
+      - name: health_visit_score
+        label: "Health component: visit recency (0-100)"
+        description: Region-peer percentile of days since the last geofence-verified visit, longer scores lower (weight 10%).
+        type: simple
+        agg: average
+        expr: score_visit_recency
+      - name: at_risk_distributors
+        label: At-risk distributors
+        description: Distributors flagged at risk (score < 30 with a bottom-15% sell-out trend, 3 weeks running).
+        type: simple
+        agg: count_distinct
+        expr: distributor_id
+        filter: "{{ Dimension('distributor_week__is_at_risk') }}"
+
+  - name: mart_scheme_quarterly
+    description: >-
+      Quarter-end scheme participation per distributor × scheme window × category: the stuffing rate ratio,
+      scheme_concentration_ratio, and the days-of-stock follow-through after quarter-end. RLS by region.
+    semantic_model:
+      enabled: true
+      name: scheme_quarterly
+    agg_time_dimension: window_start_date
+    derived_semantics:
+      entities:
+        - name: distributor_scheme_window
+          type: primary
+          expr: "distributor_id || '|' || category || '|' || window_start_date::text"
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "distributor_id || '|' || category || '|' || window_start_date"
+    columns:
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: window_start_date
+        granularity: day
+        dimension: {type: time}
+      - name: fiscal_quarter_label
+        dimension: {type: categorical}
+      - name: category
+        dimension: {type: categorical}
+      - name: is_stuffing_flag
+        dimension: {type: categorical}
+      - name: is_window_complete
+        dimension: {type: categorical}
+    metrics:
+      - name: scheme_concentration_ratio
+        label: Scheme concentration ratio
+        description: >-
+          Share of a distributor's quarterly primary volume booked in the scheme window (last 15 days), divided by
+          its own baseline share (median of its other quarters). 1.0 is normal; about 2 or more is quarter-end loading.
+        type: simple
+        agg: average
+        expr: concentration_ratio
+      - name: stuffing_rate_ratio
+        label: Scheme-window order rate ratio
+        description: Window daily primary units ÷ the distributor's trailing-90-day daily average.
+        type: simple
+        agg: average
+        expr: rate_ratio
+      - name: stuffing_flags
+        label: Stuffing flags
+        description: Distributor × window × category combinations ordering at ≥ 2× their trailing-90-day rate.
+        type: simple
+        agg: sum
+        expr: "case when is_stuffing_flag then 1 else 0 end"

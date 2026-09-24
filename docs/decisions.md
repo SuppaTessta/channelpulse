@@ -97,3 +97,28 @@ It was committed before the first data generation. Every detector is a generic s
 
 **D19. Claim rates are deliberately higher than a real manufacturer's.**
 Year-one tank claims run at about 0.5% a month (base crack about 0.2%). This buys the statistical power the anomaly checks need inside the row budget. The trade-off is disclosed in the case study rather than hidden.
+
+**D20. Semantic layer: real MetricFlow, run as a compile-only engine inside the API (build prompt step 4, an "ask me" item).**
+The 12 glossary metrics are defined once, in dbt 1.12's inline semantic spec under `warehouse/semantic_models/`. `dbt parse` validates them and writes `semantic_manifest.json`.
+
+At query time the API loads that manifest into MetricFlow's Python engine (`metricflow` 0.213.0, already a dbt-core dependency) with a compile-only Postgres client. MetricFlow writes the SQL, including joins, non-additive stock snapshots and ratio metrics, and the API runs it on the read-only, region-filtered role.
+
+A probe compiled every glossary metric, with group-bys and filters, without a database, a dbt adapter or the `mf` CLI. So the hand-written fallback compiler wasn't needed.
+
+Trade-offs:
+- The API image carries MetricFlow.
+- Metric semantics are MetricFlow's. For example, stock metrics read the period's last day, and grouping by an entity uses its name (`distributor`), not its key column.
+
+**D21. Extra marts beyond PLAN §6. Extends plan.**
+- `fct_invoice_collections` (invoice grain) gives `dso` and `collections_efficiency` a home at the grain D13 needs.
+- `mart_scheme_quarterly` gives `scheme_concentration_ratio` and the stuffing detector a governed table.
+- `dim_date` (in marts) is the MetricFlow time spine, so compiled SQL never needs a schema the agent can't read.
+- `mart_anomaly_flags` holds the pre-registered detectors' output for `get_anomalies`.
+
+**D22. The cohort clock starts at shipment.**
+`mart_batch_claim_cohorts` counts months since shipment, not since install, because about 30% of units never record an install date (D8). The PLAN §9 heatmap axis is labelled "months in service (from shipment)". This matches the pre-registered lot scan's `days_since_ship` exposure clock.
+
+**D23. Thresholds.**
+- Stock-out means under 7 days of stock and overstock means over 60 (target cover is 30).
+- Days with no sell-out in the trailing 30 days have no days-of-stock value and count toward neither rate.
+- The trailing average uses the days available at the window start, with a minimum of 14.

@@ -1,0 +1,77 @@
+version: 2
+
+# Governed metrics (PLAN §7, decisions D13): dso, collections_efficiency.
+
+models:
+  - name: fct_invoice_collections
+    description: >-
+      One row per primary invoice with payment status as of the as-of date. Open invoices age to the as-of date,
+      so a distributor who stops paying is visible immediately instead of when late payments finally land. RLS by region.
+    semantic_model:
+      enabled: true
+      name: invoice_collections
+    agg_time_dimension: invoice_date
+    columns:
+      - name: invoice_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: invoice}
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: invoice_date
+        granularity: day
+        dimension: {type: time}
+      - name: due_date
+        granularity: day
+        dimension: {type: time}
+      - name: is_open
+        dimension: {type: categorical}
+      - name: is_due
+        dimension: {type: categorical}
+      - name: days_outstanding
+        data_tests: [not_null]
+    metrics:
+      - name: invoiced_amount
+        label: Invoiced amount (₹)
+        type: simple
+        agg: sum
+        expr: invoice_amount_inr
+      - name: invoiced_amount_days
+        label: Invoice ₹-days outstanding
+        type: simple
+        agg: sum
+        expr: invoice_amount_inr * days_outstanding
+      - name: dso
+        label: DSO (days)
+        description: >-
+          Amount-weighted average days from invoice to full payment. Invoices still open are aged to the as-of date.
+        type: ratio
+        numerator: invoiced_amount_days
+        denominator: invoiced_amount
+      - name: open_receivables
+        label: Open receivables (₹)
+        type: simple
+        agg: sum
+        expr: open_amount_inr
+      - name: overdue_receivables
+        label: Overdue receivables (₹)
+        type: simple
+        agg: sum
+        expr: "case when is_open and days_past_due > 0 then open_amount_inr else 0 end"
+      - name: collected_within_terms
+        label: Collected within terms (₹)
+        type: simple
+        agg: sum
+        expr: paid_within_terms_inr
+        filter: "{{ Dimension('invoice__is_due') }}"
+      - name: due_amount
+        label: Amount due (₹)
+        type: simple
+        agg: sum
+        expr: invoice_amount_inr
+        filter: "{{ Dimension('invoice__is_due') }}"
+      - name: collections_efficiency
+        label: Collections efficiency
+        description: Amount collected within payment terms ÷ amount invoiced, over invoices already due.
+        type: ratio
+        numerator: collected_within_terms
+        denominator: due_amount

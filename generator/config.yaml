@@ -1,0 +1,339 @@
+# generator/config.yaml -- every non-anomaly parameter of the ChannelPulse simulator.
+# Anomaly parameters live only in ground_truth.yaml. generate.py asserts at startup that the
+# levers shared with ground_truth.calibration agree with the values below.
+
+calendar:
+  burn_in_days: 92                 # internal, unwritten warm-up ending the day before window_start (D5)
+  reference_date: 2024-10-01       # demand.units_per_year is the level at this date (mid FY25)
+  plant_weekdays: [0, 1, 2, 3, 4, 5]   # Mon-Sat, no holiday calendar
+  shifts: [A, B]
+
+demand:
+  units_per_year: {tank: 106000, pipe: 5950000, fitting: 10950000, sanitaryware: 358000}
+  yoy_growth: 0.07
+  event_dispersion: 1.5            # gamma-Poisson shape of retailer purchase events per distributor x sku x day
+  weekday_factor: [1, 1, 1, 1, 1, 1, 0.4]   # Mon..Sun, renormalised to a weekly mean of 1
+  seasonality:                     # Jan..Dec, each renormalised to mean 1; blend = mean of tank and agri
+    tank: [0.9, 1.0, 1.2, 1.35, 1.35, 1.15, 0.8, 0.75, 0.85, 1.05, 1.1, 0.9]
+    agri: [1.0, 1.0, 1.2, 1.2, 1.2, 1.0, 0.7, 0.7, 0.7, 1.0, 1.0, 1.0]
+    flat: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  state_factor:                    # multiplies base demand of a season profile's SKUs in a state
+    tank: {Assam: 1.4}
+    agri: {Bihar: 1.8, Odisha: 1.8}
+  tier_scale: {1: 3.0, 2: 1.0, 3: 0.45}
+  size_sigma: 0.35                 # lognormal spread of master-data base_demand within a tier
+  carried_share:                   # share of a category's SKUs a distributor stocks, by tier 1/2/3
+    tank: {1: 1.0, 2: 0.6, 3: 0.4}
+    pipe: {1: 1.0, 2: 0.4, 3: 0.3}
+    fitting: {1: 1.0, 2: 0.4, 3: 0.25}
+    sanitaryware: {1: 1.0, 2: 0.5, 3: 0.3}
+  unattributed_share: 0.10         # sell-out with no retailer_id
+  lot_tier_factor: {1: 1.5, 2: 0.65, 3: 0.45}   # retailer purchase size (catalog.lots) by the account's tier
+  retailer_weight_sigma: 1.0
+  onboarding_ramp: {start: 0.3, days: 120}
+  launch_ramp: {start: 0.2, days: 180}
+  attrition_days: 60
+
+festivals:
+  durga_puja:
+    states: [West Bengal, Assam, Tripura]
+    dashami: [2022-10-05, 2023-10-24, 2024-10-12, 2025-10-02, 2026-10-21]
+    dip: 0.35                      # the 4 main days, ending on Dashami
+    dip_days: 4
+    bump: 1.15                     # the 14 days after
+    bump_days: 14
+  diwali:
+    dates: [2022-10-24, 2023-11-12, 2024-11-01, 2025-10-21, 2026-11-08]
+    bump: 1.12
+    half_width_days: 3
+
+catalog:
+  serialized_categories: [tank]
+  warranty_months: {tank: 120, pipe: 60, fitting: 60, sanitaryware: 12}
+  lots:                            # a retailer purchase = pack x (1 + Poisson(packs - 1)) units
+    tank: {pack: 1, packs: 2}
+    pipe: {pack: 10, packs: 25.5}
+    fitting: {pack: 50, packs: 12.7}
+    sanitaryware: {pack: 1, packs: 23.3}
+  lot_overrides:
+    GP-PIP-COL-32: {pack: 1, packs: 48}
+    GP-PIP-COL-40: {pack: 1, packs: 39}
+    GP-PIP-COL-50: {pack: 1, packs: 32}
+  # sku, name, category, capacity_l, list price INR at window_start, launched, mix weight, season
+  skus:
+    - [GP-TNK-0200-3L, "Gangasagar 200 L Triple-Layer Water Tank", tank, 200, 2000, 2016-04-01, 0.06, tank]
+    - [GP-TNK-0300-3L, "Gangasagar 300 L Triple-Layer Water Tank", tank, 300, 2850, 2015-06-01, 0.08, tank]
+    - [GP-TNK-0500-3L, "Gangasagar 500 L Triple-Layer Water Tank", tank, 500, 4500, 2015-01-15, 0.17, tank]
+    - [GP-TNK-0750-3L, "Gangasagar 750 L Triple-Layer Water Tank", tank, 750, 6600, 2017-02-01, 0.10, tank]
+    - [GP-TNK-1000-3L, "Gangasagar 1000 L Triple-Layer Water Tank", tank, 1000, 8500, 2015-01-15, 0.25, tank]
+    - [GP-TNK-1500-3L, "Gangasagar 1500 L Triple-Layer Water Tank", tank, 1500, 12300, 2016-08-01, 0.08, tank]
+    - [GP-TNK-2000-3L, "Gangasagar 2000 L Triple-Layer Water Tank", tank, 2000, 16000, 2015-09-01, 0.09, tank]
+    - [GP-TNK-3000-3L, "Gangasagar 3000 L Triple-Layer Water Tank", tank, 3000, 23100, 2018-03-01, 0.04, tank]
+    - [GP-TNK-5000-3L, "Gangasagar 5000 L Triple-Layer Water Tank", tank, 5000, 36500, 2019-01-10, 0.02, tank]
+    - [GP-TNK-0500-4L, "Gangasagar 500 L Four-Layer Water Tank", tank, 500, 5000, 2020-04-01, 0.03, tank]
+    - [GP-TNK-1000-4L, "Gangasagar 1000 L Four-Layer Water Tank", tank, 1000, 9500, 2024-11-15, 0.05, tank]
+    - [GP-TNK-2000-4L, "Gangasagar 2000 L Four-Layer Water Tank", tank, 2000, 17800, 2021-02-01, 0.03, tank]
+    - [GP-PIP-UPV-20, "Gangasagar UPVC Pipe 20 mm x 3 m", pipe, null, 150, 2015-01-15, 0.14, agri]
+    - [GP-PIP-UPV-25, "Gangasagar UPVC Pipe 25 mm x 3 m", pipe, null, 210, 2015-01-15, 0.13, agri]
+    - [GP-PIP-UPV-32, "Gangasagar UPVC Pipe 32 mm x 3 m", pipe, null, 330, 2015-01-15, 0.12, agri]
+    - [GP-PIP-UPV-40, "Gangasagar UPVC Pipe 40 mm x 3 m", pipe, null, 480, 2016-05-01, 0.10, agri]
+    - [GP-PIP-CPV-15, "Gangasagar CPVC Pipe 15 mm x 3 m", pipe, null, 260, 2017-07-01, 0.12, blend]
+    - [GP-PIP-CPV-20, "Gangasagar CPVC Pipe 20 mm x 3 m", pipe, null, 390, 2017-07-01, 0.11, blend]
+    - [GP-PIP-CPV-25, "Gangasagar CPVC Pipe 25 mm x 3 m", pipe, null, 620, 2018-01-15, 0.08, blend]
+    - [GP-PIP-COL-32, "Gangasagar Column Pipe 32 mm x 3 m", pipe, null, 900, 2019-03-01, 0.09, agri]
+    - [GP-PIP-COL-40, "Gangasagar Column Pipe 40 mm x 3 m", pipe, null, 1450, 2019-03-01, 0.06, agri]
+    - [GP-PIP-COL-50, "Gangasagar Column Pipe 50 mm x 3 m", pipe, null, 2300, 2020-01-15, 0.05, agri]
+    - [GP-FIT-CPV-ELB-20, "Gangasagar CPVC Elbow 20 mm", fitting, null, 25, 2017-07-01, 0.22, blend]
+    - [GP-FIT-CPV-TEE-20, "Gangasagar CPVC Tee 20 mm", fitting, null, 35, 2017-07-01, 0.18, blend]
+    - [GP-FIT-CPV-MTA-25, "Gangasagar CPVC Male Threaded Adapter 25 mm", fitting, null, 60, 2025-06-02, 0.10, blend]
+    - [GP-FIT-UPV-ELB-32, "Gangasagar UPVC Elbow 32 mm", fitting, null, 45, 2015-01-15, 0.16, blend]
+    - [GP-FIT-UPV-TEE-32, "Gangasagar UPVC Tee 32 mm", fitting, null, 60, 2015-01-15, 0.12, blend]
+    - [GP-FIT-BLV-20, "Gangasagar Ball Valve 20 mm", fitting, null, 240, 2016-10-01, 0.10, blend]
+    - [GP-FIT-BLV-25, "Gangasagar Ball Valve 25 mm", fitting, null, 380, 2016-10-01, 0.07, blend]
+    - [GP-FIT-TCK-01, "Gangasagar Tank Connector Kit", fitting, null, 600, 2018-06-01, 0.05, blend]
+    - [GP-SAN-SEAT-01, "Gangasagar Toilet Seat Cover", sanitaryware, null, 800, 2019-04-01, 0.28, flat]
+    - [GP-SAN-CIST-01, "Gangasagar PVC Cistern", sanitaryware, null, 1800, 2018-04-01, 0.25, flat]
+    - [GP-SAN-BSN-01, "Gangasagar Wash Basin", sanitaryware, null, 2600, 2019-04-01, 0.17, flat]
+    - [GP-SAN-PBS-01, "Gangasagar Pedestal Basin", sanitaryware, null, 4200, 2020-09-01, 0.10, flat]
+    - [GP-SAN-EWC-01, "Gangasagar Western Closet", sanitaryware, null, 5800, 2020-09-01, 0.12, flat]
+    - [GP-SAN-URN-01, "Gangasagar Urinal", sanitaryware, null, 3000, 2021-01-15, 0.08, flat]
+
+prices:
+  tier_margin: {1: 0.20, 2: 0.17, 3: 0.14}
+  revisions:                       # [effective date, categories, change]; PVC-linked = pipe + fitting
+    - [2024-04-01, [tank], 0.03]
+    - [2025-04-01, [tank], 0.03]
+    - [2026-04-01, [tank], 0.03]
+    - [2024-04-01, [sanitaryware], 0.04]
+    - [2025-04-01, [sanitaryware], 0.04]
+    - [2026-04-01, [sanitaryware], 0.04]
+    - [2023-11-06, [pipe, fitting], 0.04]
+    - [2024-03-04, [pipe, fitting], -0.03]
+    - [2024-07-01, [pipe, fitting], 0.05]
+    - [2024-11-11, [pipe, fitting], -0.02]
+    - [2025-03-10, [pipe, fitting], -0.04]
+    - [2025-07-14, [pipe, fitting], 0.03]
+    - [2025-12-08, [pipe, fitting], 0.02]
+    - [2026-05-04, [pipe, fitting], -0.02]
+
+production:
+  plants:                          # plant_id, name, city, state, plant_type
+    - [HWH, "Gangasagar Polymers Howrah Works", Howrah, West Bengal, tanks]
+    - [DGP, "Gangasagar Polymers Durgapur Works", Durgapur, West Bengal, pipes_cpvc_and_tanks]
+    - [GHY, "Gangasagar Polymers Guwahati Works", Guwahati, Assam, regional]
+  lines:                           # plant, line_no, skus made on it
+    - [HWH, 1, [GP-TNK-0200-3L, GP-TNK-0300-3L, GP-TNK-0500-3L, GP-TNK-0750-3L, GP-TNK-0500-4L]]
+    - [HWH, 2, [GP-TNK-1000-3L, GP-TNK-1500-3L, GP-TNK-1000-4L]]
+    - [HWH, 3, [GP-TNK-2000-3L, GP-TNK-3000-3L, GP-TNK-5000-3L, GP-TNK-2000-4L]]
+    - [DGP, 1, [GP-PIP-UPV-20, GP-PIP-UPV-25, GP-PIP-UPV-32, GP-PIP-UPV-40, GP-PIP-CPV-15, GP-PIP-CPV-20, GP-PIP-CPV-25, GP-PIP-COL-32, GP-PIP-COL-40, GP-PIP-COL-50]]
+    - [DGP, 2, [GP-TNK-0500-3L, GP-TNK-0750-3L, GP-TNK-1000-3L, GP-TNK-1500-3L, GP-TNK-2000-3L]]
+    - [GHY, 1, [GP-TNK-0500-3L, GP-TNK-0750-3L, GP-TNK-1000-3L, GP-TNK-1500-3L, GP-TNK-2000-3L]]
+    - [GHY, 2, [GP-FIT-CPV-ELB-20, GP-FIT-CPV-TEE-20, GP-FIT-CPV-MTA-25, GP-FIT-UPV-ELB-32, GP-FIT-UPV-TEE-32, GP-FIT-BLV-20, GP-FIT-BLV-25, GP-FIT-TCK-01]]
+  fg_target_days: 14               # a batch tops its SKU's finished goods up to this many days of demand
+  min_batch_units: {tank: 5, pipe: 100, fitting: 500}
+  qc_pass_beta: [39, 1]            # mean 0.975
+  resin_lot_weeks: [3, 8]
+  dgp_line2_annual_units: 25000    # demand split: footprint distributors are served by Line 2 in this order until reached
+  dgp_state_priority: [West Bengal, Jharkhand, Bihar, Odisha]
+  howrah_hinterland: [Kolkata, Howrah, Hooghly, North 24 Parganas, South 24 Parganas, Nadia, Purba Medinipur]
+  ghy_first_districts: [Jalpaiguri, Alipurduar, Cooch Behar]   # North Bengal accounts served Guwahati-first
+  max_invoice_age_days: 33         # older tank stock is held back so ship_date <= mfg + 35
+  shift_capacity: {HWH-1: 90, HWH-2: 90, HWH-3: 90, DGP-2: 47, GHY-1: 55}   # tank units per shift; Line 2 peaks at ~92/day
+                                   # (ground truth resin_lot expected_units); Howrah covers Line 2 and Guwahati shortfalls
+
+channel:
+  target_cover_days: 30
+  review_days: {1: [7], 2: [7, 14], 3: [14]}
+  reorder_fraction: 0.35           # order only when the gap to target is >= this share of target
+  safety_lots: {tank: 0, pipe: 1, fitting: 1, sanitaryware: 1}   # bulk goods add one retailer purchase lot of safety stock
+  payment_terms_days: {1: 30, 2: 45, 3: 60}
+  invoice_to_ship_days: [0, 2]
+  credit_limit_inr: {1: [15000000, 30000000], 2: [4000000, 9000000], 3: [1000000, 3000000]}
+  reporting:
+    lag: {p80_days: 7, p97_days: 21, cap_days: 35, permanent_loss_share: 0.002}   # targets = ground truth
+    late_week_probs: [0.82, 0.10, 0.045, 0.025, 0.01]   # extra whole weeks after the due upload, per record
+    skipped_week_share: 0.03       # distributor-weeks skipped, then back-filled as catch-up records
+    backfill_weeks: [1, 2]
+    duplicate_upload_share: 0.005  # distributor-week uploads re-sent as exact duplicates
+    duplicate_delay_days: [1, 5]
+    sources:
+      1: {dms_api: 0.7, excel_upload: 0.2, sales_app: 0.1}
+      2: {dms_api: 0.4, excel_upload: 0.4, sales_app: 0.2}
+      3: {dms_api: 0.1, excel_upload: 0.6, sales_app: 0.3}
+  collections:
+    late_median_days: 2
+    late_profile_sd: 1.5
+    chronic_share: 0.10
+    chronic_median_days: 15
+    chronic_profile_sd: 3
+    invoice_sd_days: 3
+    instalment_share: 0.15
+    instalment_gap_days: [5, 15]
+    first_instalment_share: [0.4, 0.6]
+  visits:
+    cadence_days: {1: 7, 2: 14, 3: 30}
+    jitter_days: 2
+    geofence_share: 0.92
+    notes_share: 0.85
+    notes:
+      - "Routine visit; stock levels reviewed with the distributor."
+      - "Discussed next order and delivery schedule."
+      - "Payment follow-up on open invoices."
+      - "Reviewed ongoing scheme and slab terms."
+      - "Checked retailer coverage in the territory."
+      - "Counter sales steady; no issues raised."
+      - "Reminded distributor about weekly DMS uploads."
+      - "Market feedback on pricing noted."
+      - "Discussed upcoming price revision."
+      - "Reviewed pending warranty cases."
+      - "New retailer leads shared with the distributor."
+      - "Godown checked; storage conditions fine."
+
+entities:
+  distributors: {count: 350, tiers: {1: 50, 2: 120, 3: 180}, onboarded_from: 2008-01-01, in_window_share: 0.08, in_window_onboarding: [2023-10-15, 2026-06-30]}
+  natural_attrition_starts: [2024-06-03, 2025-01-13, 2025-11-10]   # demand falls to zero over attrition_days
+  retailers: {per_distributor: {1: 60, 2: 30, 3: 15}, home_district_share: 0.8, in_window_share: 0.10, duplicate_name_share: 0.03, onboarded_from: 2010-01-01}
+  sales_reps: {count: 40, hired: [2012-01-01, 2023-03-31]}
+  installers: {count: 600, certified_share: 0.55, weight_sigma: 0.6}
+
+fates:
+  self_install_share: 0.10
+  retailer_to_install: {median_days: 2, sigma: 0.8}    # calibrated so ship -> latent install has median ~35 d
+  ship_to_install: {median_days: 35, sigma: 0.6, cap_days: 120}   # the cap; pre-window legacy units draw this directly
+  mfg_to_ship_days_max: 35
+  registration_probability: 0.70
+  registration_visible_after_install_days: [0, 30]
+  registered_via:
+    installer: {installer_app: 0.70, qr_scan: 0.17, call_centre: 0.07, dealer_portal: 0.06}
+    self: {qr_scan: 0.55, call_centre: 0.25, dealer_portal: 0.20}
+
+hazards:
+  per_month_days: 30.4375
+  year1_per_month: {base_crack: 0.0020, leak: 0.00125, fitting_failure: 0.0010, discoloration: 0.0005, other: 0.00025}
+  after_year1_factor: {base_crack: 0.02, leak: 0.05, fitting_failure: 0.05, discoloration: 0.05, other: 0.05}
+  claim_after_failure_days: [0, 10]
+  batch_frailty_cv: 0.15
+  installer_frailty_cv: 0.15
+
+claims:
+  pending_within_days: 21
+  approved_share: 0.88
+  repair_cost_inr: [300, 2000]
+  notes:
+    base_crack: ["Crack observed at the base; unit replaced.", "Hairline crack along the base ring.", "Base cracked; seepage below the tank.", "Radial crack near the base; replacement issued."]
+    leak: ["Seepage from the side wall; resealed.", "Minor leak along the moulding line.", "Leak near the outlet; sealant applied."]
+    fitting_failure: ["Inlet fitting cracked; replaced.", "Outlet socket loose; refitted.", "Overflow fitting damaged; replaced."]
+    discoloration: ["Surface discoloration on the exterior; cosmetic.", "Yellowing on the sun-facing side; cosmetic only."]
+    other: ["Lid damaged; replaced.", "Inspected on complaint; no fault found.", "Lid lock broken; replaced."]
+
+names:
+  first: [Amit, Arijit, Biswajit, Debashis, Subhash, Rahul, Sanjay, Pranab, Tapan, Anup, Ranjit, Manoj, Rakesh, Sunil, Bikash, Dipankar, Gautam, Hemanta, Jayanta, Kaushik, Mithun, Nirmal, Partha, Rajib, Sourav, Sujit, Tarun, Uttam, Abhijit, Pankaj, Ravi, Vikash, Ajay, Deepak, Santosh, Ashok, Rupam, Bhaskar, Nabajit, Pritam, Anjali, Priya, Mousumi, Rina, Sima, Puja, Rupa, Nandini, Sunita, Kavita, Tanushree, Moumita, Dhiraj, Sameer, Arun, Bijoy, Chandan, Dilip, Gopal, Himangshu]
+  surname: [Das, Saha, Ghosh, Roy, Mondal, Paul, Dey, Sarkar, Banerjee, Mukherjee, Chatterjee, Sen, Bose, Kar, Pal, Biswas, Haldar, Bhattacharya, Chakraborty, Dutta, Nath, Baruah, Bora, Kalita, Gogoi, Saikia, Deka, Sharma, Singh, Kumar, Yadav, Prasad, Sahu, Mishra, Mohanty, Patra, Behera, Nayak, Jena, Pradhan, Mahato, Lyngdoh, Sangma, Debbarma, Singha, Tamang, Gurung, Rai]
+  trade_prefix: [Maa Tara, Shree Ganesh, Jai Hind, Sri Durga, Loknath, Annapurna, Kamakhya, Jagannath, Sai, Balaji, Mahadev, Laxmi, Modern, Popular, Eastern, Royal, Pioneer, Sunrise, Green Valley, Everest, Janata, Unity, Golden, Friends]
+  distributor_suffix: [Enterprises, Traders, Agencies, Distributors, Sales Corporation, Marketing, "& Sons", Trading Co.]
+  retailer_suffix: [Hardware, Sanitary Stores, Pipe House, Hardware & Paints, Plumbing Centre, Building Materials, Tiles & Sanitary, Iron Stores]
+
+geography:
+  distributor_share: {West Bengal: 0.30, Assam: 0.14, Bihar: 0.14, Odisha: 0.12, Jharkhand: 0.10, Meghalaya: 0.04, Tripura: 0.04, Manipur: 0.03, Nagaland: 0.025, Arunachal Pradesh: 0.025, Sikkim: 0.02, Mizoram: 0.02}
+  regions: {West Bengal: South Bengal, Sikkim: "North Bengal & Sikkim", Assam: Assam, Meghalaya: North East, Tripura: North East, Manipur: North East, Nagaland: North East, Arunachal Pradesh: North East, Mizoram: North East, Bihar: "Bihar & Jharkhand", Jharkhand: "Bihar & Jharkhand", Odisha: Odisha}
+  north_bengal_region: "North Bengal & Sikkim"
+  north_bengal_districts: [Darjeeling, Kalimpong, Jalpaiguri, Alipurduar, Cooch Behar, Uttar Dinajpur, Dakshin Dinajpur, Malda]
+  pincodes: {base: 5, per_weight: 9, max_per_4digit_prefix: 60}
+  districts:                       # state -> district -> [postal prefix or prefixes, market weight]
+    West Bengal:
+      Kolkata: ["700", 10]
+      Howrah: ["711", 6]
+      Hooghly: ["712", 5]
+      North 24 Parganas: ["743", 7]
+      South 24 Parganas: ["743", 5]
+      Nadia: ["741", 4]
+      Murshidabad: ["742", 4]
+      Paschim Bardhaman: ["713", 4.5]
+      Purba Bardhaman: ["713", 4]
+      Birbhum: ["731", 2.5]
+      Bankura: ["722", 2.5]
+      Purulia: ["723", 2]
+      Paschim Medinipur: ["721", 3]
+      Purba Medinipur: ["721", 3]
+      Jhargram: ["721", 1]
+      Darjeeling: [["7340", "7341"], 4.5]
+      Kalimpong: ["7343", 0.8]
+      Jalpaiguri: ["735", 2.5]
+      Alipurduar: ["7362", 1.2]
+      Cooch Behar: ["7361", 2]
+      Uttar Dinajpur: ["7332", 1.8]
+      Dakshin Dinajpur: ["7331", 1.2]
+      Malda: ["732", 2.5]
+    Assam:
+      Kamrup Metropolitan: ["7810", 12]
+      Kamrup: ["7811", 2.5]
+      Barpeta: ["7813", 1.5]
+      Nagaon: ["782", 3]
+      Dibrugarh: ["786", 2.5]
+      Tinsukia: ["786", 1.5]
+      Jorhat: ["785", 2]
+      Golaghat: ["785", 1.2]
+      Sonitpur: ["784", 2]
+      Lakhimpur: ["787", 1.2]
+      Cachar: ["788", 2.5]
+      Dhubri: ["783", 1.5]
+    Bihar:
+      Patna: ["800", 8]
+      Gaya: ["823", 3]
+      Bhagalpur: ["812", 2.5]
+      Muzaffarpur: ["842", 3]
+      Darbhanga: ["846", 2]
+      Purnia: ["854", 2]
+      Begusarai: ["851", 1.5]
+      Nalanda: ["803", 1.5]
+      Saran: ["841", 1.5]
+      Samastipur: ["848", 1.5]
+    Jharkhand:
+      Ranchi: ["834", 6]
+      Dhanbad: ["826", 4]
+      Bokaro: ["827", 2.5]
+      East Singhbhum: ["831", 4]
+      Hazaribagh: ["825", 1.5]
+      Deoghar: ["814", 1.2]
+      Giridih: ["815", 1.2]
+    Odisha:
+      Khordha: ["751", 7]
+      Cuttack: ["753", 4]
+      Ganjam: ["760", 3]
+      Sundargarh: ["769", 2.5]
+      Balasore: ["756", 2]
+      Sambalpur: ["768", 1.8]
+      Mayurbhanj: ["757", 1.5]
+      Puri: ["752", 1.5]
+      Jajpur: ["755", 1.2]
+    Meghalaya:
+      East Khasi Hills: ["793", 4]
+      Ri-Bhoi: ["793", 1]
+      West Garo Hills: ["794", 1.5]
+      West Jaintia Hills: ["793", 0.8]
+    Tripura:
+      West Tripura: ["799", 4]
+      Gomati: ["799", 1.2]
+      North Tripura: ["799", 1]
+      Dhalai: ["799", 0.6]
+    Manipur:
+      Imphal West: ["795", 3]
+      Imphal East: ["795", 1.5]
+      Thoubal: ["795", 1]
+      Churachandpur: ["795", 0.8]
+    Nagaland:
+      Dimapur: ["797", 2.5]
+      Kohima: ["797", 2]
+      Mokokchung: ["798", 1]
+    Arunachal Pradesh:
+      Papum Pare: ["791", 2.5]
+      East Siang: ["791", 1]
+      Lohit: ["792", 0.8]
+    Sikkim:
+      Gangtok: ["737", 3]
+      Namchi: ["737", 1.2]
+      Gyalshing: ["737", 0.8]
+    Mizoram:
+      Aizawl: ["796", 3]
+      Lunglei: ["796", 1]
+      Champhai: ["796", 0.6]

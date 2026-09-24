@@ -6,6 +6,13 @@
 
 dbt-core==1.12.5
 dbt-postgres==1.11.0
+# Pinned below latest: Windows Smart App Control blocks psycopg2-binary 2.9.13's bundled libcrypto DLL
+# (a new build with no reputation yet); 2.9.10's DLLs load. dbt-postgres accepts any 2.9.x.
+psycopg2-binary==2.9.10
+
+# generator/ (PyYAML also arrives via dbt; pinned because the generator imports it)
+numpy==2.5.3
+PyYAML==6.0.3
 
 ruff==0.16.8
 pytest==9.1.1

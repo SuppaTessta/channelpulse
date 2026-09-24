@@ -1,0 +1,244 @@
+version: 2
+
+# Governed metrics (PLAN §7): claims_per_1000_units, warranty_registration_rate, installer_claim_rate.
+
+models:
+  - name: dim_batch
+    description: >-
+      Production batch: plant, line, resin lot, and unit counts. Registration counts only use shipments at least
+      90 days old, so recent shipments don't drag the rate down.
+    semantic_model:
+      enabled: true
+      name: batches
+    agg_time_dimension: mfg_date
+    columns:
+      - name: batch_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: batch}
+      - name: sku
+        entity: {type: foreign, name: product}
+      - name: plant_id
+        dimension: {type: categorical}
+      - name: plant_name
+        dimension: {type: categorical}
+      - name: line_no
+        dimension: {type: categorical}
+      - name: resin_lot_id
+        dimension: {type: categorical}
+      - name: is_legacy
+        dimension: {type: categorical}
+      - name: mfg_date
+        granularity: day
+        dimension: {type: time}
+      - name: mfg_month
+        granularity: month
+        dimension: {type: time}
+    metrics:
+      - name: units_shipped_90d_matured
+        label: Units shipped (≥ 90 days ago)
+        type: simple
+        agg: sum
+        expr: units_shipped_90d_matured
+      - name: units_registered_within_90d
+        label: Units registered within 90 days of shipment
+        type: simple
+        agg: sum
+        expr: units_registered_within_90d
+      - name: warranty_registration_rate
+        label: Warranty registration rate
+        description: Share of shipped serials with an install date within 90 days of shipment (period = manufacture date).
+        type: ratio
+        numerator: units_registered_within_90d
+        denominator: units_shipped_90d_matured
+
+  - name: fct_warranty_claims
+    description: One row per warranty claim (all claims are on serialised tanks), with the unit's full lineage.
+    semantic_model:
+      enabled: true
+      name: warranty_claims
+    agg_time_dimension: claim_date
+    columns:
+      - name: claim_id
+        data_tests: [unique, not_null]
+        entity: {type: primary, name: claim}
+      - name: batch_id
+        data_tests: [not_null]
+        entity: {type: foreign, name: batch}
+      - name: sku
+        entity: {type: foreign, name: product}
+      - name: installer_id
+        entity: {type: foreign, name: installer}
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: claim_date
+        granularity: day
+        dimension: {type: time}
+      - name: failure_mode
+        dimension: {type: categorical}
+      - name: claim_status
+        dimension: {type: categorical}
+      - name: install_district
+        dimension: {type: categorical}
+      - name: install_state
+        dimension: {type: categorical}
+      - name: months_since_ship
+        dimension: {type: categorical}
+    metrics:
+      - name: warranty_claims
+        label: Warranty claims
+        type: simple
+        agg: sum
+        expr: "1"
+      - name: warranty_claim_cost
+        label: Warranty claim cost (₹)
+        type: simple
+        agg: sum
+        expr: cost_inr
+
+  - name: mart_batch_claim_cohorts
+    description: >-
+      Nevada-chart cohorts: batch × months since shipment, with claims by failure mode and cumulative claims per
+      1,000 shipped units. The in-service clock starts at shipment. is_fully_observed means every unit has been
+      out for the whole month.
+    semantic_model:
+      enabled: true
+      name: batch_claim_cohorts
+    agg_time_dimension: mfg_date
+    derived_semantics:
+      entities:
+        - name: batch_cohort_month
+          type: primary
+          expr: "batch_id || '|' || months_since_ship::text"
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "batch_id || '|' || months_since_ship"
+    columns:
+      - name: batch_id
+        entity: {type: foreign, name: batch}
+      - name: months_since_ship
+        dimension: {type: categorical}
+      - name: is_fully_observed
+        dimension: {type: categorical}
+      - name: mfg_date
+        granularity: day
+        dimension: {type: time}
+    metrics:
+      - name: cohort_claims
+        label: Cohort claims
+        type: simple
+        agg: sum
+        expr: claims
+      - name: cohort_base_crack_claims
+        label: Cohort base-crack claims
+        type: simple
+        agg: sum
+        expr: claims_base_crack
+      - name: cohort_units_shipped
+        label: Cohort units shipped
+        description: Serialised units shipped from the cohort's batches (counted once per batch).
+        type: simple
+        agg: sum
+        expr: "case when months_since_ship = 0 then units_shipped else 0 end"
+      - name: claims_per_1000_units
+        label: Claims per 1,000 units
+        description: >-
+          Warranty claims ÷ (serials shipped in the cohort ÷ 1000), for a batch, plant, SKU or manufacture period.
+          To see the curve by age, group by months_since_ship and use cohort_cumulative_claims_per_1000 instead.
+        type: derived
+        expr: 1000 * claims / nullif(units, 0)
+        input_metrics:
+          - name: cohort_claims
+            alias: claims
+          - name: cohort_units_shipped
+            alias: units
+      - name: cohort_cumulative_claims
+        label: Cohort cumulative claims
+        type: simple
+        agg: sum
+        expr: cumulative_claims
+      - name: cohort_cumulative_base_crack_claims
+        label: Cohort cumulative base-crack claims
+        type: simple
+        agg: sum
+        expr: cumulative_base_crack_claims
+      - name: cohort_cumulative_base_crack_per_1000
+        label: Cumulative base-crack claims per 1,000 units (by age)
+        description: Like cohort_cumulative_claims_per_1000, for base cracks only. Only meaningful grouped by months_since_ship.
+        type: derived
+        expr: 1000 * claims / nullif(units, 0)
+        input_metrics:
+          - name: cohort_cumulative_base_crack_claims
+            alias: claims
+          - name: cohort_units_at_age
+            alias: units
+      - name: cohort_units_at_age
+        label: Cohort units at age
+        type: simple
+        agg: sum
+        expr: units_shipped
+      - name: cohort_cumulative_claims_per_1000
+        label: Cumulative claims per 1,000 units (by age)
+        description: Pooled cumulative claims per 1,000 shipped units at each months_since_ship. Only meaningful grouped by months_since_ship.
+        type: derived
+        expr: 1000 * claims / nullif(units, 0)
+        input_metrics:
+          - name: cohort_cumulative_claims
+            alias: claims
+          - name: cohort_units_at_age
+            alias: units
+
+  - name: mart_installer_claim_cohorts
+    description: >-
+      installer_claim_rate source: installer × district × install month × months since install, over
+      installer-attributed registrations only.
+    semantic_model:
+      enabled: true
+      name: installer_claim_cohorts
+    agg_time_dimension: install_month
+    derived_semantics:
+      entities:
+        - name: installer_cohort_month
+          type: primary
+          expr: "installer_id || '|' || install_district || '|' || install_month::text || '|' || months_since_install::text"
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "installer_id || '|' || install_district || '|' || install_month || '|' || months_since_install"
+    columns:
+      - name: installer_id
+        entity: {type: foreign, name: installer}
+      - name: installer_name
+        dimension: {type: categorical}
+      - name: is_certified
+        dimension: {type: categorical}
+      - name: install_district
+        dimension: {type: categorical}
+      - name: install_state
+        dimension: {type: categorical}
+      - name: months_since_install
+        dimension: {type: categorical}
+      - name: install_month
+        granularity: month
+        dimension: {type: time}
+    metrics:
+      - name: installer_claims
+        label: Installer-attributed claims
+        type: simple
+        agg: sum
+        expr: claims
+      - name: installer_units_installed
+        label: Units installed (installer-attributed)
+        type: simple
+        agg: sum
+        expr: "case when months_since_install = 0 then units_installed else 0 end"
+      - name: installer_claim_rate
+        label: Installer claim rate (per 1,000 units)
+        description: claims_per_1000_units grouped by installer instead of batch; compare an installer with its district.
+        type: derived
+        expr: 1000 * claims / nullif(units, 0)
+        input_metrics:
+          - name: installer_claims
+            alias: claims
+          - name: installer_units_installed
+            alias: units

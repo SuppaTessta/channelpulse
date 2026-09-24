@@ -3,8 +3,28 @@ version: "0.1.0"
 config-version: 2
 profile: channelpulse
 
-model-paths: ["models"]
+model-paths: ["models", "semantic_models"]
 test-paths: ["tests"]
+macro-paths: ["macros"]
 
 flags:
   send_anonymous_usage_stats: false
+
+vars:
+  window_start: "2023-10-01"         # month 1, day 1 (generator/config.yaml anchor)
+  secondary_horizon_days: 17         # decisions D12: p95 reporting lag; newer sale dates are provisional
+  dos_stockout_below: 7              # channel days of stock thresholds for stockout_rate / overstock_rate
+  dos_overstock_above: 60            # (target cover is 30 days; README documents both)
+  days_per_month: 30.4375
+
+models:
+  channelpulse:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table

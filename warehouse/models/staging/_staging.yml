@@ -1,0 +1,290 @@
+version: 2
+
+models:
+  - name: stg_collections
+    columns:
+      - name: collection_id
+        data_tests:
+          - unique
+          - not_null
+      - name: invoice_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_primary_invoices')"
+                field: invoice_id
+  - name: stg_distributors
+    columns:
+      - name: distributor_id
+        data_tests:
+          - unique
+          - not_null
+      - name: rep_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_sales_reps')"
+                field: rep_id
+      - name: pincode
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_geo_pincodes')"
+                field: pincode
+  - name: stg_field_visits
+    columns:
+      - name: visit_id
+        data_tests:
+          - unique
+          - not_null
+      - name: rep_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_sales_reps')"
+                field: rep_id
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+  - name: stg_generation_run
+  - name: stg_geo_pincodes
+    columns:
+      - name: pincode
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_installations
+    columns:
+      - name: serial
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: "ref('stg_serial_units')"
+                field: serial
+      - name: installer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_installers')"
+                field: installer_id
+      - name: install_pincode
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_geo_pincodes')"
+                field: pincode
+  - name: stg_installers
+    columns:
+      - name: installer_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_opening_channel_stock
+    columns:
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+      - name: sku
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_products')"
+                field: sku
+  - name: stg_plants
+    columns:
+      - name: plant_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_primary_invoice_lines
+    columns:
+      - name: line_id
+        data_tests:
+          - unique
+          - not_null
+      - name: invoice_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_primary_invoices')"
+                field: invoice_id
+      - name: sku
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_products')"
+                field: sku
+      - name: batch_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_production_batches')"
+                field: batch_id
+  - name: stg_primary_invoices
+    columns:
+      - name: invoice_id
+        data_tests:
+          - unique
+          - not_null
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+      - name: scheme_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_schemes')"
+                field: scheme_id
+  - name: stg_production_batches
+    columns:
+      - name: batch_id
+        data_tests:
+          - unique
+          - not_null
+      - name: plant_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_plants')"
+                field: plant_id
+      - name: sku
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_products')"
+                field: sku
+  - name: stg_products
+    columns:
+      - name: sku
+        data_tests:
+          - unique
+          - not_null
+      - name: category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['tank', 'pipe', 'fitting', 'sanitaryware']
+  - name: stg_retailers
+    columns:
+      - name: retailer_id
+        data_tests:
+          - unique
+          - not_null
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+      - name: pincode
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_geo_pincodes')"
+                field: pincode
+  - name: stg_sales_reps
+    columns:
+      - name: rep_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_schemes
+    columns:
+      - name: scheme_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_secondary_sales
+    columns:
+      - name: record_id
+        data_tests:
+          - unique
+          - not_null
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+      - name: retailer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_retailers')"
+                field: retailer_id
+      - name: sku
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_products')"
+                field: sku
+  - name: stg_serial_units
+    columns:
+      - name: serial
+        data_tests:
+          - unique
+          - not_null
+      - name: batch_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_production_batches')"
+                field: batch_id
+      - name: sku
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_products')"
+                field: sku
+  - name: stg_shipments
+    columns:
+      - name: shipment_id
+        data_tests:
+          - unique
+          - not_null
+      - name: serial
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_serial_units')"
+                field: serial
+      - name: distributor_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_distributors')"
+                field: distributor_id
+  - name: stg_warranty_claims
+    columns:
+      - name: claim_id
+        data_tests:
+          - unique
+          - not_null
+      - name: serial
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_serial_units')"
+                field: serial
+      - name: installer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: "ref('stg_installers')"
+                field: installer_id
+      - name: failure_mode
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['base_crack', 'leak', 'fitting_failure', 'discoloration', 'other']

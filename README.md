@@ -14,6 +14,7 @@ Requires Docker, Python 3.12, Node 24, and GNU make (Windows: `winget install ez
 cp .env.example .env   # optional: override ports/credentials (used by compose, dbt, and the API)
 make setup             # .venv + Python deps, web deps
 make up                # Postgres 17, waits until healthy
+make seed              # synthetic data -> raw schema at the pinned as-of (idempotent, ~1 min)
 make dbt-debug         # dbt -> Postgres connectivity
 make api               # FastAPI on :$API_PORT (default 8000) -> GET /health
 make web               # Next.js on :3000

@@ -1,0 +1,97 @@
+version: 2
+
+# Governed metrics (PLAN §7): channel_days_of_stock, stockout_rate, overstock_rate.
+# Stock is a snapshot: over a period it is read on the period's last day (non-additive over date_day).
+
+models:
+  - name: fct_channel_inventory_daily
+    description: >-
+      Implied channel stock per distributor × sku × day: opening stock + primary receipts − reported secondary.
+      is_stockout / is_overstock mark days below 7 / above 60 days of stock; days with no sell-out in the
+      trailing 30 days have no days of stock and are excluded from both rates. RLS by region.
+    semantic_model:
+      enabled: true
+      name: channel_inventory
+    agg_time_dimension: date_day
+    derived_semantics:
+      entities:
+        - name: inventory_day
+          type: primary
+          expr: "distributor_id || '|' || sku || '|' || date_day::text"
+      dimensions:
+        - name: has_days_of_stock
+          type: categorical
+          expr: "days_of_stock is not null"
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "distributor_id || '|' || sku || '|' || date_day"
+    columns:
+      - name: distributor_id
+        entity: {type: foreign, name: distributor}
+      - name: sku
+        entity: {type: foreign, name: product}
+      - name: date_day
+        granularity: day
+        dimension: {type: time}
+      - name: is_settled
+        dimension: {type: categorical}
+    metrics:
+      - name: channel_stock_units
+        label: Channel stock (units)
+        description: Implied units held by distributors, read on the last day of the period.
+        type: simple
+        agg: sum
+        expr: stock_units
+        filter: "{{ Dimension('inventory_day__has_days_of_stock') }}"
+        non_additive_dimension:
+          name: date_day
+          window_agg: max
+      - name: avg_daily_sellout_units
+        label: Avg daily sell-out (units, trailing 30d)
+        description: Trailing-30-day average daily secondary units, read on the last day of the period.
+        type: simple
+        agg: sum
+        expr: avg_daily_secondary_units
+        filter: "{{ Dimension('inventory_day__has_days_of_stock') }}"
+        non_additive_dimension:
+          name: date_day
+          window_agg: max
+      - name: channel_days_of_stock
+        label: Channel days of stock
+        description: >-
+          (cumulative primary shipped − cumulative secondary sold) ÷ trailing-30-day average daily secondary
+          sales, in units, on the last day of the period.
+        type: ratio
+        numerator: channel_stock_units
+        denominator: avg_daily_sellout_units
+      - name: stock_days_measured
+        label: Distributor-SKU-days measured
+        description: Distributor × SKU × days that have a days-of-stock value.
+        type: simple
+        agg: sum
+        expr: "case when days_of_stock is not null then 1 else 0 end"
+      - name: stockout_days
+        label: Stock-out days
+        description: Distributor × SKU × days with under 7 days of stock.
+        type: simple
+        agg: sum
+        expr: "case when is_stockout then 1 else 0 end"
+      - name: overstock_days
+        label: Overstock days
+        description: Distributor × SKU × days with over 60 days of stock.
+        type: simple
+        agg: sum
+        expr: "case when is_overstock then 1 else 0 end"
+      - name: stockout_rate
+        label: Stock-out rate
+        description: Share of distributor-SKU-days with channel days of stock below 7.
+        type: ratio
+        numerator: stockout_days
+        denominator: stock_days_measured
+      - name: overstock_rate
+        label: Overstock rate
+        description: Share of distributor-SKU-days with channel days of stock above 60.
+        type: ratio
+        numerator: overstock_days
+        denominator: stock_days_measured

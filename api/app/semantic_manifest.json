@@ -1,0 +1,3531 @@
+{
+  "metrics": [
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Distributors flagged at risk (score < 30 with a bottom-15% sell-out trend, 3 weeks running).",
+      "filter": {
+        "where_filters": [
+          {
+            "where_sql_template": "{{ Dimension('distributor_week__is_at_risk') }}"
+          }
+        ]
+      },
+      "label": "At-risk distributors",
+      "metadata": null,
+      "name": "at_risk_distributors",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "distributor_id",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "count_distinct",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Trailing-30-day average daily secondary units, read on the last day of the period.",
+      "filter": {
+        "where_filters": [
+          {
+            "where_sql_template": "{{ Dimension('inventory_day__has_days_of_stock') }}"
+          }
+        ]
+      },
+      "label": "Avg daily sell-out (units, trailing 30d)",
+      "metadata": null,
+      "name": "avg_daily_sellout_units",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "avg_daily_secondary_units",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "date_day",
+          "non_additive_dimension": {
+            "name": "date_day",
+            "window_choice": "max",
+            "window_groupings": []
+          },
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "(cumulative primary shipped − cumulative secondary sold) ÷ trailing-30-day average daily secondary sales, in units, on the last day of the period.",
+      "filter": null,
+      "label": "Channel days of stock",
+      "metadata": null,
+      "name": "channel_days_of_stock",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "avg_daily_sellout_units",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "channel_stock_units",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Implied units held by distributors, read on the last day of the period.",
+      "filter": {
+        "where_filters": [
+          {
+            "where_sql_template": "{{ Dimension('inventory_day__has_days_of_stock') }}"
+          }
+        ]
+      },
+      "label": "Channel stock (units)",
+      "metadata": null,
+      "name": "channel_stock_units",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "stock_units",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "date_day",
+          "non_additive_dimension": {
+            "name": "date_day",
+            "window_choice": "max",
+            "window_groupings": []
+          },
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Warranty claims ÷ (serials shipped in the cohort ÷ 1000), for a batch, plant, SKU or manufacture period. To see the curve by age, group by months_since_ship and use cohort_cumulative_claims_per_1000 instead.",
+      "filter": null,
+      "label": "Claims per 1,000 units",
+      "metadata": null,
+      "name": "claims_per_1000_units",
+      "time_granularity": null,
+      "type": "derived",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1000 * claims / nullif(units, 0)",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [
+          {
+            "alias": "claims",
+            "filter": null,
+            "name": "cohort_claims",
+            "offset_to_grain": null,
+            "offset_window": null
+          },
+          {
+            "alias": "units",
+            "filter": null,
+            "name": "cohort_units_shipped",
+            "offset_to_grain": null,
+            "offset_window": null
+          }
+        ],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Cohort base-crack claims",
+      "metadata": null,
+      "name": "cohort_base_crack_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "claims_base_crack",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Cohort claims",
+      "metadata": null,
+      "name": "cohort_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "claims",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Cohort cumulative base-crack claims",
+      "metadata": null,
+      "name": "cohort_cumulative_base_crack_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "cumulative_base_crack_claims",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Like cohort_cumulative_claims_per_1000, for base cracks only. Only meaningful grouped by months_since_ship.",
+      "filter": null,
+      "label": "Cumulative base-crack claims per 1,000 units (by age)",
+      "metadata": null,
+      "name": "cohort_cumulative_base_crack_per_1000",
+      "time_granularity": null,
+      "type": "derived",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1000 * claims / nullif(units, 0)",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [
+          {
+            "alias": "claims",
+            "filter": null,
+            "name": "cohort_cumulative_base_crack_claims",
+            "offset_to_grain": null,
+            "offset_window": null
+          },
+          {
+            "alias": "units",
+            "filter": null,
+            "name": "cohort_units_at_age",
+            "offset_to_grain": null,
+            "offset_window": null
+          }
+        ],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Cohort cumulative claims",
+      "metadata": null,
+      "name": "cohort_cumulative_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "cumulative_claims",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Pooled cumulative claims per 1,000 shipped units at each months_since_ship. Only meaningful grouped by months_since_ship.",
+      "filter": null,
+      "label": "Cumulative claims per 1,000 units (by age)",
+      "metadata": null,
+      "name": "cohort_cumulative_claims_per_1000",
+      "time_granularity": null,
+      "type": "derived",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1000 * claims / nullif(units, 0)",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [
+          {
+            "alias": "claims",
+            "filter": null,
+            "name": "cohort_cumulative_claims",
+            "offset_to_grain": null,
+            "offset_window": null
+          },
+          {
+            "alias": "units",
+            "filter": null,
+            "name": "cohort_units_at_age",
+            "offset_to_grain": null,
+            "offset_window": null
+          }
+        ],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Cohort units at age",
+      "metadata": null,
+      "name": "cohort_units_at_age",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "units_shipped",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Serialised units shipped from the cohort's batches (counted once per batch).",
+      "filter": null,
+      "label": "Cohort units shipped",
+      "metadata": null,
+      "name": "cohort_units_shipped",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when months_since_ship = 0 then units_shipped else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batch_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": {
+        "where_filters": [
+          {
+            "where_sql_template": "{{ Dimension('invoice__is_due') }}"
+          }
+        ]
+      },
+      "label": "Collected within terms (₹)",
+      "metadata": null,
+      "name": "collected_within_terms",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "paid_within_terms_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Amount collected within payment terms ÷ amount invoiced, over invoices already due.",
+      "filter": null,
+      "label": "Collections efficiency",
+      "metadata": null,
+      "name": "collections_efficiency",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "due_amount",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "collected_within_terms",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Weighted composite (0-100, higher = healthier) of region-peer percentiles: secondary-sales trend 35%, primary/secondary gap 20%, days-of-stock deviation 15%, DSO trend 20%, visit recency 10%.",
+      "filter": null,
+      "label": "Distributor health score",
+      "metadata": null,
+      "name": "distributor_health_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "health_score",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Amount-weighted average days from invoice to full payment. Invoices still open are aged to the as-of date.",
+      "filter": null,
+      "label": "DSO (days)",
+      "metadata": null,
+      "name": "dso",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "invoiced_amount",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "invoiced_amount_days",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": {
+        "where_filters": [
+          {
+            "where_sql_template": "{{ Dimension('invoice__is_due') }}"
+          }
+        ]
+      },
+      "label": "Amount due (₹)",
+      "metadata": null,
+      "name": "due_amount",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "invoice_amount_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Field visits",
+      "metadata": null,
+      "name": "field_visits",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "visit_date",
+          "non_additive_dimension": null,
+          "semantic_model": "field_visits"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Region-peer percentile of DSO ÷ own 52-week median, higher scores lower (weight 20%).",
+      "filter": null,
+      "label": "Health component: DSO trend (0-100)",
+      "metadata": null,
+      "name": "health_dso_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "score_dso_trend",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Region-peer percentile of trailing-12-week primary ÷ secondary units, higher gap scores lower (weight 20%).",
+      "filter": null,
+      "label": "Health component: sell-in vs sell-out (0-100)",
+      "metadata": null,
+      "name": "health_gap_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "score_primary_secondary_gap",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Region-peer percentile of trailing-8-week secondary units vs the same weeks a year earlier (weight 35%).",
+      "filter": null,
+      "label": "Health component: sell-out trend (0-100)",
+      "metadata": null,
+      "name": "health_secondary_trend_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "score_secondary_trend",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Region-peer percentile of channel days of stock ÷ own 52-week median, higher scores lower (weight 15%).",
+      "filter": null,
+      "label": "Health component: days-of-stock deviation (0-100)",
+      "metadata": null,
+      "name": "health_stock_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "score_days_of_stock_dev",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Region-peer percentile of days since the last geofence-verified visit, longer scores lower (weight 10%).",
+      "filter": null,
+      "label": "Health component: visit recency (0-100)",
+      "metadata": null,
+      "name": "health_visit_score",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "score_visit_recency",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": null,
+          "semantic_model": "distributor_health"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "claims_per_1000_units grouped by installer instead of batch; compare an installer with its district.",
+      "filter": null,
+      "label": "Installer claim rate (per 1,000 units)",
+      "metadata": null,
+      "name": "installer_claim_rate",
+      "time_granularity": null,
+      "type": "derived",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1000 * claims / nullif(units, 0)",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [
+          {
+            "alias": "claims",
+            "filter": null,
+            "name": "installer_claims",
+            "offset_to_grain": null,
+            "offset_window": null
+          },
+          {
+            "alias": "units",
+            "filter": null,
+            "name": "installer_units_installed",
+            "offset_to_grain": null,
+            "offset_window": null
+          }
+        ],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Installer-attributed claims",
+      "metadata": null,
+      "name": "installer_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "claims",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "install_month",
+          "non_additive_dimension": null,
+          "semantic_model": "installer_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Units installed (installer-attributed)",
+      "metadata": null,
+      "name": "installer_units_installed",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when months_since_install = 0 then units_installed else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "install_month",
+          "non_additive_dimension": null,
+          "semantic_model": "installer_claim_cohorts"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Invoiced amount (₹)",
+      "metadata": null,
+      "name": "invoiced_amount",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "invoice_amount_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Invoice ₹-days outstanding",
+      "metadata": null,
+      "name": "invoiced_amount_days",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "invoice_amount_inr * days_outstanding",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Open receivables (₹)",
+      "metadata": null,
+      "name": "open_receivables",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "open_amount_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Overdue receivables (₹)",
+      "metadata": null,
+      "name": "overdue_receivables",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when is_open and days_past_due > 0 then open_amount_inr else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "invoice_collections"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Distributor × SKU × days with over 60 days of stock.",
+      "filter": null,
+      "label": "Overstock days",
+      "metadata": null,
+      "name": "overstock_days",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when is_overstock then 1 else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "date_day",
+          "non_additive_dimension": null,
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Share of distributor-SKU-days with channel days of stock above 60.",
+      "filter": null,
+      "label": "Overstock rate",
+      "metadata": null,
+      "name": "overstock_rate",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "stock_days_measured",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "overstock_days",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Σ primary_invoice_lines.qty × unit_price_inr, the company's sell-in to distributors, net of scheme discounts.",
+      "filter": null,
+      "label": "Primary sales value (₹)",
+      "metadata": null,
+      "name": "primary_sales_value",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "primary_value_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "primary_sales"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Units invoiced to distributors (sell-in).",
+      "filter": null,
+      "label": "Primary units",
+      "metadata": null,
+      "name": "primary_units",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "qty",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "invoice_date",
+          "non_additive_dimension": null,
+          "semantic_model": "primary_sales"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Share of a distributor's quarterly primary volume booked in the scheme window (last 15 days), divided by its own baseline share (median of its other quarters). 1.0 is normal; about 2 or more is quarter-end loading.",
+      "filter": null,
+      "label": "Scheme concentration ratio",
+      "metadata": null,
+      "name": "scheme_concentration_ratio",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "concentration_ratio",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "window_start_date",
+          "non_additive_dimension": null,
+          "semantic_model": "scheme_quarterly"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Σ secondary_sales.qty × products.list_price_inr, sell-out valued at the current list price.",
+      "filter": null,
+      "label": "Secondary sales value (₹)",
+      "metadata": null,
+      "name": "secondary_sales_value",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "secondary_value_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "sale_date",
+          "non_additive_dimension": null,
+          "semantic_model": "secondary_sales"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Units sold by distributors to retailers (sell-out).",
+      "filter": null,
+      "label": "Secondary units",
+      "metadata": null,
+      "name": "secondary_units",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "qty",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "sale_date",
+          "non_additive_dimension": null,
+          "semantic_model": "secondary_sales"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Distributor × SKU × days that have a days-of-stock value.",
+      "filter": null,
+      "label": "Distributor-SKU-days measured",
+      "metadata": null,
+      "name": "stock_days_measured",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when days_of_stock is not null then 1 else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "date_day",
+          "non_additive_dimension": null,
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Distributor × SKU × days with under 7 days of stock.",
+      "filter": null,
+      "label": "Stock-out days",
+      "metadata": null,
+      "name": "stockout_days",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when is_stockout then 1 else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "date_day",
+          "non_additive_dimension": null,
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Share of distributor-SKU-days with channel days of stock below 7.",
+      "filter": null,
+      "label": "Stock-out rate",
+      "metadata": null,
+      "name": "stockout_rate",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "stock_days_measured",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "stockout_days",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Distributor × window × category combinations ordering at ≥ 2× their trailing-90-day rate.",
+      "filter": null,
+      "label": "Stuffing flags",
+      "metadata": null,
+      "name": "stuffing_flags",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when is_stuffing_flag then 1 else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "window_start_date",
+          "non_additive_dimension": null,
+          "semantic_model": "scheme_quarterly"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Window daily primary units ÷ the distributor's trailing-90-day daily average.",
+      "filter": null,
+      "label": "Scheme-window order rate ratio",
+      "metadata": null,
+      "name": "stuffing_rate_ratio",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "rate_ratio",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "average",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "window_start_date",
+          "non_additive_dimension": null,
+          "semantic_model": "scheme_quarterly"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Units registered within 90 days of shipment",
+      "metadata": null,
+      "name": "units_registered_within_90d",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "units_registered_within_90d",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batches"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Units shipped (≥ 90 days ago)",
+      "metadata": null,
+      "name": "units_shipped_90d_matured",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "units_shipped_90d_matured",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "mfg_date",
+          "non_additive_dimension": null,
+          "semantic_model": "batches"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Geofence-verified visits",
+      "metadata": null,
+      "name": "verified_field_visits",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "case when is_geofence_verified then 1 else 0 end",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "visit_date",
+          "non_additive_dimension": null,
+          "semantic_model": "field_visits"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Warranty claim cost (₹)",
+      "metadata": null,
+      "name": "warranty_claim_cost",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "cost_inr",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "claim_date",
+          "non_additive_dimension": null,
+          "semantic_model": "warranty_claims"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "",
+      "filter": null,
+      "label": "Warranty claims",
+      "metadata": null,
+      "name": "warranty_claims",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "claim_date",
+          "non_additive_dimension": null,
+          "semantic_model": "warranty_claims"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Share of shipped serials with an install date within 90 days of shipment (period = manufacture date).",
+      "filter": null,
+      "label": "Warranty registration rate",
+      "metadata": null,
+      "name": "warranty_registration_rate",
+      "time_granularity": null,
+      "type": "ratio",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": {
+          "alias": null,
+          "filter": null,
+          "name": "units_shipped_90d_matured",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "expr": null,
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [],
+        "numerator": {
+          "alias": null,
+          "filter": null,
+          "name": "units_registered_within_90d",
+          "offset_to_grain": null,
+          "offset_window": null
+        },
+        "window": null
+      }
+    }
+  ],
+  "project_configuration": {
+    "dsi_package_version": {
+      "major_version": "0",
+      "minor_version": "213",
+      "patch_version": "0"
+    },
+    "metadata": null,
+    "time_spine_table_configurations": [],
+    "time_spines": [
+      {
+        "custom_granularities": [],
+        "node_relation": {
+          "alias": "dim_date",
+          "database": null,
+          "relation_name": "\"marts\".\"dim_date\"",
+          "schema_name": "marts"
+        },
+        "primary_column": {
+          "name": "date_day",
+          "time_granularity": "day"
+        }
+      }
+    ]
+  },
+  "saved_queries": [],
+  "semantic_models": [
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "mfg_date"
+      },
+      "description": "Nevada-chart cohorts: batch × months since shipment, with claims by failure mode and cumulative claims per 1,000 shipped units. The in-service clock starts at shipment. is_fully_observed means every unit has been out for the whole month.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "months_since_ship",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_fully_observed",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "mfg_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "batch_id",
+          "label": null,
+          "metadata": null,
+          "name": "batch",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": null,
+          "expr": "batch_id || '|' || months_since_ship::text",
+          "label": null,
+          "metadata": null,
+          "name": "batch_cohort_month",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "batch_claim_cohorts",
+      "node_relation": {
+        "alias": "mart_batch_claim_cohorts",
+        "database": null,
+        "relation_name": "\"marts\".\"mart_batch_claim_cohorts\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "mfg_date"
+      },
+      "description": "Production batch: plant, line, resin lot, and unit counts. Registration counts only use shipments at least 90 days old, so recent shipments don't drag the rate down.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "plant_id",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "plant_name",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "line_no",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "resin_lot_id",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_legacy",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "mfg_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "mfg_month",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "month",
+            "validity_params": null
+          }
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "batch_id",
+          "label": null,
+          "metadata": null,
+          "name": "batch",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "batches",
+      "node_relation": {
+        "alias": "dim_batch",
+        "database": null,
+        "relation_name": "\"marts\".\"dim_batch\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "date_day"
+      },
+      "description": "Implied channel stock per distributor × sku × day: opening stock + primary receipts − reported secondary. is_stockout / is_overstock mark days below 7 / above 60 days of stock; days with no sell-out in the trailing 30 days have no days of stock and are excluded from both rates. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "date_day",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_settled",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": null,
+          "expr": "days_of_stock is not null",
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "has_days_of_stock",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": null,
+          "expr": "distributor_id || '|' || sku || '|' || date_day::text",
+          "label": null,
+          "metadata": null,
+          "name": "inventory_day",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "channel_inventory",
+      "node_relation": {
+        "alias": "fct_channel_inventory_daily",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_channel_inventory_daily\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "week_start"
+      },
+      "description": "distributor_health_score per distributor × completed ISO week: point-in-time, exactly as pre-registered in detectors/detectors.yaml. Five region-peer percentile components (0-100), a weighted score, and is_at_risk after 3 consecutive flag weeks. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "week_start",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "week",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_at_risk",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_scored",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": null,
+          "expr": "distributor_id || '|' || week_start::text",
+          "label": null,
+          "metadata": null,
+          "name": "distributor_week",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "distributor_health",
+      "node_relation": {
+        "alias": "mart_distributor_health_weekly",
+        "database": null,
+        "relation_name": "\"marts\".\"mart_distributor_health_weekly\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": null
+      },
+      "description": "Distributor master with region, rep, lifecycle and first/last invoice dates. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "distributor_name",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "tier",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "state",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "district",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "region",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "distributor_status",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "rep_name",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "distributors",
+      "node_relation": {
+        "alias": "dim_distributor",
+        "database": null,
+        "relation_name": "\"marts\".\"dim_distributor\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "visit_date"
+      },
+      "description": "Sales-rep visits to distributors, with geofence verification. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "visit_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_geofence_verified",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "rep_name",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "visit_id",
+          "label": null,
+          "metadata": null,
+          "name": "visit",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "field_visits",
+      "node_relation": {
+        "alias": "fct_field_visits",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_field_visits\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "install_month"
+      },
+      "description": "installer_claim_rate source: installer × district × install month × months since install, over installer-attributed registrations only.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "installer_name",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_certified",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "install_district",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "install_state",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "months_since_install",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "install_month",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "month",
+            "validity_params": null
+          }
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "installer_id",
+          "label": null,
+          "metadata": null,
+          "name": "installer",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": null,
+          "expr": "installer_id || '|' || install_district || '|' || install_month::text || '|' || months_since_install::text",
+          "label": null,
+          "metadata": null,
+          "name": "installer_cohort_month",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "installer_claim_cohorts",
+      "node_relation": {
+        "alias": "mart_installer_claim_cohorts",
+        "database": null,
+        "relation_name": "\"marts\".\"mart_installer_claim_cohorts\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "invoice_date"
+      },
+      "description": "One row per primary invoice with payment status as of the as-of date. Open invoices age to the as-of date, so a distributor who stops paying is visible immediately instead of when late payments finally land. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "invoice_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "due_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_open",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_due",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "invoice_id",
+          "label": null,
+          "metadata": null,
+          "name": "invoice",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "invoice_collections",
+      "node_relation": {
+        "alias": "fct_invoice_collections",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_invoice_collections\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "invoice_date"
+      },
+      "description": "Company → distributor invoice lines (sell-in). RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "invoice_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_scheme_invoice",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "line_id",
+          "label": null,
+          "metadata": null,
+          "name": "primary_sale_line",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "invoice_id",
+          "label": null,
+          "metadata": null,
+          "name": "invoice",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "batch_id",
+          "label": null,
+          "metadata": null,
+          "name": "batch",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "primary_sales",
+      "node_relation": {
+        "alias": "fct_primary_sales",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_primary_sales\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": null
+      },
+      "description": "SKU catalogue. Tanks are serialised; sanitaryware is traded.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "product_name",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "category",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "capacity_l",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_serialised",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "products",
+      "node_relation": {
+        "alias": "dim_product",
+        "database": null,
+        "relation_name": "\"marts\".\"dim_product\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "window_start_date"
+      },
+      "description": "Quarter-end scheme participation per distributor × scheme window × category: the stuffing rate ratio, scheme_concentration_ratio, and the days-of-stock follow-through after quarter-end. RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "window_start_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "fiscal_quarter_label",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "category",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_stuffing_flag",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_window_complete",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": null,
+          "expr": "distributor_id || '|' || category || '|' || window_start_date::text",
+          "label": null,
+          "metadata": null,
+          "name": "distributor_scheme_window",
+          "role": null,
+          "type": "primary"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "scheme_quarterly",
+      "node_relation": {
+        "alias": "mart_scheme_quarterly",
+        "database": null,
+        "relation_name": "\"marts\".\"mart_scheme_quarterly\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "sale_date"
+      },
+      "description": "Distributor → retailer sell-out as reported, with re-sent uploads removed. Sale dates within the reporting horizon are still filling in (is_settled = false). RLS by region.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "sale_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_settled",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "report_source",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "record_id",
+          "label": null,
+          "metadata": null,
+          "name": "secondary_sale",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "secondary_sales",
+      "node_relation": {
+        "alias": "fct_secondary_sales",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_secondary_sales\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "defaults": {
+        "agg_time_dimension": "claim_date"
+      },
+      "description": "One row per warranty claim (all claims are on serialised tanks), with the unit's full lineage.",
+      "dimensions": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "claim_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "failure_mode",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "claim_status",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "install_district",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "install_state",
+          "type": "categorical",
+          "type_params": null
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "months_since_ship",
+          "type": "categorical",
+          "type_params": null
+        }
+      ],
+      "entities": [
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "claim_id",
+          "label": null,
+          "metadata": null,
+          "name": "claim",
+          "role": null,
+          "type": "primary"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "batch_id",
+          "label": null,
+          "metadata": null,
+          "name": "batch",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "sku",
+          "label": null,
+          "metadata": null,
+          "name": "product",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "installer_id",
+          "label": null,
+          "metadata": null,
+          "name": "installer",
+          "role": null,
+          "type": "foreign"
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "description": "",
+          "expr": "distributor_id",
+          "label": null,
+          "metadata": null,
+          "name": "distributor",
+          "role": null,
+          "type": "foreign"
+        }
+      ],
+      "label": null,
+      "measures": [],
+      "metadata": null,
+      "name": "warranty_claims",
+      "node_relation": {
+        "alias": "fct_warranty_claims",
+        "database": null,
+        "relation_name": "\"marts\".\"fct_warranty_claims\"",
+        "schema_name": "marts"
+      },
+      "primary_entity": null
+    }
+  ]
+}

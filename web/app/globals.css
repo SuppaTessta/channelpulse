@@ -1,9 +1,205 @@
+@import "tailwindcss";
+
+/*
+  ChannelPulse tokens (web/DESIGN.md). One semantic set, swapped for dark mode under prefers-color-scheme.
+  Chart colours follow the dataviz method: the categorical order below was chosen by enumerating orders with the
+  brand teal fixed in slot 1 and keeping only those that pass every validator gate in both modes
+  (worst adjacent CVD dE 13.0, normal-vision dE 19.3). The heatmap ramp is one hue (teal, OKLCH h 200), light to
+  dark, with the anchor flipped in dark mode. Text tokens all clear WCAG AA (4.5:1) on every surface.
+*/
 :root {
-  color-scheme: light dark;
-  font-family: system-ui, sans-serif;
+  color-scheme: light;
+  --canvas: #f4f5f7;
+  --surface: #fcfcfd;
+  --surface-raised: #fefeff;
+  --surface-hover: #eef0f3;
+  --text: #16181d;
+  --text-muted: #50555e;
+  --text-subtle: #646973;
+  --border: #e3e5e9;
+  --border-strong: #c6cad1;
+  --control-border: #878c95;
+  --grid: #eceef1;
+  --axis: #c6cad1;
+
+  --accent: #0a7377;
+  --accent-hover: #076165;
+  --accent-soft: #dcf6f8;
+  --on-accent: #fcfcfd;
+  --focus: #0a7377;
+
+  --adhoc: #8a5a00;
+  --adhoc-soft: #fdf1d6;
+  --danger: #b8322f;
+  --danger-soft: #fdecea;
+  --good: #0f6a2c;
+  --refused-edge: #d0406a;
+  --refused-soft: #f3f4f6;
+
+  --series-1: #139aa0;
+  --series-2: #eb6834;
+  --series-3: #2a78d6;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --deemph: #aab0b8;
+  --band: rgb(22 24 29 / 0.05);
+
+  --seq-1: #aee7ea;
+  --seq-2: #73cfd4;
+  --seq-3: #35afb5;
+  --seq-4: #0e868c;
+  --seq-5: #076165;
+  --seq-6: #023f42;
+
+  --shadow-raised: 0 1px 2px rgb(22 38 48 / 0.05), 0 12px 32px -12px rgb(22 38 48 / 0.16);
 }
 
-body {
-  margin: 0;
-  padding: 2rem 1rem;
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --canvas: #0e0f11;
+    --surface: #16171a;
+    --surface-raised: #1d1e22;
+    --surface-hover: #22242a;
+    --text: #ececef;
+    --text-muted: #a7abb4;
+    --text-subtle: #9296a0;
+    --border: #2a2c31;
+    --border-strong: #3d4047;
+    --control-border: #6f747e;
+    --grid: #222428;
+    --axis: #3d4047;
+
+    --accent: #54bfc5;
+    --accent-hover: #73cfd4;
+    --accent-soft: #0d3436;
+    --on-accent: #0e0f11;
+    --focus: #54bfc5;
+
+    --adhoc: #f0b547;
+    --adhoc-soft: #2e2410;
+    --danger: #f07470;
+    --danger-soft: #351a1a;
+    --good: #3fbf5f;
+    --refused-edge: #e8628a;
+    --refused-soft: #1b1c20;
+
+    --series-1: #139aa0;
+    --series-2: #d95926;
+    --series-3: #3987e5;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --deemph: #5d626b;
+    --band: rgb(236 236 239 / 0.06);
+
+    --seq-1: #023f42;
+    --seq-2: #076165;
+    --seq-3: #0e868c;
+    --seq-4: #35afb5;
+    --seq-5: #73cfd4;
+    --seq-6: #aee7ea;
+
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-hover: var(--surface-hover);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-control: var(--control-border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-adhoc: var(--adhoc);
+  --color-adhoc-soft: var(--adhoc-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-good: var(--good);
+  --color-refused-edge: var(--refused-edge);
+  --color-refused-soft: var(--refused-soft);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --shadow-raised: var(--shadow-raised);
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-size: 14px;
+    line-height: 20px;
+    /* DESIGN.md: every figure uses tabular-nums. */
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 24%, transparent);
+  }
+  button:not(:disabled),
+  [role="button"],
+  summary,
+  select {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
+
+/* The previous render stays on screen while filters refetch (dataviz: refetch keeps the frame). */
+[data-pending="true"] [data-dim] {
+  opacity: 0.55;
+}
+[data-dim] {
+  transition: opacity 180ms var(--ease-out);
+}
+
+/* Observable Plot output: tokens in, library defaults out. */
+.cp-plot svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-subtle);
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }

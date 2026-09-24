@@ -21,9 +21,11 @@ DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "5.00"))
 
 CORS_ORIGINS = ["http://localhost:3000", *(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip())]
 
-# The marts run_readonly_sql may read. The first group carries a region column and the region RLS policy.
+# The marts run_readonly_sql may read. The first group is region-filtered by RLS (the two channel-inventory marts
+# look the region up via the distributor; the rest carry a region column).
 MART_TABLES = frozenset({
     "dim_distributor", "fct_primary_sales", "fct_secondary_sales", "fct_channel_inventory_daily",
+    "mart_channel_inventory_weekly",
     "fct_invoice_collections", "fct_field_visits", "mart_distributor_health_weekly", "mart_scheme_quarterly",
     "dim_geo", "dim_product", "dim_batch", "fct_warranty_claims", "mart_batch_claim_cohorts",
     "mart_installer_claim_cohorts", "dim_date", "mart_anomaly_flags",

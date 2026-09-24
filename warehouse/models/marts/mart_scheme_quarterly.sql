@@ -99,13 +99,14 @@ baseline_shares as (
 
 category_dos as (   -- channel days of stock per distributor x category x day
     select
-        distributor_id,
-        category,
-        date_day,
-        sum(stock_units) / nullif(sum(avg_daily_secondary_units), 0) as days_of_stock
-    from {{ ref('fct_channel_inventory_daily') }}
-    where category in (select distinct category from windows) and avg_daily_secondary_units is not null
-    group by distributor_id, category, date_day
+        inv.distributor_id,
+        p.category,
+        inv.date_day,
+        sum(inv.stock_units) / nullif(sum(inv.avg_daily_secondary_units), 0) as days_of_stock
+    from {{ ref('fct_channel_inventory_daily') }} as inv
+    inner join {{ ref('stg_products') }} as p on p.sku = inv.sku
+    where p.category in (select distinct category from windows) and inv.avg_daily_secondary_units is not null
+    group by inv.distributor_id, p.category, inv.date_day
 ),
 
 follow_through as (

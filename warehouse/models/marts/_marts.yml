@@ -14,6 +14,15 @@ models:
         granularity: day
         data_tests: [unique, not_null]
 
+  - name: fct_channel_inventory_daily
+    description: >-
+      Implied channel stock per distributor × sku × day (PLAN §6), the detail behind the governed inventory
+      metrics, which are served from mart_channel_inventory_weekly (decisions D24). RLS by region (via the distributor).
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "distributor_id || '|' || sku || '|' || date_day"
+
   - name: dim_geo
     description: Pincode → district → state → sales region (decisions D4).
     columns:

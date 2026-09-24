@@ -54,7 +54,7 @@
       "filter": {
         "where_filters": [
           {
-            "where_sql_template": "{{ Dimension('inventory_day__has_days_of_stock') }}"
+            "where_sql_template": "{{ Dimension('inventory_week__has_days_of_stock') }}"
           }
         ]
       },
@@ -81,9 +81,9 @@
             "use_approximate_percentile": false,
             "use_discrete_percentile": false
           },
-          "agg_time_dimension": "date_day",
+          "agg_time_dimension": "week_start",
           "non_additive_dimension": {
-            "name": "date_day",
+            "name": "week_start",
             "window_choice": "max",
             "window_groupings": []
           },
@@ -144,7 +144,7 @@
       "filter": {
         "where_filters": [
           {
-            "where_sql_template": "{{ Dimension('inventory_day__has_days_of_stock') }}"
+            "where_sql_template": "{{ Dimension('inventory_week__has_days_of_stock') }}"
           }
         ]
       },
@@ -171,9 +171,9 @@
             "use_approximate_percentile": false,
             "use_discrete_percentile": false
           },
-          "agg_time_dimension": "date_day",
+          "agg_time_dimension": "week_start",
           "non_additive_dimension": {
-            "name": "date_day",
+            "name": "week_start",
             "window_choice": "max",
             "window_groupings": []
           },
@@ -1289,7 +1289,7 @@
         "conversion_type_params": null,
         "cumulative_type_params": null,
         "denominator": null,
-        "expr": "case when is_overstock then 1 else 0 end",
+        "expr": "overstock_days",
         "fill_nulls_with": null,
         "grain_to_date": null,
         "input_measures": [],
@@ -1303,7 +1303,7 @@
             "use_approximate_percentile": false,
             "use_discrete_percentile": false
           },
-          "agg_time_dimension": "date_day",
+          "agg_time_dimension": "week_start",
           "non_additive_dimension": null,
           "semantic_model": "channel_inventory"
         },
@@ -1564,7 +1564,7 @@
         "conversion_type_params": null,
         "cumulative_type_params": null,
         "denominator": null,
-        "expr": "case when days_of_stock is not null then 1 else 0 end",
+        "expr": "days_measured",
         "fill_nulls_with": null,
         "grain_to_date": null,
         "input_measures": [],
@@ -1578,7 +1578,7 @@
             "use_approximate_percentile": false,
             "use_discrete_percentile": false
           },
-          "agg_time_dimension": "date_day",
+          "agg_time_dimension": "week_start",
           "non_additive_dimension": null,
           "semantic_model": "channel_inventory"
         },
@@ -1603,7 +1603,7 @@
         "conversion_type_params": null,
         "cumulative_type_params": null,
         "denominator": null,
-        "expr": "case when is_stockout then 1 else 0 end",
+        "expr": "stockout_days",
         "fill_nulls_with": null,
         "grain_to_date": null,
         "input_measures": [],
@@ -1617,7 +1617,7 @@
             "use_approximate_percentile": false,
             "use_discrete_percentile": false
           },
-          "agg_time_dimension": "date_day",
+          "agg_time_dimension": "week_start",
           "non_additive_dimension": null,
           "semantic_model": "channel_inventory"
         },
@@ -2258,9 +2258,9 @@
         "meta": {}
       },
       "defaults": {
-        "agg_time_dimension": "date_day"
+        "agg_time_dimension": "week_start"
       },
-      "description": "Implied channel stock per distributor × sku × day: opening stock + primary receipts − reported secondary. is_stockout / is_overstock mark days below 7 / above 60 days of stock; days with no sell-out in the trailing 30 days have no days of stock and are excluded from both rates. RLS by region.",
+      "description": "Channel stock per distributor × sku × ISO week: the snapshot on the week's last available day (the as-of date for the week in progress), plus counts of days measured, stock-out days (under 7 days of stock) and overstock days (over 60). Days with no sell-out in the trailing 30 days have no days of stock and count toward neither rate. RLS by region (via the distributor).",
       "dimensions": [
         {
           "config": {
@@ -2272,10 +2272,10 @@
           "is_partition": false,
           "label": null,
           "metadata": null,
-          "name": "date_day",
+          "name": "week_start",
           "type": "time",
           "type_params": {
-            "time_granularity": "day",
+            "time_granularity": "week",
             "validity_params": null
           }
         },
@@ -2289,9 +2289,12 @@
           "is_partition": false,
           "label": null,
           "metadata": null,
-          "name": "is_settled",
-          "type": "categorical",
-          "type_params": null
+          "name": "snapshot_date",
+          "type": "time",
+          "type_params": {
+            "time_granularity": "day",
+            "validity_params": null
+          }
         },
         {
           "config": {
@@ -2338,10 +2341,10 @@
             "meta": {}
           },
           "description": null,
-          "expr": "distributor_id || '|' || sku || '|' || date_day::text",
+          "expr": "distributor_id || '|' || sku || '|' || week_start::text",
           "label": null,
           "metadata": null,
-          "name": "inventory_day",
+          "name": "inventory_week",
           "role": null,
           "type": "primary"
         }
@@ -2351,9 +2354,9 @@
       "metadata": null,
       "name": "channel_inventory",
       "node_relation": {
-        "alias": "fct_channel_inventory_daily",
+        "alias": "mart_channel_inventory_weekly",
         "database": null,
-        "relation_name": "\"marts\".\"fct_channel_inventory_daily\"",
+        "relation_name": "\"marts\".\"mart_channel_inventory_weekly\"",
         "schema_name": "marts"
       },
       "primary_entity": null

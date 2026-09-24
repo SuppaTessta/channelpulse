@@ -1,12 +1,16 @@
--- Implied channel stock per distributor x sku x day (PLAN §7 channel_days_of_stock, decisions D5/D10/D13):
+-- Implied channel stock per distributor x sku x day (PLAN Â§7 channel_days_of_stock, decisions D5/D10/D13):
 --   stock_units    = opening stock + cumulative primary receipts - cumulative reported secondary (units)
 --   days_of_stock  = stock_units / avg daily secondary over the trailing 30 days (fewer at the window start,
 --                    minimum 14); null when there were no secondary sales in that period.
--- Rows exist for every pair that ever held stock, from its first day through the as-of date.
+-- Rows exist for every pair that ever held stock, from its first day through the as-of date, except inert days
+-- (no stock and no sell-out in the trailing 30 days), which no metric reads.
+-- Deliberately narrow at 6.5M rows: region, category and settledness come from dim_distributor, dim_product and
+-- dim_date through the semantic layer's joins, and the region RLS policy looks the distributor up (decisions D24).
 {{ config(
-    post_hook="{{ apply_region_rls() }}",
-    indexes=[{'columns': ['distributor_id', 'sku', 'date_day']}, {'columns': ['date_day']}]
+    post_hook="{{ apply_region_rls(via_distributor=true) }}",
+    indexes=[{'columns': ['distributor_id', 'sku', 'date_day']}]
 ) }}
+-- depends_on: {{ ref('dim_distributor') }}
 
 with primary_daily as (
     select distributor_id, sku, invoice_date as flow_date, sum(qty) as units
@@ -78,21 +82,15 @@ rated as (
 select
     r.date_day,
     r.distributor_id,
-    d.region,
-    d.state,
-    d.tier,
     r.sku,
-    p.category,
-    r.primary_units,
-    r.secondary_units,
-    r.stock_units,
-    r.secondary_units_t30,
-    r.avg_daily_secondary_units,
-    round(r.stock_units / r.avg_daily_secondary_units, 1) as days_of_stock,
+    r.stock_units::integer as stock_units,
+    r.avg_daily_secondary_units::real as avg_daily_secondary_units,
+    round(r.stock_units / r.avg_daily_secondary_units, 1)::real as days_of_stock,
     r.stock_units / r.avg_daily_secondary_units < {{ var('dos_stockout_below') }} as is_stockout,
-    r.stock_units / r.avg_daily_secondary_units > {{ var('dos_overstock_above') }} as is_overstock,
-    r.date_day <= run.as_of_date - {{ var('secondary_horizon_days') }} as is_settled
+    r.stock_units / r.avg_daily_secondary_units > {{ var('dos_overstock_above') }} as is_overstock
 from rated as r
-inner join {{ ref('dim_distributor') }} as d on d.distributor_id = r.distributor_id
-inner join {{ ref('stg_products') }} as p on p.sku = r.sku
-cross join {{ ref('stg_generation_run') }} as run
+where (r.stock_units <> 0 or r.avg_daily_secondary_units is not null)
+{%- if var('inventory_history_days', none) %}
+    -- deployed copy only (decisions D24): keep the trailing window; local and CI builds keep full history
+    and r.date_day > (select as_of_date from {{ ref('stg_generation_run') }}) - {{ var('inventory_history_days') }}
+{%- endif %}

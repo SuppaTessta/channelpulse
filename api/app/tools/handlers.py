@@ -10,17 +10,18 @@ GOVERNED = "governed_metric"
 AD_HOC = "ad_hoc_sql_verify"
 
 # Latest snapshot per (detector, entity) on or before as_of, kept if the entity was flagged by then. A lot_scan
-# entity is a (resin lot, failure mode) pair; failure_mode is null for the other detectors. The table has its own
+# entity is a (resin lot, failure mode) pair and a stuffing entity a (distributor, scheme category) pair; the
+# other keys are null for the other detectors. The table has its own
 # region RLS policy, like the distributor-level marts.
 ANOMALIES_SQL = """\
 with params as (
     select coalesce(%(as_of)s::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of
 ),
 latest as (
-    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode) f.*
+    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*
     from marts.mart_anomaly_flags f, params p
     where f.snapshot_date <= p.as_of
-    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.snapshot_date desc
+    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc
 )
 select p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,
        l.first_flag_date, l.effect_size, l.p_value, l.details

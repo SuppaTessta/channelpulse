@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  check:   # fast: lint, unit tests without a database, web build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -23,3 +23,40 @@ jobs:
       - run: make lint
       - run: make test
       - run: npm --prefix web run build
+
+  warehouse:   # end to end: seed -> dbt build + tests -> detectors -> DB-backed tests -> eval
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: channelpulse
+          POSTGRES_PASSWORD: channelpulse
+          POSTGRES_DB: channelpulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U channelpulse" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      # Present only if the repo has the secret; without it the eval validates its golden answers and reports not_run.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: make setup
+      - run: make seed
+      - run: make dbt
+      - run: make test   # now with the database: the DB-marked tests run instead of skipping
+      - run: make eval
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            evals/results/latest.json
+            detectors/results/latest.json

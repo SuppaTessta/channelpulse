@@ -16,7 +16,7 @@ DBT := "$(VENV_BIN)/dbt"
 DBT_ARGS := --project-dir warehouse --profiles-dir warehouse
 API_PORT ?= 8000
 
-.PHONY: setup lock up down seed dbt-debug api web lint test
+.PHONY: setup lock up down seed dbt detect roles semantic acceptance eval dbt-debug api web lint test
 
 setup:  ## create .venv + install Python and web deps
 	$(BOOTSTRAP_PY) -m venv .venv
@@ -31,6 +31,26 @@ up:  ## start Postgres and wait until healthy
 
 seed:  ## synthetic data -> raw schema at the pinned as-of (idempotent: rebuilds the schema)
 	$(PY) generator/generate.py
+
+dbt:  ## build + test the warehouse, run the pre-registered detectors, (re)apply the API's DB roles
+	$(DBT) build --no-partial-parse $(DBT_ARGS)
+	$(PY) -m detectors.run
+	$(PY) api/app/admin.py roles
+
+detect:  ## re-run the pre-registered detectors -> marts.mart_anomaly_flags + detectors/results/latest.json
+	$(PY) -m detectors.run
+
+roles:  ## least-privilege roles: agent (read marts) and ops (write traces); idempotent
+	$(PY) api/app/admin.py roles
+
+semantic:  ## re-parse warehouse/semantic_models into the API's shipped semantic manifest
+	$(PY) api/app/admin.py semantic
+
+acceptance:  ## black-box check of the planted anomalies against generator/ground_truth.yaml (slow: extra seeds)
+	$(PY) generator/acceptance.py
+
+eval:  ## golden-set eval of the Ask agent -> evals/results/latest.json (needs Anthropic credentials to score)
+	$(PY) evals/run_eval.py
 
 down:
 	docker compose down

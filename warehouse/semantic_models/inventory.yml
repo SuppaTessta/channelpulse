@@ -1,23 +1,25 @@
 version: 2
 
 # Governed metrics (PLAN §7): channel_days_of_stock, stockout_rate, overstock_rate.
-# Stock is a snapshot: over a period it is read on the period's last day (non-additive over date_day).
+# Served from the weekly mart (decisions D24). Stock is a snapshot: over a period it is read on the period's
+# last week (non-additive over week_start); the rates are exact day counts.
 
 models:
-  - name: fct_channel_inventory_daily
+  - name: mart_channel_inventory_weekly
     description: >-
-      Implied channel stock per distributor × sku × day: opening stock + primary receipts − reported secondary.
-      is_stockout / is_overstock mark days below 7 / above 60 days of stock; days with no sell-out in the
-      trailing 30 days have no days of stock and are excluded from both rates. RLS by region.
+      Channel stock per distributor × sku × ISO week: the snapshot on the week's last available day (the as-of date
+      for the week in progress), plus counts of days measured, stock-out days (under 7 days of stock) and overstock
+      days (over 60). Days with no sell-out in the trailing 30 days have no days of stock and count toward neither
+      rate. RLS by region (via the distributor).
     semantic_model:
       enabled: true
       name: channel_inventory
-    agg_time_dimension: date_day
+    agg_time_dimension: week_start
     derived_semantics:
       entities:
-        - name: inventory_day
+        - name: inventory_week
           type: primary
-          expr: "distributor_id || '|' || sku || '|' || date_day::text"
+          expr: "distributor_id || '|' || sku || '|' || week_start::text"
       dimensions:
         - name: has_days_of_stock
           type: categorical
@@ -25,17 +27,18 @@ models:
     data_tests:
       - unique:
           arguments:
-            column_name: "distributor_id || '|' || sku || '|' || date_day"
+            column_name: "distributor_id || '|' || sku || '|' || week_start"
     columns:
       - name: distributor_id
         entity: {type: foreign, name: distributor}
       - name: sku
         entity: {type: foreign, name: product}
-      - name: date_day
+      - name: week_start
+        granularity: week
+        dimension: {type: time}
+      - name: snapshot_date
         granularity: day
         dimension: {type: time}
-      - name: is_settled
-        dimension: {type: categorical}
     metrics:
       - name: channel_stock_units
         label: Channel stock (units)
@@ -43,9 +46,9 @@ models:
         type: simple
         agg: sum
         expr: stock_units
-        filter: "{{ Dimension('inventory_day__has_days_of_stock') }}"
+        filter: "{{ Dimension('inventory_week__has_days_of_stock') }}"
         non_additive_dimension:
-          name: date_day
+          name: week_start
           window_agg: max
       - name: avg_daily_sellout_units
         label: Avg daily sell-out (units, trailing 30d)
@@ -53,9 +56,9 @@ models:
         type: simple
         agg: sum
         expr: avg_daily_secondary_units
-        filter: "{{ Dimension('inventory_day__has_days_of_stock') }}"
+        filter: "{{ Dimension('inventory_week__has_days_of_stock') }}"
         non_additive_dimension:
-          name: date_day
+          name: week_start
           window_agg: max
       - name: channel_days_of_stock
         label: Channel days of stock
@@ -70,19 +73,19 @@ models:
         description: Distributor × SKU × days that have a days-of-stock value.
         type: simple
         agg: sum
-        expr: "case when days_of_stock is not null then 1 else 0 end"
+        expr: days_measured
       - name: stockout_days
         label: Stock-out days
         description: Distributor × SKU × days with under 7 days of stock.
         type: simple
         agg: sum
-        expr: "case when is_stockout then 1 else 0 end"
+        expr: stockout_days
       - name: overstock_days
         label: Overstock days
         description: Distributor × SKU × days with over 60 days of stock.
         type: simple
         agg: sum
-        expr: "case when is_overstock then 1 else 0 end"
+        expr: overstock_days
       - name: stockout_rate
         label: Stock-out rate
         description: Share of distributor-SKU-days with channel days of stock below 7.

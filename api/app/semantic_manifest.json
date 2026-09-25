@@ -99,6 +99,50 @@
         "meta": {}
       },
       "datatype": null,
+      "description": "claims_per_1000_units restricted to base cracks, for a batch, plant, SKU, resin lot or manufacture period.",
+      "filter": null,
+      "label": "Base-crack claims per 1,000 units",
+      "metadata": null,
+      "name": "base_crack_claims_per_1000_units",
+      "time_granularity": null,
+      "type": "derived",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "1000 * claims / nullif(units, 0)",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": null,
+        "metrics": [
+          {
+            "alias": "claims",
+            "filter": null,
+            "name": "cohort_base_crack_claims",
+            "offset_to_grain": null,
+            "offset_window": null
+          },
+          {
+            "alias": "units",
+            "filter": null,
+            "name": "cohort_units_shipped",
+            "offset_to_grain": null,
+            "offset_window": null
+          }
+        ],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
       "description": "(cumulative primary shipped − cumulative secondary sold) ÷ trailing-30-day average daily secondary sales, in units, on the last day of the period.",
       "filter": null,
       "label": "Channel days of stock",
@@ -2295,6 +2339,20 @@
             "time_granularity": "day",
             "validity_params": null
           }
+        },
+        {
+          "config": {
+            "meta": {}
+          },
+          "datatype": null,
+          "description": "",
+          "expr": null,
+          "is_partition": false,
+          "label": null,
+          "metadata": null,
+          "name": "is_settled",
+          "type": "categorical",
+          "type_params": null
         },
         {
           "config": {

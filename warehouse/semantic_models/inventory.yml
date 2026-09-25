@@ -39,6 +39,8 @@ models:
       - name: snapshot_date
         granularity: day
         dimension: {type: time}
+      - name: is_settled
+        dimension: {type: categorical}
     metrics:
       - name: channel_stock_units
         label: Channel stock (units)

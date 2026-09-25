@@ -152,6 +152,16 @@ models:
             alias: claims
           - name: cohort_units_shipped
             alias: units
+      - name: base_crack_claims_per_1000_units
+        label: Base-crack claims per 1,000 units
+        description: claims_per_1000_units restricted to base cracks, for a batch, plant, SKU, resin lot or manufacture period.
+        type: derived
+        expr: 1000 * claims / nullif(units, 0)
+        input_metrics:
+          - name: cohort_base_crack_claims
+            alias: claims
+          - name: cohort_units_shipped
+            alias: units
       - name: cohort_cumulative_claims
         label: Cohort cumulative claims
         type: simple

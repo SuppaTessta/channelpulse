@@ -75,7 +75,7 @@ def test_database_errors_are_tool_errors(monkeypatch):
 
 def test_get_anomalies_binds_as_of_as_a_parameter(fake_db):
     run_tool("get_anomalies", {"as_of_date": "2026-03-01"}, "ALL")
-    assert fake_db.calls == [(ANOMALIES_SQL, {"as_of": "2026-03-01"}, "ALL")]
+    assert fake_db.calls == [(ANOMALIES_SQL, {"as_of": "2026-03-01", "detector": None}, "ALL")]
 
 
 def test_an_unknown_tool_is_a_tool_error():
@@ -133,7 +133,7 @@ FLAGS = """(select * from (values
              ("lot_scan", "L1", "base_crack", "2026-01-11"), ("lot_scan", "L1", "leak", "2026-01-11")])],
 )
 def test_anomalies_are_the_latest_snapshot_per_entity_flagged_by_as_of(as_of, expected):
-    result = readonly_db.run(ANOMALIES_SQL.replace("marts.mart_anomaly_flags", FLAGS), {"as_of": as_of}, "ALL")
+    result = readonly_db.run(ANOMALIES_SQL.replace("marts.mart_anomaly_flags", FLAGS), {"as_of": as_of, "detector": None}, "ALL")
     at = result.columns.index
     rows = [(r[at("detector")], r[at("entity_id")], r[at("failure_mode")], r[at("snapshot_date")]) for r in result.rows]
     assert rows == expected

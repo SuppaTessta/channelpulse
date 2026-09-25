@@ -57,7 +57,10 @@ select
     s.days_of_stock,
     c.days_measured,
     c.stockout_days,
-    c.overstock_days
+    c.overstock_days,
+    -- decisions D12: snapshots inside the reporting horizon still move as late sell-out reports arrive
+    s.snapshot_date <= run.as_of_date - {{ var('secondary_horizon_days') }} as is_settled
 from snapshots as s
 inner join day_counts as c
     on c.distributor_id = s.distributor_id and c.sku = s.sku and c.week_start = s.week_start
+cross join {{ ref('stg_generation_run') }} as run

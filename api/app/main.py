@@ -16,7 +16,7 @@ from app.agent.trace import Trace, write_trace
 from app.db import db_conninfo
 from app.guardrails.rate_limit import enforce_spend_cap, limit_ask_rate
 from app.guardrails.readonly_db import QueryError
-from app.guardrails.region import region_claim
+from app.guardrails.region import ALL_REGIONS, REGIONS, region_claim
 from app.tools import handlers
 
 log = logging.getLogger("channelpulse.api")
@@ -112,9 +112,29 @@ def query_metric(body: MetricQuery, region: Region) -> dict:
     return _governed(handlers.query_metric, body.model_dump(mode="json"), region)
 
 
+Detector = Literal["lot_scan", "installer_scan", "stuffing", "distributor_health"]
+
+
 @app.get("/api/anomalies", response_model=GovernedResult)
-def anomalies(region: Region, as_of: date | None = None) -> dict:
-    return _governed(handlers.get_anomalies, {"as_of_date": as_of}, region)
+def anomalies(region: Region, as_of: date | None = None, detector: Detector | None = None) -> dict:
+    return _governed(handlers.get_anomalies, {"as_of_date": as_of, "detector": detector}, region)
+
+
+class Meta(BaseModel):
+    data_start: date
+    as_of: date
+    provisional_days: int
+    regions: list[str]
+
+
+@app.get("/api/meta", response_model=Meta)
+def meta(region: Region) -> dict:
+    """What clients need to frame the data: its window, the provisional horizon and the valid region claims."""
+    try:
+        window = handlers.data_window(region)
+    except QueryError as e:
+        raise HTTPException(502, f"Query failed: {e}") from e
+    return {**window, "provisional_days": config.PROVISIONAL_DAYS, "regions": [*REGIONS, ALL_REGIONS]}
 
 
 @functools.cache

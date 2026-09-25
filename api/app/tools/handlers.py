@@ -27,6 +27,7 @@ select p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region
        l.first_flag_date, l.effect_size, l.p_value, l.details
 from latest l, params p
 where l.first_flag_date <= p.as_of
+  and (%(detector)s::text is null or l.detector = %(detector)s)
 order by l.detector, l.effect_size desc nulls last, l.entity_id, l.failure_mode"""
 
 
@@ -57,7 +58,18 @@ def run_readonly_sql(tool_input: dict, region: str) -> dict:
 
 
 def get_anomalies(tool_input: dict, region: str) -> dict:
-    return _result(readonly_db.run(ANOMALIES_SQL, {"as_of": tool_input["as_of_date"]}, region), GOVERNED)
+    params = {"as_of": tool_input["as_of_date"], "detector": tool_input.get("detector")}
+    return _result(readonly_db.run(ANOMALIES_SQL, params, region), GOVERNED)
+
+
+META_SQL = "select min(date_day) as data_start, max(date_day) as as_of from marts.dim_date"
+
+
+def data_window(region: str) -> dict:
+    """First and last day with data (the as-of date), read from the time spine."""
+    result = readonly_db.run(META_SQL, {}, region)
+    data_start, as_of = result.rows[0]
+    return {"data_start": data_start, "as_of": as_of}
 
 
 HANDLERS = {

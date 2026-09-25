@@ -17,9 +17,12 @@ STATEMENT_TIMEOUT_MS = int(env("AGENT_STATEMENT_TIMEOUT_MS", "10000"))
 ASK_RATE_PER_MIN = float(env("ASK_RATE_PER_MIN", "6"))
 ASK_RATE_BURST = int(env("ASK_RATE_BURST", "3"))
 TRUST_PROXY = env("TRUST_PROXY") == "1"
+# Sale dates newer than this are still filling in (decisions D12; dbt var secondary_horizon_days).
+PROVISIONAL_DAYS = 17
+
 DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "5.00"))
 
-CORS_ORIGINS = ["http://localhost:3000", *(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip())]
+CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", *(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip())]
 
 # The marts run_readonly_sql may read. The first group is region-filtered by RLS (the two channel-inventory marts
 # look the region up via the distributor; the rest carry a region column).

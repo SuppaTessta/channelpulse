@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from app import main, semantic
 from app.guardrails import readonly_db
+from app.tools import handlers
 
 QUESTION = {"question": "How has DSO moved this year?"}
 DSO_QUERY = {"metric_name": "dso", "filters": [], "group_by": ["month"], "date_range": None}
@@ -129,11 +130,25 @@ def test_a_database_failure_is_502(api, monkeypatch):
 @pytest.mark.parametrize(("query", "as_of"), [("", None), ("?as_of=2026-03-01", dt.date(2026, 3, 1))])
 def test_anomalies_read_as_of_a_date_or_the_latest_snapshot(api, query, as_of):
     response = api.http.get(f"/api/anomalies{query}")
-    assert response.status_code == 200 and api.db.calls[0][1] == {"as_of": as_of}
+    assert response.status_code == 200 and api.db.calls[0][1] == {"as_of": as_of, "detector": None}
+
+
+def test_anomalies_can_be_filtered_to_one_detector(api):
+    assert api.http.get("/api/anomalies?detector=lot_scan").status_code == 200
+    assert api.db.calls[0][1] == {"as_of": None, "detector": "lot_scan"}
+    assert api.http.get("/api/anomalies?detector=everything").status_code == 422
 
 
 def test_a_malformed_as_of_is_422(api):
     assert api.http.get("/api/anomalies?as_of=yesterday").status_code == 422
+
+
+def test_meta_frames_the_data(api, monkeypatch):
+    monkeypatch.setattr(handlers, "data_window", lambda region: {"data_start": "2023-10-01", "as_of": "2026-09-23"})
+    body = api.http.get("/api/meta").json()
+    assert body == {"data_start": "2023-10-01", "as_of": "2026-09-23", "provisional_days": 17,
+                    "regions": ["South Bengal", "North Bengal & Sikkim", "Assam", "North East", "Bihar & Jharkhand",
+                                "Odisha", "ALL"]}
 
 
 def test_the_dashboard_origin_may_call_the_api(api):

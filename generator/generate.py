@@ -25,7 +25,8 @@ Design overview
                       fixed share of its district's installer installs from first_install_date.
   distributor_churn   channel.Channel: sell-out events thinned by the monthly multipliers; phase A orders
                       come from a shadow counterfactual of the account; fates.collections: late payments.
-  quarter_end_stuffing schemes.SchemeProgramme: stuffers, k x trailing-90 window orders, theta drain.
+  quarter_end_stuffing schemes.SchemeProgramme: stuffers, k x trailing-90 window orders, and a drain of
+                      the excess to zero at QE+72 (ground truth's theta rule at flat demand).
 """
 
 import argparse

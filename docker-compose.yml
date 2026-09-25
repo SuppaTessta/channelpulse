@@ -3,6 +3,8 @@
 services:
   postgres:
     image: postgres:17-alpine
+    # Defaults (128 MB buffers, 4 MB work_mem) are sized for tiny servers; the marts' window queries want more.
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "work_mem=32MB", "-c", "effective_cache_size=2GB"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-channelpulse}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-channelpulse}

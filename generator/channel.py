@@ -236,8 +236,8 @@ class Channel:
         qty = np.zeros(self.nc)
         if reviewing.size:
             cells = (reviewing[:, None] * ns + np.arange(ns)).ravel()
-            qty[cells], target = self.policy(cells, self.stock[cells], self.dem_ring[:, cells].sum(axis=0), t)
-            self.schemes.adjust_orders(t, cells, qty, target)
+            qty[cells] = self.policy(cells, self.stock[cells], self.dem_ring[:, cells].sum(axis=0), t)[0]
+            self.schemes.adjust_orders(t, cells, qty)
             if self.shadow is not None and self.churn in reviewing:
                 sh = self.shadow
                 qty[sh["cells"]] = self.policy(sh["cells"], sh["stock"], sh["ring"].sum(axis=0), t)[0]

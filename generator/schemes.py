@@ -3,8 +3,13 @@
 Mechanism (ground_truth.yaml anomalies.quarter_end_stuffing): at each window start the programme fixes
 min_slab_units from the literal trailing-90 primary, picks round(U(15%, 20%) x active) stuffers from the
 eligible accounts weighted by their Beta(2, 8) propensity, and replaces each stuffer's scheme-category ordering
-in the window by k x its trailing-90 daily average over the 15 days, in 1-2 invoices. After quarter end the
-stuffer orders theta = 1 - 15(k - 1)/72 of its trailing-30 sell-out until stock is back at target.
+in the window by k x its trailing-90 daily average over the 15 days, in 1-2 invoices.
+
+After quarter end the excess (window receipts - window sell-out) is drained on a straight line to zero at
+QE + 72: the stuffer runs its normal policy on stock minus the excess still due. With flat demand that is
+exactly ground truth's theta rule, orders = (1 - 15(k - 1)/72) x trailing-30 sell-out, then the normal
+policy. Applied literally to seasonal demand the theta rule never clears: after June windows the normal
+policy itself orders ~0.74x sell-out, so theta ~0.69 barely drains and repeat stuffers carry the excess on.
 """
 
 import math
@@ -26,15 +31,19 @@ class SchemeProgramme:
         self.rows, self.stuffers = [], []
         self.active = None
         self.block = np.zeros(ch.nc, dtype=bool)
-        self.theta = np.zeros(ch.nc)
+        self.excess, self.quarter_end = np.zeros(ch.nc), np.zeros(ch.nc)
         self.orders, self.drain_from = {}, {}
 
     def begin_day(self, t: int):
+        ch = self.ch
         if self.active is not None and t > self.active["end"]:
             self.active = None
             self.block[:] = False
-        for cells, theta in self.drain_from.pop(t, []):
-            self.theta[cells] = theta
+        for cells, start in self.drain_from.pop(t, []):     # t = QE + 1; rings still hold the whole window
+            days = np.arange(start, t)
+            received = ch.prim_ring[days % 90][:, cells].sum(axis=0)
+            sold = ch.sold_ring[days % 30][:, cells].sum(axis=0)
+            self.excess[cells], self.quarter_end[cells] = np.maximum(received - sold, 0), t - 1
         if t in self.cycles:
             self._start(t, self.cycles[t])
 
@@ -75,7 +84,6 @@ class SchemeProgramme:
         record = []
         for d in picked:
             k = k_low + (k_high - k_low) * uniform(ch.seed, H_STUFF, quarter, d, 0)[0]
-            theta = 1 - WINDOW_DAYS * (k - 1) / DRAIN_DAYS
             cats = [c for c in SCHEME_CATS if eligible_cat[c][d]]
             for i, c in enumerate(SCHEME_CATS):
                 if c not in cats:
@@ -83,7 +91,12 @@ class SchemeProgramme:
                 cols = np.flatnonzero(m.sku_cat == c)
                 total = k * daily[c][d] * WINDOW_DAYS
                 pack = m.pack[cols]
-                units = np.round(largest_remainder(round(total), prim90[d, cols]) / pack) * pack
+                # Split by each SKU's true sell-out rate, not its lumpy primary, so every stuffed SKU carries the
+                # same days of excess and drains on the same clock.
+                rate = ch.dem_ring[:, d * ch.ns + cols].sum(axis=0)
+                if rate.sum() <= 0:
+                    continue
+                units = np.round(largest_remainder(round(total), rate) / pack) * pack
                 u = uniform(ch.seed, H_STUFF, quarter, d, 1 + 3 * i + np.arange(3))
                 first = int(u[1] * len(window))
                 plan = [(window[first], units)]
@@ -95,25 +108,27 @@ class SchemeProgramme:
                     self.orders.setdefault(day, []).append((int(d), cols[q > 0], q[q > 0]))
                 cells = d * ch.ns + cols
                 self.block[cells] = True
-                self.drain_from.setdefault(end + 1, []).append((cells, theta))
+                self.drain_from.setdefault(end + 1, []).append((cells, t))
             record.append((int(d), k, [CATEGORIES[c] for c in cats]))
         self.stuffers.append({"fq": cyc["fq"], "n_active": int(active.sum()), "n_eligible": len(eligible), "stuffers": record})
 
-    def adjust_orders(self, t: int, cells: np.ndarray, qty: np.ndarray, target: np.ndarray):
-        """Stuffers skip normal scheme-category orders in the window, then drain at theta x trailing-30 sell-out."""
+    def excess_due(self, cells: np.ndarray, t: int) -> np.ndarray:
+        """Stuffing excess still to drain: falls linearly from quarter end to zero at QE + DRAIN_DAYS."""
+        return self.excess[cells] * np.clip(1 - (t - self.quarter_end[cells]) / DRAIN_DAYS, 0, 1)
+
+    def adjust_orders(self, t: int, cells: np.ndarray, qty: np.ndarray):
+        """Stuffers skip normal scheme-category orders in the window, then order as if the excess still due
+        were not on hand, so the overhang clears by QE + 72 whatever the season."""
         ch = self.ch
         if self.active is not None:
             qty[cells[self.block[cells]]] = 0
-        pos = np.flatnonzero((self.theta[cells] > 0) & ~self.block[cells])   # a new window replaces an old drain
-        if not pos.size:
-            return
-        c = cells[pos]
-        over = ch.stock[c] > target[pos]
-        self.theta[c[~over]] = 0
-        c, tgt = c[over], target[pos][over]
-        want = self.theta[c] * ch.sold_ring[:, c].sum(axis=0) / 30 * (t - ch.last_order[c])
-        pack = ch.pack_cell[c]
-        qty[c] = np.where((want >= ch.ch["reorder_fraction"] * tgt) & (want > 0), np.ceil(want / pack) * pack, 0)
+        pos = np.flatnonzero((self.excess_due(cells, t) > 0) & ~self.block[cells])   # a new window replaces an old drain
+        if pos.size:
+            c = cells[pos]
+            # Excess only sheds when an order is skipped, so size this order on what will still be due at the
+            # next review; otherwise the last order before QE + 72 re-buys the final stretch of the drain.
+            due = self.excess_due(c, t + ch.m.review_period[ch.cell_d[c]] // 2)
+            qty[c] = ch.policy(c, ch.stock[c] - due, ch.dem_ring[:, c].sum(axis=0), t)[0]
 
     def scheduled(self, t: int):
         return self.orders.pop(t, [])

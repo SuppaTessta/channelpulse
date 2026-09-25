@@ -192,7 +192,8 @@ channel:
 entities:
   distributors: {count: 350, tiers: {1: 50, 2: 120, 3: 180}, onboarded_from: 2008-01-01, in_window_share: 0.08, in_window_onboarding: [2023-10-15, 2026-06-30]}
   natural_attrition_starts: [2024-06-03, 2025-01-13, 2025-11-10]   # demand falls to zero over attrition_days
-  retailers: {per_distributor: {1: 60, 2: 30, 3: 15}, home_district_share: 0.8, in_window_share: 0.10, duplicate_name_share: 0.03, onboarded_from: 2010-01-01}
+  retailers: {per_distributor: {1: 60, 2: 30, 3: 15}, home_district_share: 0.8, in_window_share: 0.10, duplicate_name_share: 0.03,
+              exact_copy_share: 0.005, onboarded_from: 2010-01-01}   # near-duplicate variants, then exact copies: ~3% share a name
   sales_reps: {count: 40, hired: [2012-01-01, 2023-03-31]}
   installers: {count: 600, certified_share: 0.55, weight_sigma: 0.6}
 

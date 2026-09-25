@@ -144,6 +144,15 @@ Trade-offs:
 6. Legacy plant stock on 2023-10-01 goes into distributors' opening stock.
 7. The secondary reporting-lag p95 is 19 days, against the 17 assumed by the pre-registered horizon. The horizon stays at 17, and point-in-time visibility still filters on `reported_date`.
 
+**D27. The stuffing drain follows ground truth's outcome, not its literal formula.**
+Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1 − 15(k−1)/72, until stock is back at target. That clears the excess by QE+72 only when demand is flat.
+- After June windows demand falls, and the stuffing-off run is itself destocking at about 0.74× sell-out. θ ≈ 0.69 then barely undercut normal ordering, so the excess never cleared, and repeat stuffers ratcheted to about 100 days of cover. The acceptance suite's S5 check caught this.
+- **New rule:** stuffers run their normal policy while treating the not-yet-drained excess as absent, and that excess falls linearly to zero at QE+72. With flat demand this is exactly θ·s.
+- Also fixed: excess is split across SKUs by true sell-out, not lumpy trailing primary; and drain orders look half a review period ahead, so the last order doesn't re-buy the tail.
+- **Result:**
+  - Non-June cycles end within +1 to +2.8 days of the counterfactual at the next window.
+  - June cycles end about 11–12 days over. Stock sized on the March–June peak meets the monsoon trough, and distributors can't return stock. Clearing that fully would mean changing ground truth's k or θ, which were fixed before generation, so it's reported, not tuned away.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

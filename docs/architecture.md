@@ -9,7 +9,7 @@ flowchart LR
     end
 
     subgraph pg["Postgres 17"]
-        raw[(raw<br/>20 tables, ~1.86M rows)]
+        raw[(raw<br/>20 tables, ~1.84M rows)]
         stg[(staging<br/>1:1 views, dedup)]
         int[(intermediate<br/>calendar, serials, daily series)]
         marts[(marts<br/>dims, facts, cohorts, health,<br/>anomaly flags. RLS by region)]
@@ -17,8 +17,8 @@ flowchart LR
     end
 
     subgraph dbt["warehouse/ (dbt 1.12)"]
-        models[models + 160 tests]
-        sem[semantic_models/<br/>13 semantic models, 49 metrics]
+        models[39 models + 123 tests]
+        sem[semantic_models/<br/>13 semantic models, 50 metrics]
     end
 
     det[detectors/<br/>pre-registered scans]

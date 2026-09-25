@@ -7,6 +7,7 @@ registration fields (install_date, pincode, registered_via, installer_id) with _
 the registration date is visible.
 """
 
+import copy
 import datetime as dt
 from collections import Counter
 from functools import cache
@@ -15,7 +16,10 @@ import numpy as np
 import pytest
 
 import generate
+from channel import Channel
+from common import Calendar
 from load import tsv
+from master import CATEGORIES, build_master
 
 SCALE = 0.05
 AS_OF = dt.date(2025, 9, 30)      # resin-lot claims, the decoy and every stuffing cycle so far are in range
@@ -126,3 +130,38 @@ def test_claim_only_anomalies_change_nothing_but_claims(anomaly):
         if name != "warranty_claims":
             assert rows(full[name]) == rows(off[name]), name
     assert rows(full["warranty_claims"]) != rows(off["warranty_claims"])
+
+
+class _StuffingProbe(Channel):
+    """Records the first cycle's stuffers' excess days of stock (stock / trailing-28 demand) on given days."""
+
+    def __init__(self, *args, marks):
+        super().__init__(*args)
+        self.marks, self.cohort, self.dos = marks, None, {}
+
+    def _day(self, t):
+        super()._day(t)
+        if self.cohort is None and self.schemes.stuffers:
+            self.cohort = np.concatenate([d * self.ns + np.flatnonzero(self.m.sku_cat == CATEGORIES.index(c))
+                                          for d, _, cats in self.schemes.stuffers[0]["stuffers"] for c in cats])
+        if t in self.marks:
+            self.dos[t] = self.stock[self.cohort].sum() / (self.dem_ring[:, self.cohort].sum() / 28)
+
+
+def test_stuffing_overhang_clears_by_quarter_end_plus_72():
+    """With smooth demand (single-pack purchases, so stock can always be shed by skipping orders) the first
+    cycle's stuffers are still overstocked against a stuffing-off run at QE+30 and back within about a day of
+    it by QE+72, ground truth's cleared_by. Real purchase lots are too lumpy at reduced scale to test this."""
+    cfg = copy.deepcopy(CFG)
+    for lot in cfg["catalog"]["lots"].values():
+        lot.update(pack=1, packs=1)
+    cfg["catalog"]["lot_overrides"] = {}
+    cfg["demand"].update(lot_tier_factor={1: 1, 2: 1, 3: 1}, event_dispersion=50.0)
+    cal = Calendar(GT["anchor"]["legacy_serial_start"], GT["anchor"]["as_of"])
+    qe = cal.day(GT["anomalies"]["quarter_end_stuffing"]["cycles"][0]["end"])
+    on = _StuffingProbe(build_master(cfg, GT, cal), cfg, GT, cal, qe + 72, set(), SCALE, marks=(qe + 30, qe + 72)).run()
+    off = _StuffingProbe(build_master(cfg, GT, cal), cfg, GT, cal, qe + 72, {"quarter_end_stuffing"}, SCALE, marks=on.marks)
+    off.cohort = on.cohort                            # the same accounts, never stuffing
+    off.run()
+    assert on.dos[qe + 30] - off.dos[qe + 30] >= 3
+    assert abs(on.dos[qe + 72] - off.dos[qe + 72]) <= 1

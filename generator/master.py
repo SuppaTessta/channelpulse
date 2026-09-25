@@ -205,6 +205,9 @@ def _retailers(m, cfg, gt, cal, rng):
                 lambda s: s.upper(), lambda s: s.replace(".", "")]
     for r in rng.choice(n, round(ent["duplicate_name_share"] * n / 2), replace=False):
         ret_names[r] = variants[rng.integers(len(variants))](ret_names[rng.integers(n)])
+    copies = np.random.default_rng(np.random.SeedSequence([gt["seed"], MASTER, 1]))   # own stream: later master draws stay put
+    for r, source in zip(copies.choice(n, round(ent["exact_copy_share"] * n), replace=False), copies.integers(0, n, n)):
+        ret_names[r] = ret_names[source]
     m.ret_name = ret_names
 
 

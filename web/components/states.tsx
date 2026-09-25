@@ -29,6 +29,13 @@ export function describeError(error: ApiError): { title: string; body: string; i
       icon: icon(Database),
     };
   }
+  if (error.status === 502 && detail.includes("statement timeout")) {
+    return {
+      title: "The warehouse query timed out",
+      body: "The database stopped this query at the API's time limit. Retry, or narrow the date range to scan less.",
+      icon: icon(Hourglass),
+    };
+  }
   if (error.status === 502 && detail.includes("database is unavailable")) {
     return { title: "The database isn't reachable", body: "The API is up but can't reach Postgres. Check that the database is running, then retry.", icon: icon(Database) };
   }

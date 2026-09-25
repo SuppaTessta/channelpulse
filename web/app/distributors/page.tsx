@@ -12,7 +12,7 @@ import { getAnomalies, getDataWindow, getMetrics, query, type Metric, type Resul
 import { parseRegion, type Region } from "@/lib/config";
 import { toISODate } from "@/lib/dates";
 import { fmtDate, fmtRange } from "@/lib/format";
-import { anomaliesDefQuery, detailPairs, fallbackMetric, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
+import { anomaliesDefQuery, fallbackMetric, isCurrentFlag, latestSnapshot, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
 import { param, resolvePeriod, sharedQuery, type Period, type SearchParams } from "@/lib/params";
 import { num, records, str } from "@/lib/table";
 
@@ -44,6 +44,7 @@ async function DistributorList({ period, region, catalog, sp }: { period: Period
     tier: str(r.distributor__tier) ?? "",
     sales: num(r.primary_sales_value),
   }));
+  const latest = anomalies.ok ? latestSnapshot(anomalies.value.rows) : null;
   const flags: RiskFlag[] | null = anomalies.ok
     ? anomalies.value.rows
         .filter((a) => a.detector === "distributor_health")
@@ -52,18 +53,19 @@ async function DistributorList({ period, region, catalog, sp }: { period: Period
           region: a.region,
           firstFlag: toISODate(a.first_flag_date),
           snapshot: toISODate(a.snapshot_date),
-          effect: num(a.effect_size),
-          pValue: num(a.p_value),
-          details: detailPairs(a.details),
+          week: toISODate(a.details?.week_start),
+          // For this detector the effect size is the health score in the flagged week; the details carry its parts.
+          score: num(a.effect_size),
+          trendScore: num(a.details?.score_secondary_trend),
+          current: isCurrentFlag(a, latest),
         }))
     : null;
   const cat = catalog.ok ? catalog.value : {};
   const sales = cat.primary_sales_value ?? fallbackMetric("primary_sales_value");
   const atRisk = cat.at_risk_distributors;
-  const snapshot = anomalies.ok ? anomalies.value.asOf : null;
   const riskRule = [
     atRisk?.description ?? "Distributors the pre-registered distributor-health detector has flagged.",
-    snapshot ? `Detector snapshot on or before ${fmtDate(period.range.to)}, latest ${fmtDate(snapshot)}.` : `Flags as of ${fmtDate(period.range.to)}.`,
+    latest ? `At risk means flagged in the detector's latest weekly snapshot, ${fmtDate(latest)} (the last on or before ${fmtDate(period.range.to)}).` : "",
   ].join(" ");
 
   return (

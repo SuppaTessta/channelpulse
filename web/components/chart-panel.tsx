@@ -52,11 +52,12 @@ export function ChartPanel({
             {actions}
           </div>
         </header>
-        <Tabs.Content value="chart" className="min-w-0 outline-none">
+        {/* Not a tab stop: the chart itself (or the error state inside) is focusable where needed. */}
+        <Tabs.Content value="chart" tabIndex={-1} className="min-w-0 outline-none">
           {chart}
         </Tabs.Content>
         {table ? (
-          <Tabs.Content value="table" className="min-w-0 outline-none">
+          <Tabs.Content value="table" className="min-w-0 rounded-control outline-offset-2">
             {table}
           </Tabs.Content>
         ) : null}

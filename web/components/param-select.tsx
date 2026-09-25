@@ -59,7 +59,7 @@ export function ParamSelect({
           <Select.Content
             position="popper"
             sideOffset={4}
-            className="z-50 max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-control border border-line bg-raised shadow-raised"
+            className="cp-drop z-50 max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-control border border-line bg-raised shadow-raised"
           >
             <Select.Viewport className="p-1">
               {[{ value: ALL, label: allLabel }, ...options].map((o) => (

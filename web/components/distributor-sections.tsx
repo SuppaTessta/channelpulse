@@ -5,14 +5,14 @@ import { fmtDate, fmtRange, formatValue } from "@/lib/format";
 import { fallbackMetric, metricKind, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
 import type { Period } from "@/lib/params";
 import { alignSeries, coverageText, timeBuckets } from "@/lib/series";
-import { column, num, records, scalar, str } from "@/lib/table";
+import { num, records, scalar, str } from "@/lib/table";
 import { ChartPanel } from "./chart-panel";
 import { TimeChart } from "./charts/time-chart";
 import { DataTable } from "./data-table";
 import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { EmptyState, ErrorState } from "./states";
-import { Badge, cx, ICON } from "./ui";
+import { Badge, ICON } from "./ui";
 
 type Ctx = { period: Period; win: DataWindow; region: Region; catalog: Result<Record<string, Metric>>; filters: Filter[] };
 const metricOf = (catalog: Ctx["catalog"], name: string) => (catalog.ok ? catalog.value[name] : undefined) ?? fallbackMetric(name);
@@ -26,7 +26,9 @@ function riskThreshold(catalog: Ctx["catalog"]): number | null {
   return m ? Number(m[1]) : null;
 }
 
-export async function HealthPanel({ ctx, flag, className }: { ctx: Ctx; flag: Anomaly | undefined; className?: string }) {
+const flagWeek = (a: Anomaly) => String((a.details?.week_start as string | undefined) ?? a.snapshot_date).slice(0, 10);
+
+export async function HealthPanel({ ctx, flag, pastFlag, className }: { ctx: Ctx; flag: Anomaly | undefined; pastFlag: Anomaly | undefined; className?: string }) {
   const names = [HEALTH, ...COMPONENTS];
   const title = "Distributor health score";
   const r = await queryAll(
@@ -78,8 +80,10 @@ export async function HealthPanel({ ctx, flag, className }: { ctx: Ctx; flag: An
                 <Badge tone="danger" className="w-fit" icon={<WarningDiamond size={14} {...ICON} aria-hidden />}>
                   At risk since {flag.first_flag_date ? fmtDate(String(flag.first_flag_date).slice(0, 10)) : "this snapshot"}
                 </Badge>
+              ) : pastFlag ? (
+                <p className="text-xs text-muted">Not at risk now. The detector last flagged it in the week of {fmtDate(flagWeek(pastFlag))}.</p>
               ) : (
-                <p className="text-xs text-subtle">Not flagged at risk by the detector for this range.</p>
+                <p className="text-xs text-subtle">The distributor-health detector has never flagged it.</p>
               )}
               <p className="max-w-[40ch] text-xs text-muted">{metricOf(ctx.catalog, HEALTH).description}</p>
             </div>
@@ -106,7 +110,7 @@ export async function HealthPanel({ ctx, flag, className }: { ctx: Ctx; flag: An
                     </p>
                     <span className="shrink-0 text-xs text-subtle">{weight(COMPONENTS[i]) ?? ""}</span>
                   </div>
-                  <TimeChart buckets={buckets} series={[s]} mark="line" kind="score" yDomain={[0, 100]} height={104} title={s.label} grain="week" />
+                  <TimeChart buckets={buckets} series={[s]} mark="line" kind="score" yDomain={[0, 100]} height={104} title={s.label} grain="week" footnote={false} />
                 </div>
               ))}
             </div>
@@ -157,23 +161,24 @@ export async function Receivables({ ctx }: { ctx: Ctx }) {
 const SCHEME = ["stuffing_rate_ratio", "scheme_concentration_ratio", "stuffing_flags"];
 const QUARTER = "distributor_scheme_window__fiscal_quarter_label";
 const CATEGORY = "distributor_scheme_window__category";
+const COMPLETE = "distributor_scheme_window__is_window_complete";
 
 export async function SchemePanel({ ctx, className }: { ctx: Ctx; className?: string }) {
   const title = "Scheme participation";
   const subtitle = `Quarter-end scheme windows starting ${fmtRange(ctx.period.range)}`;
   const r = await queryAll(
-    SCHEME.map((name) => ({ metric_name: name, filters: ctx.filters, group_by: [QUARTER, CATEGORY], date_range: { start: ctx.period.range.from, end: ctx.period.range.to } })),
+    SCHEME.map((name) => ({ metric_name: name, filters: ctx.filters, group_by: [QUARTER, CATEGORY, COMPLETE], date_range: { start: ctx.period.range.from, end: ctx.period.range.to } })),
     ctx.region,
   );
   if (!r.ok) return <ChartPanel id="scheme" title={title} subtitle={subtitle} className={className} chart={<ErrorState compact error={r.error} />} />;
 
-  const rows = new Map<string, { quarter: string; category: string; values: (number | null)[] }>();
+  const rows = new Map<string, { quarter: string; category: string; open: boolean; values: (number | null)[] }>();
   r.value.forEach((q, i) => {
     for (const rec of records(q.result.data)) {
       const quarter = str(rec[QUARTER]) ?? "";
       const category = str(rec[CATEGORY]) ?? "";
       const key = `${quarter}|${category}`;
-      const row = rows.get(key) ?? { quarter, category, values: [null, null, null] };
+      const row = rows.get(key) ?? { quarter, category, open: rec[COMPLETE] === false, values: [null, null, null] };
       row.values[i] = num(rec[SCHEME[i]]);
       rows.set(key, row);
     }
@@ -223,7 +228,10 @@ export async function SchemePanel({ ctx, className }: { ctx: Ctx; className?: st
               <tbody>
                 {sorted.map((row) => (
                   <tr key={`${row.quarter}|${row.category}`} className="border-b border-line last:border-0">
-                    <td className="px-3 py-2 whitespace-nowrap text-ink">{row.quarter}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-ink">
+                      {row.quarter}
+                      {row.open ? <span className="block text-xs text-subtle">Window still open</span> : null}
+                    </td>
                     <td className="px-3 py-2 text-muted capitalize">{row.category}</td>
                     <td className="px-3 py-2 text-right text-ink">{formatValue(metricKind(SCHEME[0]), row.values[0])}</td>
                     <td className="px-3 py-2 text-right text-ink">{formatValue(metricKind(SCHEME[1]), row.values[1])}</td>
@@ -279,7 +287,7 @@ export async function loadProfile(id: string, region: Region) {
   return { ok: true as const, value: { profile, query: r.value } };
 }
 
-export function ProfileFacts({ profile, flag }: { profile: Profile; flag: Anomaly | undefined }) {
+export function ProfileFacts({ profile, flag, pastFlag }: { profile: Profile; flag: Anomaly | undefined; pastFlag: Anomaly | undefined }) {
   const facts: [string, string][] = [
     ["District", profile.district],
     ["State", profile.state],
@@ -296,9 +304,11 @@ export function ProfileFacts({ profile, flag }: { profile: Profile; flag: Anomal
           <Badge tone="danger" icon={<WarningDiamond size={12} {...ICON} aria-hidden />}>
             At risk
           </Badge>
+        ) : pastFlag ? (
+          <Badge tone="neutral">Flagged at risk in the week of {fmtDate(flagWeek(pastFlag))}</Badge>
         ) : null}
       </div>
-      <dl className={cx("grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:flex sm:flex-wrap")}>
+      <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         {facts
           .filter(([, v]) => v)
           .map(([k, v]) => (
@@ -312,4 +322,3 @@ export function ProfileFacts({ profile, flag }: { profile: Profile; flag: Anomal
   );
 }
 
-export { column };

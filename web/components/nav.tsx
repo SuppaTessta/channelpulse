@@ -111,8 +111,8 @@ export function MobileNav() {
         <List size={22} {...ICON} aria-hidden />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgb(10_12_14/0.4)] md:hidden" />
-        <Dialog.Content className="fixed inset-x-0 top-0 z-50 border-b border-line bg-raised px-4 pt-3 pb-5 shadow-raised md:hidden">
+        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(10_12_14/0.4)] md:hidden" />
+        <Dialog.Content className="cp-drop fixed inset-x-0 top-0 z-50 border-b border-line bg-raised px-4 pt-3 pb-5 shadow-raised md:hidden">
           <div className="mb-3 flex items-center justify-between">
             <Dialog.Title className="flex items-center gap-2 text-[15px] font-semibold text-ink">
               <Pulse size={22} {...ICON} className="text-accent" aria-hidden />

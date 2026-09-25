@@ -32,6 +32,25 @@ export type Query = { request: MetricQuery; region: Region; result: Governed };
 
 const TIMEOUT_MS = 20_000;
 
+// A page runs about 25 governed queries. Fired all at once they contend in Postgres and the heavy ones (weekly
+// stock snapshots) pass the API's 5 s statement timeout, so at most this many calls run at a time per server process.
+// ponytail: an in-process FIFO; a shared limit across instances would need the API to queue instead.
+const MAX_CONCURRENT = 4;
+let running = 0;
+const waiting: (() => void)[] = [];
+
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (running < MAX_CONCURRENT) running++;
+  else await new Promise<void>((resolve) => waiting.push(resolve)); // the finishing call hands its slot over
+  try {
+    return await fn();
+  } finally {
+    const next = waiting.shift();
+    if (next) next();
+    else running--;
+  }
+}
+
 async function errorDetail(res: Response): Promise<string> {
   try {
     const body = await res.json();
@@ -46,7 +65,34 @@ async function errorDetail(res: Response): Promise<string> {
   }
 }
 
-async function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+// A drill-down or filter change re-renders the whole page on the server, so without this every click re-ran every
+// governed query on it (12 on /quality). Successful results are reused for a minute; the warehouse refreshes daily.
+// ponytail: per-process memory, cleared wholesale at MAX_CACHED; a shared cache would need Redis or the API's help.
+const CACHE_MS = 60_000;
+const MAX_CACHED = 500;
+const recent = new Map<string, { at: number; value: Promise<Result<unknown>> }>();
+
+function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+  const key = `${region} ${init.method ?? "GET"} ${endpoint} ${init.body ?? ""}`;
+  const hit = recent.get(key);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as Promise<Result<T>>;
+  if (recent.size >= MAX_CACHED) recent.clear();
+  const value = callOnce<T>(endpoint, init, region);
+  recent.set(key, { at: Date.now(), value });
+  value.then((r) => !r.ok && recent.delete(key)); // failures are never reused: Retry must really retry
+  return value;
+}
+
+function callOnce<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+  return withSlot(async () => {
+    const first = await send<T>(endpoint, init, region);
+    // A statement timeout under contention is usually transient: one retry, then the error is shown as it is.
+    const transient = !first.ok && first.error.status === 502 && first.error.detail.includes("statement timeout");
+    return transient ? send<T>(endpoint, init, region) : first;
+  });
+}
+
+async function send<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
       ...init,
@@ -57,11 +103,12 @@ async function call<T>(endpoint: string, init: RequestInit & { next?: { revalida
     return { ok: true, value: (await res.json()) as T };
   } catch (e) {
     const timedOut = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+    const cause = (e as { cause?: { code?: string } })?.cause?.code;
     return {
       ok: false,
       error: {
         kind: timedOut ? "timeout" : "unreachable",
-        detail: timedOut ? `No response within ${TIMEOUT_MS / 1000} seconds.` : `Couldn't connect to ${API_URL}.`,
+        detail: timedOut ? `No response within ${TIMEOUT_MS / 1000} seconds.` : `Couldn't connect to ${API_URL}${cause ? ` (${cause})` : ""}.`,
         endpoint,
       },
     };

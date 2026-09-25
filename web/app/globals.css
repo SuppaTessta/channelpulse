@@ -176,12 +176,54 @@
   }
 }
 
+/* The top bar is sticky from 768px (two rows until 1024px): keep focused and anchored content clear of it. */
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 112px;
+  }
+}
+@media (min-width: 1024px) {
+  html {
+    scroll-padding-top: 72px;
+  }
+}
+
 /* The previous render stays on screen while filters refetch (dataviz: refetch keeps the frame). */
 [data-pending="true"] [data-dim] {
   opacity: 0.55;
 }
 [data-dim] {
   transition: opacity 180ms var(--ease-out);
+}
+
+/* Disclosures enter in 150-200 ms and leave at once (DESIGN.md motion 3). Reduced motion zeroes these below. */
+@keyframes cp-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes cp-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes cp-slide {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.cp-fade[data-state="open"] {
+  animation: cp-fade 150ms var(--ease-out);
+}
+.cp-drop[data-state="open"],
+.cp-drop[data-state="delayed-open"],
+.cp-drop[data-state="instant-open"] {
+  animation: cp-drop 160ms var(--ease-out);
+}
+.cp-slide[data-state="open"] {
+  animation: cp-slide 200ms var(--ease-out);
 }
 
 /* Observable Plot output: tokens in, library defaults out. */

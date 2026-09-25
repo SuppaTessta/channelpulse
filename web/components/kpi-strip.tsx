@@ -22,7 +22,8 @@ const SPANS = ["md:col-span-2", "md:col-span-2", "md:col-span-2", "md:col-span-3
 
 async function load(name: string, { period, region }: Ctx): Promise<Loaded> {
   const { range, prior, priorCovered } = period;
-  const grain: Grain = daysBetween(range.from, range.to) <= 120 ? "week" : "month";
+  // Weekly up to about half a year: the channel-stock chart asks for the same weekly query, so the two share one call.
+  const grain: Grain = daysBetween(range.from, range.to) <= 190 ? "week" : "month";
   const [current, priorResult, trend] = await Promise.all([
     query({ metric_name: name, date_range: { start: range.from, end: range.to } }, region),
     priorCovered ? query({ metric_name: name, date_range: { start: prior.from, end: prior.to } }, region) : Promise.resolve(null),

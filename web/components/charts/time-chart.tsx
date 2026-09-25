@@ -22,6 +22,8 @@ export type ChartSeries = { key: string; label: string; slot: number | "deemph";
 type Geometry = { xs: number[]; y: (v: number) => number; top: number; bottom: number; left: number; right: number; step: number };
 
 const MARGIN_BOTTOM = 28;
+/** A surface-coloured outline behind chart text, so a label stays legible where a line crosses it. */
+const HALO = { stroke: "var(--surface)", strokeWidth: 3, paintOrder: "stroke" } as const;
 
 /** Partial periods, and provisional ones for metrics built on sell-out, draw lighter or dashed. */
 const isDim = (b: Bucket, s: ChartSeries) => !!b.partial || (s.horizonBound && b.provisional);
@@ -38,6 +40,7 @@ export function TimeChart({
   grain,
   endLabels = true,
   refLine,
+  footnote = true,
 }: {
   buckets: Bucket[];
   series: ChartSeries[];
@@ -51,11 +54,14 @@ export function TimeChart({
   endLabels?: boolean;
   /** A labelled threshold, such as the at-risk score. Drawn in the danger colour with its label, never colour alone. */
   refLine?: { value: number; label: string };
+  /** The note naming partial periods. Small multiples leave it to the chart they sit under. */
+  footnote?: boolean;
 }) {
   const [hostRef, width] = useWidth<HTMLDivElement>();
   const plotRef = useRef<HTMLDivElement>(null);
   const [geom, setGeom] = useState<Geometry | null>(null);
   const [active, setActive] = useState<number | null>(null);
+  const [failed, setFailed] = useState(false);
   const n = buckets.length;
   const firstProvisional = series.some((s) => s.horizonBound) ? buckets.findIndex((b) => b.provisional) : -1;
   const dim = (i: number, s: ChartSeries) => isDim(buckets[i], s);
@@ -67,7 +73,7 @@ export function TimeChart({
       const host = plotRef.current;
       if (cancelled || !host) return;
       const values = series.flatMap((s) => s.values.filter((v): v is number => v != null));
-      const { domain, ticks } = niceScale(values, height < 180 ? 3 : 4, yDomain);
+      const { domain, ticks } = niceScale(values, height < 180 ? 3 : 4, yDomain, kind === "count");
       const marginLeft = Math.max(...ticks.map((t) => labelWidth(formatTick(kind, t)))) + 12;
       const marginTop = firstProvisional >= 0 ? 22 : 10;
       const plotH = height - marginTop - MARGIN_BOTTOM;
@@ -109,8 +115,8 @@ export function TimeChart({
         );
       }
       marks.push(Plot.gridY(ticks, { stroke: "var(--grid)", strokeOpacity: 1 }));
-      marks.push(Plot.axisY(ticks, { tickFormat: (d: number) => formatTick(kind, d), tickSize: 0, tickPadding: 8, fill: "var(--text-subtle)", fontSize: 12 }));
-      marks.push(Plot.axisX(tickIdx, { tickFormat: (i: number) => tickText.get(i) ?? "", tickSize: 0, tickPadding: 10, fill: "var(--text-subtle)", fontSize: 12 }));
+      marks.push(Plot.axisY(ticks, { tickFormat: (d: number) => formatTick(kind, d), tickSize: 0, tickPadding: 8, fill: "var(--text-subtle)", fontSize: 12, label: null }));
+      marks.push(Plot.axisX(tickIdx, { tickFormat: (i: number) => tickText.get(i) ?? "", tickSize: 0, tickPadding: 10, fill: "var(--text-subtle)", fontSize: 12, label: null }));
 
       if (mark === "bar") {
         const gap = 2;
@@ -148,7 +154,7 @@ export function TimeChart({
           if (end) {
             marks.push(Plot.dot([end], { x: "i", y: "v", r: 4, fill: stroke, stroke: "var(--surface)", strokeWidth: 2 }));
             if (showEnds) {
-              marks.push(Plot.text([end], { x: "i", y: "v", text: "text", dx: 9, textAnchor: "start", fill: "var(--text)", fontSize: 12, fontWeight: 600 }));
+              marks.push(Plot.text([end], { x: "i", y: "v", text: "text", dx: 9, textAnchor: "start", fill: "var(--text)", fontSize: 12, fontWeight: 600, ...HALO }));
             }
           }
         });
@@ -157,7 +163,7 @@ export function TimeChart({
       if (refLine && refLine.value >= domain[0] && refLine.value <= domain[1]) {
         marks.push(Plot.ruleY([refLine.value], { stroke: "var(--danger)", strokeOpacity: 0.7 }));
         marks.push(
-          Plot.text([refLine], { x: () => -0.5, y: "value", text: "label", dy: -7, textAnchor: "start", fill: "var(--danger)", fontSize: 11 }),
+          Plot.text([refLine], { x: () => -0.5, y: "value", text: "label", dy: -7, dx: 4, textAnchor: "start", fill: "var(--danger)", fontSize: 11, ...HALO }),
         );
       }
 
@@ -183,11 +189,14 @@ export function TimeChart({
         right: marginLeft + plotW,
         step,
       });
+    }).catch((error: unknown) => {
+      console.error(`Chart "${title}" could not be drawn`, error);
+      if (!cancelled) setFailed(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [width, n, buckets, series, mark, barMode, kind, yDomain, height, endLabels, firstProvisional, refLine]);
+  }, [width, n, buckets, series, mark, barMode, kind, yDomain, height, endLabels, firstProvisional, refLine, title]);
 
   const pick = (e: PointerEvent<HTMLDivElement>) => {
     if (!geom) return;
@@ -213,14 +222,15 @@ export function TimeChart({
     series.map((s) => `${s.label} ${formatValue(kind, s.values[i])}${dim(i, s) && buckets[i].provisional && s.horizonBound ? ", provisional" : ""}`).join("; ");
   const last = n - 1;
   const aria = n
-    ? `${title}. ${n} ${grain}${n === 1 ? "" : "s"}, ${buckets[0].label} to ${buckets[last].label}. Latest, ${describe(last)}. Use the arrow keys to read each ${grain}; a table view is also available.`
+    ? `${title}, by ${grain}, ${buckets[0].label} to ${buckets[last].label}. Latest, ${describe(last)}. Use the left and right arrow keys to read each point; a table view is also available.`
     : title;
 
   const legend: LegendItem[] = [
     ...(series.length > 1 ? series.map((s) => ({ key: s.key, label: s.label, color: seriesColor(s.slot), shape: mark === "bar" ? ("rect" as const) : ("line" as const) })) : []),
     ...(firstProvisional >= 0 ? [{ key: "band", label: "Provisional: sell-out still arriving", color: "var(--band)", shape: "band" as const }] : []),
   ];
-  const partials = buckets.filter((b) => b.partial);
+  // Only periods that actually hold a value here: a partial week the series has no figure for needs no note.
+  const partials = footnote ? buckets.filter((b, i) => b.partial && series.some((s) => s.values[i] != null)) : [];
 
   return (
     <div className="flex flex-col gap-2">
@@ -241,6 +251,11 @@ export function TimeChart({
           <div aria-hidden className="absolute rounded-[4px] bg-[var(--band)]" style={{ left: geom.xs[active] - geom.step / 2, width: geom.step, top: geom.top, height: geom.bottom - geom.top }} />
         ) : null}
         <div ref={plotRef} className="cp-plot relative" />
+        {failed ? (
+          <p role="status" className="absolute inset-0 flex items-center justify-center text-sm text-muted">
+            This chart couldn&apos;t be drawn. The table view has every value.
+          </p>
+        ) : null}
         {geom ? (
           <div
             aria-hidden
@@ -291,7 +306,7 @@ export function TimeChart({
       </div>
       {partials.length ? (
         <p className="text-xs text-subtle">
-          {mark === "bar" ? "Lighter bars" : "Dashed line"}: {partials.map((b) => `${b.label}, ${b.partial?.toLowerCase()}`).join("; ")}.
+          {mark === "bar" ? "Lighter bars" : "Dashed line"}: {partials.map((b) => `${b.label}, ${b.partial!.charAt(0).toLowerCase()}${b.partial!.slice(1)}`).join("; ")}.
         </p>
       ) : null}
     </div>

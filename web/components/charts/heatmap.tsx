@@ -36,10 +36,12 @@ export function Heatmap({
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<(Cell & { x: number; y: number }) | null>(null);
 
-  const place = (cell: Cell) => {
+  const place = (cell: Cell, reveal = false) => {
     const host = hostRef.current;
     const el = host?.querySelector<HTMLElement>(`[data-cell="${cell.r}-${cell.c}"]`);
     if (!host || !el) return setActive(null);
+    // Keyboard moves keep the active cell in view inside the matrix's own horizontal scroll (narrow screens).
+    if (reveal) el.scrollIntoView({ block: "nearest", inline: "nearest" });
     const a = host.getBoundingClientRect();
     const b = el.getBoundingClientRect();
     setActive({ ...cell, x: b.right - a.left, y: b.bottom - a.top + 4 });
@@ -71,7 +73,7 @@ export function Heatmap({
     const next = moves[e.key];
     if (!next) return;
     e.preventDefault();
-    place(next);
+    place(next, true);
   };
 
   const describe = ({ r, c }: Cell) => {
@@ -115,7 +117,7 @@ export function Heatmap({
         onBlur={() => setActive(null)}
         className="relative rounded-control outline-offset-4"
       >
-        <div className="overflow-x-auto overscroll-x-contain pb-1">
+        <div className="overflow-x-auto overscroll-x-contain pb-1 [scroll-padding-inline-start:80px]">
           <div
             className="grid min-w-max gap-[2px] sm:min-w-0"
             style={{ gridTemplateColumns: `76px repeat(${cols.length}, minmax(14px, 1fr))` }}

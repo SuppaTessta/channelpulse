@@ -39,6 +39,14 @@ export function coverageText(buckets: Bucket[], range: Range, win: Win, grain: G
   return c.from < range.from ? `${fmtRange(c)}, whole ${grain}s` : fmtRange(c);
 }
 
+/** Upper bounds of `bins - 1` equal-width bins on a round step covering 0 to max: [5, 10, 15, 20, 25] for six. */
+export function niceThresholds(max: number, bins = 6): number[] {
+  const raw = Math.max(max, 1e-9) / bins;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((f) => f * power).find((s) => s >= raw) ?? 10 * power;
+  return Array.from({ length: bins - 1 }, (_, i) => +((i + 1) * step).toFixed(10));
+}
+
 /** One value per bucket; sums and counts read 0 for a bucket with no rows, other metrics have no value there. */
 export function alignSeries(buckets: Bucket[], q: Query, timeColumn: string, valueColumn: string, zeroFill: boolean): (number | null)[] {
   const times = column(q.result.data, timeColumn) ?? [];

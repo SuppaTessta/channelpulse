@@ -47,6 +47,18 @@ export function resolvePeriod(sp: SearchParams, win: { asOf: string; dataStart: 
   };
 }
 
+/** `path` with the current parameters, some changed (null removes one). For server-rendered drill-down links. */
+export function hrefWith(path: string, sp: SearchParams, changes: Record<string, string | null>): string {
+  const out = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    const value = Array.isArray(v) ? v[0] : v;
+    if (value && !(k in changes)) out.set(k, value);
+  }
+  for (const [k, v] of Object.entries(changes)) if (v) out.set(k, v);
+  const qs = out.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
 /** The filters that follow the viewer between pages, as a query string. */
 export function sharedQuery(sp: SearchParams): string {
   const out = new URLSearchParams();

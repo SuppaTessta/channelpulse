@@ -19,8 +19,8 @@ function tickIncrement(start: number, stop: number, count: number): number {
   return factor * 10 ** power;
 }
 
-/** A zero-based domain widened to round ticks. */
-export function niceScale(values: number[], count = 4, fixed?: [number, number]): { domain: [number, number]; ticks: number[] } {
+/** A zero-based domain widened to round ticks. Whole-number measures (counts) never get fractional ticks. */
+export function niceScale(values: number[], count = 4, fixed?: [number, number], integer = false): { domain: [number, number]; ticks: number[] } {
   if (fixed) {
     const step = tickIncrement(fixed[0], fixed[1], count);
     const ticks: number[] = [];
@@ -30,7 +30,7 @@ export function niceScale(values: number[], count = 4, fixed?: [number, number])
   let lo = Math.min(0, ...values);
   let hi = Math.max(0, ...values);
   if (lo === hi) hi = lo + 1;
-  const step = tickIncrement(lo, hi, count);
+  const step = integer ? Math.max(1, tickIncrement(lo, hi, count)) : tickIncrement(lo, hi, count);
   lo = Math.floor(lo / step) * step;
   hi = Math.ceil(hi / step) * step;
   const ticks: number[] = [];
@@ -48,6 +48,8 @@ export function useWidth<T extends HTMLElement>() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Measure now rather than waiting for the observer's first callback, which only runs once a frame is painted.
+    setWidth(Math.floor(el.getBoundingClientRect().width));
     const ro = new ResizeObserver(([entry]) => setWidth(Math.floor(entry.contentRect.width)));
     ro.observe(el);
     return () => ro.disconnect();

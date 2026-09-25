@@ -53,8 +53,8 @@ export function DefinitionButton({
         )}
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-[rgb(10_12_14/0.35)] backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[640px] flex-col border-l border-line bg-raised shadow-raised outline-none">
+        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(10_12_14/0.35)] backdrop-blur-[2px]" />
+        <Dialog.Content className="cp-slide fixed inset-y-0 right-0 z-50 flex w-full max-w-[640px] flex-col border-l border-line bg-raised shadow-raised outline-none">
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
               <Dialog.Title className="text-base font-semibold text-ink">{title}</Dialog.Title>

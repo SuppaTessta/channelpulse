@@ -15,7 +15,7 @@ function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<R
   return (
     <DefinitionButton
       title="Data as of"
-      className="-mr-2 h-auto min-h-10 flex-wrap justify-end gap-x-1.5 gap-y-0 py-1 text-right md:min-h-8"
+      className="-ml-2.5 h-auto min-h-10 flex-wrap justify-start gap-x-1.5 gap-y-0 py-1 text-left md:min-h-8 lg:-mr-2 lg:ml-0 lg:justify-end lg:text-right"
       trigger={
         <>
           <span className="text-muted">Data as of</span>
@@ -61,13 +61,13 @@ export function TopBar({
 }) {
   return (
     <header className="border-b border-line bg-canvas md:sticky md:top-0 md:z-20 md:bg-canvas/85 md:backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:min-h-14 md:flex-nowrap md:px-6">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:px-6 lg:min-h-14 lg:flex-nowrap">
         <MobileNav />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 py-1">
+          {children ? <div className="text-xs text-muted">{children}</div> : null}
           <h1 className="truncate text-base font-semibold text-ink md:text-lg">{title}</h1>
-          {children}
         </div>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 md:w-auto md:flex-nowrap md:justify-end">
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 lg:w-auto lg:flex-nowrap lg:justify-end">
           <ParamSelect
             param="region"
             label="Viewing as"

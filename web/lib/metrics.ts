@@ -57,8 +57,13 @@ export function shortLabel(label: string): string {
   return bare.charAt(0).toUpperCase() + bare.slice(1);
 }
 
-/** Metrics built on late-arriving sell-out reports carry an __is_settled dimension (semantic layer caveat). */
-export const isHorizonBound = (m: Metric | undefined) => !!m?.dimensions.some((d) => d.endsWith("__is_settled"));
+/**
+ * Metrics built on late-arriving sell-out reports, whose newest days are provisional (decisions D12). Sell-out facts
+ * carry an __is_settled dimension. Channel stock is implied from sell-out too (primary minus secondary), but the weekly
+ * inventory mart (D24) has no settled flag, so its metrics are recognised by their semantic model's own dimension.
+ */
+export const isHorizonBound = (m: Metric | undefined) =>
+  !!m?.dimensions.some((d) => d.endsWith("__is_settled") || d === "inventory_week__has_days_of_stock");
 
 /** Sums and counts read zero for a period with no rows; averages and ratios have no value there. */
 export const zeroWhenEmpty = (m: Metric | undefined) => !!m && m.type === "simple" && /^(sum|count)/.test(m.formula);
@@ -87,6 +92,25 @@ export function fallbackMetric(name: string): Metric {
     dimensions: [],
     glossary: false,
   };
+}
+
+const WEEKLY_DETECTORS = new Set(["distributor_health", "lot_scan", "installer_scan"]);
+const day = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : null);
+
+/** The most recent weekly detector snapshot among the flags (detectors run every Sunday, detectors.yaml). */
+export function latestSnapshot(rows: Anomaly[]): string | null {
+  return rows.reduce<string | null>((max, a) => {
+    const d = WEEKLY_DETECTORS.has(a.detector) ? day(a.snapshot_date) : null;
+    return d && (!max || d > max) ? d : max;
+  }, null);
+}
+
+/**
+ * /api/anomalies returns each entity's latest flag on or before as_of, so it includes entities last flagged long ago.
+ * A flag is current when it comes from the latest snapshot (and, where the detector says so, flagged in it).
+ */
+export function isCurrentFlag(a: Anomaly, latest: string | null): boolean {
+  return !!latest && day(a.snapshot_date) === latest && a.details?.flagged_this_snapshot !== false;
 }
 
 /** A detector's details JSON as label and value pairs, for display. Its keys are the detector's own. */

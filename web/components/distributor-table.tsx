@@ -12,9 +12,12 @@ export type RiskFlag = {
   region: string | null;
   firstFlag: string | null;
   snapshot: string | null;
-  effect: number | null;
-  pValue: number | null;
-  details: [string, string][];
+  /** The scored week the flag belongs to. */
+  week: string | null;
+  score: number | null;
+  trendScore: number | null;
+  /** Flagged in the latest weekly snapshot, not only in an earlier one. */
+  current: boolean;
 };
 
 type SortKey = "name" | "region" | "tier" | "sales";
@@ -56,20 +59,24 @@ export function DistributorTable({
   const [view, setView] = useState<View>(initialView);
   const [q, setQ] = useState(initialQuery);
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "sales", dir: -1 });
+  const [includeEarlier, setIncludeEarlier] = useState(false);
+  const currentFlags = useMemo(() => (flags ?? []).filter((f) => f.current), [flags]);
+  const earlierCount = (flags?.length ?? 0) - currentFlags.length;
   const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
   const flagged = useMemo(() => new Map((flags ?? []).map((f) => [f.id, f])), [flags]);
+  const shownFlags = useMemo(() => (includeEarlier ? (flags ?? []) : currentFlags), [includeEarlier, flags, currentFlags]);
   const max = Math.max(1, ...rows.map((r) => r.sales ?? 0));
 
   const needle = q.trim().toLowerCase();
   const visible = useMemo(() => {
-    const base = view === "at-risk" ? (flags ?? []).map((f) => byId.get(f.id) ?? { id: f.id, name: f.id, region: f.region ?? "", tier: "", sales: null }) : rows;
+    const base = view === "at-risk" ? shownFlags.map((f) => byId.get(f.id) ?? { id: f.id, name: f.id, region: f.region ?? "", tier: "", sales: null }) : rows;
     const matched = needle ? base.filter((r) => [r.id, r.name, r.region, tierLabel(r.tier)].some((v) => v.toLowerCase().includes(needle))) : base;
     const val = (r: DistributorRow) => (sort.key === "sales" ? (r.sales ?? -Infinity) : r[sort.key]);
     return [...matched].sort((a, b) => {
       const x = val(a), y = val(b);
       return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || a.name.localeCompare(b.name);
     });
-  }, [view, flags, byId, rows, needle, sort]);
+  }, [view, shownFlags, byId, rows, needle, sort]);
 
   const setViewAndUrl = (v: View) => {
     setView(v);
@@ -110,7 +117,7 @@ export function DistributorTable({
                   view === v ? "bg-surface text-ink shadow-[0_0_0_1px_var(--border-strong)]" : "text-muted hover:text-ink",
                 )}
               >
-                {v === "all" ? `All ${fmtNumber(rows.length)}` : `At risk ${flags ? fmtNumber(flags.length) : ""}`}
+                {v === "all" ? `All ${fmtNumber(rows.length)}` : `At risk ${flags ? fmtNumber(currentFlags.length) : ""}`}
               </button>
             ))}
           </div>
@@ -137,21 +144,29 @@ export function DistributorTable({
       </div>
 
       {view === "at-risk" ? (
-        <p className="max-w-[80ch] text-xs text-muted">
-          <WarningDiamond size={14} {...ICON} className="mr-1 inline align-[-2px] text-danger" aria-hidden />
-          {riskRule}
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="max-w-[80ch] text-xs text-muted">
+            <WarningDiamond size={14} {...ICON} className="mr-1 inline align-[-2px] text-danger" aria-hidden />
+            {riskRule}
+          </p>
+          {earlierCount > 0 ? (
+            <label className="flex w-fit items-center gap-2 text-xs text-ink">
+              <input type="checkbox" checked={includeEarlier} onChange={(e) => setIncludeEarlier(e.target.checked)} className="size-4 accent-[var(--accent)]" />
+              Also show {fmtNumber(earlierCount)} distributors flagged only in earlier snapshots
+            </label>
+          ) : null}
+        </div>
       ) : null}
 
       {view === "at-risk" && flagsError ? (
         <p className="text-sm text-danger">{flagsError}</p>
       ) : visible.length === 0 ? (
         <p role="status" className="py-8 text-sm text-muted">
-          {needle ? `No distributor matches "${q.trim()}". Clear the search or try an ID such as D0042.` : view === "at-risk" ? "No distributor is flagged at risk for this snapshot and region claim." : "No distributor has primary sales in this range."}
+          {needle ? `No distributor matches "${q.trim()}". Clear the search or try an ID such as D0042.` : view === "at-risk" ? "No distributor is flagged at risk in the latest snapshot under this region claim." : "No distributor has primary sales in this range."}
         </p>
       ) : (
         <div className="-mx-4 overflow-x-auto md:mx-0">
-          <table className="w-full min-w-[560px] border-collapse text-[13px]">
+          <table className={cx("w-full border-collapse text-[13px]", view === "at-risk" ? "min-w-[860px]" : "min-w-[560px]")}>
             <caption className="sr-only">
               {view === "at-risk" ? "Distributors flagged at risk" : "Distributors by primary sales"}, {visible.length} rows
             </caption>
@@ -163,10 +178,16 @@ export function DistributorTable({
                 {view === "at-risk" ? (
                   <>
                     <th scope="col" className="border-b border-line px-3 py-2 text-left text-xs font-medium text-muted">
-                      Flagged since
+                      Flagged week
+                    </th>
+                    <th scope="col" className="border-b border-line px-3 py-2 text-right text-xs font-medium text-muted">
+                      Score then
+                    </th>
+                    <th scope="col" className="border-b border-line px-3 py-2 text-right text-xs font-medium text-muted">
+                      Sell-out trend score
                     </th>
                     <th scope="col" className="border-b border-line px-3 py-2 text-left text-xs font-medium text-muted">
-                      Detector output
+                      First flagged
                     </th>
                   </>
                 ) : null}
@@ -186,7 +207,7 @@ export function DistributorTable({
                         {r.name}
                       </Link>
                       <span className="ml-2 font-mono text-xs text-subtle">{r.id}</span>
-                      {view === "all" && flag ? (
+                      {view === "all" && flag?.current ? (
                         <Badge tone="danger" className="ml-2 align-middle" icon={<WarningDiamond size={12} {...ICON} aria-hidden />}>
                           At risk
                         </Badge>
@@ -196,16 +217,13 @@ export function DistributorTable({
                     <td className="px-3 py-2 whitespace-nowrap text-muted">{r.tier ? tierLabel(r.tier) : ""}</td>
                     {view === "at-risk" ? (
                       <>
-                        <td className="px-3 py-2 whitespace-nowrap text-muted">{flag?.firstFlag ? fmtDate(flag.firstFlag) : ""}</td>
-                        <td className="px-3 py-2 font-mono text-xs text-muted">
-                          {[
-                            flag?.effect != null ? `effect ${fmtNumber(flag.effect, 2)}` : null,
-                            flag?.pValue != null ? `p ${flag.pValue.toPrecision(2)}` : null,
-                            ...(flag?.details ?? []).slice(0, 3).map(([k, v]) => `${k} ${v}`),
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
+                        <td className="px-3 py-2 whitespace-nowrap text-muted">
+                          {flag?.week ? fmtDate(flag.week) : flag?.snapshot ? fmtDate(flag.snapshot) : ""}
+                          {flag && !flag.current ? <span className="block text-xs text-subtle">Not flagged since</span> : null}
                         </td>
+                        <td className="px-3 py-2 text-right text-ink">{flag?.score != null ? fmtNumber(flag.score, 1) : ""}</td>
+                        <td className="px-3 py-2 text-right text-ink">{flag?.trendScore != null ? fmtNumber(flag.trendScore, 1) : ""}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-muted">{flag?.firstFlag ? fmtDate(flag.firstFlag) : ""}</td>
                       </>
                     ) : null}
                     <td className="px-3 py-2 text-right whitespace-nowrap">

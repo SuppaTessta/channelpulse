@@ -1,0 +1,1657 @@
+{
+  "as_of": "2026-09-23",
+  "seed": 20260924,
+  "anchor": "2026-09-24",
+  "ground_truth_version": 1,
+  "summary": {
+    "pass": 28,
+    "fail": 7,
+    "deferred": 3,
+    "failed_ids": [
+      "R4",
+      "C2",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "I2"
+    ]
+  },
+  "schemas": {
+    "raw": {
+      "generated_this_run": false,
+      "seconds": 0.0,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1839183
+    },
+    "raw_cf_resin_lot": {
+      "generated_this_run": true,
+      "seconds": 55.3,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1838971
+    },
+    "raw_cf_distributor_churn": {
+      "generated_this_run": true,
+      "seconds": 72.2,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1839506
+    },
+    "raw_cf_quarter_end_stuffing": {
+      "generated_this_run": true,
+      "seconds": 43.1,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1832087
+    },
+    "raw_cf_installer_decoy": {
+      "generated_this_run": true,
+      "seconds": 39.0,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1838990
+    },
+    "raw_repeat": {
+      "generated_this_run": true,
+      "seconds": 32.7,
+      "as_of": "2026-09-23",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1839183
+    },
+    "raw_asof": {
+      "generated_this_run": true,
+      "seconds": 28.3,
+      "as_of": "2026-09-09",
+      "anchor": "2026-09-24",
+      "seed": 20260924,
+      "total_rows": 1816625
+    }
+  },
+  "row_counts": {
+    "collections": 39254,
+    "distributors": 350,
+    "field_visits": 23151,
+    "generation_run": 1,
+    "geo_pincodes": 2394,
+    "installations": 315611,
+    "installers": 602,
+    "opening_channel_stock": 5581,
+    "plants": 3,
+    "primary_invoice_lines": 184396,
+    "primary_invoices": 35761,
+    "production_batches": 16305,
+    "products": 36,
+    "retailers": 9141,
+    "sales_reps": 40,
+    "schemes": 66,
+    "secondary_sales": 427318,
+    "serial_units": 411719,
+    "shipments": 348605,
+    "warranty_claims": 18849
+  },
+  "timings_seconds": {
+    "total": 317.1,
+    "generation": 270.7,
+    "checks": {
+      "G1": 1.14,
+      "G2": 13.43,
+      "G3": 5.13,
+      "G4": 0.21,
+      "G5": 3.87,
+      "G6": 2.6,
+      "G7": 2.76,
+      "R1": 0.05,
+      "R2": 0.54,
+      "R4": 0.11,
+      "R5": 0.2,
+      "R6": 0.11,
+      "R7": 0.0,
+      "C1": 0.11,
+      "C2": 0.14,
+      "C7": 0.0,
+      "S1": 0.01,
+      "S2": 1.2,
+      "S5": 12.6,
+      "I1": 0.04,
+      "I2": 0.32,
+      "I3": 0.24,
+      "I5": 0.0
+    }
+  },
+  "checks": [
+    {
+      "id": "G1",
+      "status": "PASS",
+      "measured": "1,839,183 rows",
+      "target": "1.75M-1.95M",
+      "evidence": "20 tables, 179 MB total relation size; largest: secondary_sales 427,318, serial_units 411,719, shipments 348,605, installations 315,611",
+      "detail": {
+        "total": 1839183,
+        "size_mb": 179.0,
+        "per_table": {
+          "collections": 39254,
+          "distributors": 350,
+          "field_visits": 23151,
+          "generation_run": 1,
+          "geo_pincodes": 2394,
+          "installations": 315611,
+          "installers": 602,
+          "opening_channel_stock": 5581,
+          "plants": 3,
+          "primary_invoice_lines": 184396,
+          "primary_invoices": 35761,
+          "production_batches": 16305,
+          "products": 36,
+          "retailers": 9141,
+          "sales_reps": 40,
+          "schemes": 66,
+          "secondary_sales": 427318,
+          "serial_units": 411719,
+          "shipments": 348605,
+          "warranty_claims": 18849
+        }
+      },
+      "seconds": 1.14
+    },
+    {
+      "id": "G2",
+      "status": "PASS",
+      "measured": "20/20 tables identical",
+      "target": "all identical",
+      "evidence": "order-independent md5 per table, generation_run.generated_at exempt; no differences",
+      "detail": {
+        "differing": []
+      },
+      "seconds": 13.43
+    },
+    {
+      "id": "G3",
+      "status": "PASS",
+      "measured": "0 mismatched rows",
+      "target": "0",
+      "evidence": "20 comparisons at D=2026-09-09; excluded time-varying columns: products.list_price_inr, distributors.status, warranty_claims.status, registration fields of units not registered by D; all equal",
+      "detail": {
+        "per_table": {
+          "collections": {
+            "rows": 38743,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "distributors": {
+            "rows": 350,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "field_visits": {
+            "rows": 22848,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "geo_pincodes": {
+            "rows": 2394,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "installers": {
+            "rows": 602,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "opening_channel_stock": {
+            "rows": 5581,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "plants": {
+            "rows": 3,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "primary_invoice_lines": {
+            "rows": 181912,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "primary_invoices": {
+            "rows": 35231,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "production_batches": {
+            "rows": 16139,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "products": {
+            "rows": 36,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "retailers": {
+            "rows": 9141,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "sales_reps": {
+            "rows": 40,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "schemes": {
+            "rows": 60,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "secondary_sales": {
+            "rows": 422226,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "serial_units": {
+            "rows": 407206,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "shipments": {
+            "rows": 344039,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "warranty_claims": {
+            "rows": 18563,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "installations (serials shipped by D)": {
+            "rows": 311510,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          },
+          "installations (registered by D)": {
+            "rows": 208540,
+            "only_in_raw": 0,
+            "only_in_raw_asof": 0
+          }
+        }
+      },
+      "seconds": 5.13
+    },
+    {
+      "id": "G4",
+      "status": "PASS",
+      "measured": "0 rows after as-of",
+      "target": "0",
+      "evidence": "generation_run.as_of_date=2026-09-23; latest fact date 2026-09-23 across 17 date columns",
+      "detail": {
+        "late": {},
+        "max_dates": {
+          "production_batches.mfg_date": "2026-09-23",
+          "serial_units.mfg_date": "2026-09-23",
+          "primary_invoices.invoice_date": "2026-09-23",
+          "secondary_sales.sale_date": "2026-09-23",
+          "secondary_sales.reported_date": "2026-09-23",
+          "shipments.ship_date": "2026-09-23",
+          "installations.install_date": "2026-09-23",
+          "installations._loaded_at": "2026-09-23",
+          "warranty_claims.claim_date": "2026-09-23",
+          "collections.payment_date": "2026-09-23",
+          "field_visits.visit_date": "2026-09-23",
+          "distributors.onboarding_date": "2026-05-18",
+          "retailers.onboarding_date": "2026-06-28",
+          "schemes.start_date": "2026-09-16",
+          "opening_channel_stock.as_of_date": "2023-10-01",
+          "sales_reps.hire_date": "2022-12-24",
+          "products.launched_date": "2025-06-02"
+        }
+      },
+      "seconds": 0.21
+    },
+    {
+      "id": "G5",
+      "status": "PASS",
+      "measured": "0 vocabulary hits, 0 planted-only values",
+      "target": "0 and 0",
+      "evidence": "69 text columns in 19 tables scanned for 26 stems; 6 values contain a stem mid-word (not tells); lot qc_pass_rate mean 0.9745 inside DGP-L2 lot range [0.9657, 0.9812]; note: INS0227 has more installs than 601 of 601 other installers (volume is specified, not a text tell)",
+      "detail": {
+        "vocabulary_hits": [],
+        "mid_word_matches": [
+          "distributors.district='Murshidabad'",
+          "distributors.district='Dhanbad'",
+          "geo_pincodes.district='Murshidabad'",
+          "geo_pincodes.district='Dhanbad'",
+          "installers.district='Murshidabad'",
+          "installers.district='Dhanbad'"
+        ],
+        "planted_only_values": []
+      },
+      "seconds": 3.87
+    },
+    {
+      "id": "G6a",
+      "status": "PASS",
+      "measured": "65.6%",
+      "target": "60-70%",
+      "evidence": "install_date within 90 d of ship over 297,711 serials shipped <= as_of-90",
+      "detail": {
+        "value": 0.6563882422886625,
+        "units": 297711
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6b",
+      "status": "PASS",
+      "measured": "33.1%",
+      "target": "30-40%",
+      "evidence": "never registered over all 315,611 in-window shipped tanks; 30.1% over shipments >= 150 d old (registration fate resolved: 120 d install cap + 30 d visibility)",
+      "detail": {
+        "value": 0.3314713365503737,
+        "matured": 0.30094198400817845
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6c",
+      "status": "PASS",
+      "measured": "p80 7 d, p97 22 d, max 35 d",
+      "target": "p80 7+-1, p97 21+-2, max <= 35",
+      "evidence": "reported_date - sale_date over de-duplicated rows with sale_date <= as_of-35 (uncensored); max over all rows",
+      "detail": {
+        "p80": 7,
+        "p97": 22,
+        "max": 35
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6d",
+      "status": "PASS",
+      "measured": "0.52%",
+      "target": "about 0.5% (0.4-0.6%)",
+      "evidence": "2,212 of 427,318 rows repeat an earlier identical sale row, re-sent 1-5 d later",
+      "detail": {
+        "value": 0.005176472790755363,
+        "duplicates": 2212
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6e",
+      "status": "PASS",
+      "measured": "2.6%",
+      "target": "about 3% (2-4%)",
+      "evidence": "238 of 9,141 retailers share an exact name with another retailer; 3.2% ignoring case and punctuation",
+      "detail": {
+        "value": 0.026036538671917735,
+        "normalised": 0.032381577507931296
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6f",
+      "status": "PASS",
+      "measured": "FY25 Rs 456.4 cr, FY26 Rs 489.1 cr",
+      "target": "Rs 450-500 cr per FY",
+      "evidence": "sum(qty x unit_price_inr) of primary invoice lines by invoice_date",
+      "detail": {
+        "FY25": 456.376526646,
+        "FY26": 489.060110428
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G6g",
+      "status": "PASS",
+      "measured": "FY25 102,712, FY26 110,125",
+      "target": "110k +-15% (93.5k-126.5k)",
+      "evidence": "serialised tank shipments by ship_date per fiscal year",
+      "detail": {
+        "FY25": 102712,
+        "FY26": 110125
+      },
+      "seconds": 2.6
+    },
+    {
+      "id": "G7",
+      "status": "PASS",
+      "measured": "0 negative cell-days",
+      "target": "0",
+      "evidence": "opening + cumulative primary (invoice_date) - cumulative de-duplicated secondary (sale_date), end of day, over 554,667 distributor x sku x event-days; 0 cells ever negative, minimum balance 0",
+      "detail": {
+        "negative_days": 0,
+        "cells": 0,
+        "min_balance": "0"
+      },
+      "seconds": 2.76
+    },
+    {
+      "id": "R1",
+      "status": "PASS",
+      "measured": "RL-DGP-L2-250310: 3,376 units",
+      "target": "rule id; [2600, 4000] units; exclusive",
+      "evidence": "used on ['DGP-2'] 2025-03-10..2025-04-19 on 36/36 Mon-Sat days; 0 other DGP-L2 lots overlap; ground truth id RL-DGP-L2-250310",
+      "detail": {
+        "lot_id": "RL-DGP-L2-250310",
+        "units": 3376,
+        "production_days": 36,
+        "overlapping_lots": 0
+      },
+      "seconds": 0.05
+    },
+    {
+      "id": "R2",
+      "status": "PASS",
+      "measured": "3.90x (cf 1.00x)",
+      "target": ">= 3.0x; cf [0.6, 1.6]",
+      "evidence": "raw: lot 262/3,376 = 77.6/1000 vs 10 peer lots 481/24,141 = 19.9/1000, ratio 3.90 (95% CI 3.35-4.53); raw_cf_resin_lot: lot 67/3,376 = 19.8/1000 vs 10 peer lots 481/24,141 = 19.9/1000, ratio 1.00 (95% CI 0.77-1.29)",
+      "detail": {
+        "raw.base_crack": {
+          "lot_units": 3376,
+          "lot_claims": 262,
+          "peer_units": 24141,
+          "peer_claims": 481,
+          "peer_lots": 10,
+          "ratio": 3.895014089919303,
+          "ci95": [
+            3.350804568823978,
+            4.52760954841197
+          ]
+        },
+        "raw_cf_resin_lot.base_crack": {
+          "lot_units": 3376,
+          "lot_claims": 67,
+          "peer_units": 24141,
+          "peer_claims": 481,
+          "peer_lots": 10,
+          "ratio": 0.9960532214679134,
+          "ci95": [
+            0.7714061929752002,
+            1.2861214092281779
+          ]
+        }
+      },
+      "seconds": 0.54
+    },
+    {
+      "id": "R3",
+      "status": "PASS",
+      "measured": "0.93x",
+      "target": "[0.6, 1.6]",
+      "evidence": "raw: lot 95/3,376 = 28.1/1000 vs 10 peer lots 729/24,141 = 30.2/1000, ratio 0.93 (95% CI 0.75-1.15)",
+      "detail": {
+        "raw.other_modes": {
+          "lot_units": 3376,
+          "lot_claims": 95,
+          "peer_units": 24141,
+          "peer_claims": 729,
+          "peer_lots": 10,
+          "ratio": 0.9318561913677764,
+          "ci95": [
+            0.7524881071583177,
+            1.153979648488667
+          ]
+        },
+        "raw_cf_resin_lot.other_modes": {
+          "lot_units": 3376,
+          "lot_claims": 100,
+          "peer_units": 24141,
+          "peer_claims": 729,
+          "peer_lots": 10,
+          "ratio": 0.9809012540713437,
+          "ci95": [
+            0.7958896848943967,
+            1.2089203924868064
+          ]
+        }
+      },
+      "seconds": 0.54
+    },
+    {
+      "id": "R4",
+      "status": "FAIL",
+      "measured": "baseline 47.5/mo, uplift 40.4%",
+      "target": ">= 40/mo; uplift [30, 40]%",
+      "evidence": "Durgapur base_crack by claim month; 2024-10..2025-03 [61, 48, 44, 45, 47, 40]; 2025-08..2026-03 raw 497 vs cf 354; ground-truth span m21-m31 (2025-06..2026-04) uplift 35.5%",
+      "detail": {
+        "baseline": [
+          61,
+          48,
+          44,
+          45,
+          47,
+          40
+        ],
+        "uplift_pct": 40.39548022598871,
+        "uplift_m21_m31_pct": 35.46511627906976,
+        "raw": {
+          "2023-10-01": 36,
+          "2023-11-01": 35,
+          "2023-12-01": 40,
+          "2024-01-01": 50,
+          "2024-02-01": 39,
+          "2024-03-01": 48,
+          "2024-04-01": 46,
+          "2024-05-01": 40,
+          "2024-06-01": 41,
+          "2024-07-01": 49,
+          "2024-08-01": 33,
+          "2024-09-01": 44,
+          "2024-10-01": 61,
+          "2024-11-01": 48,
+          "2024-12-01": 44,
+          "2025-01-01": 45,
+          "2025-02-01": 47,
+          "2025-03-01": 40,
+          "2025-04-01": 52,
+          "2025-05-01": 65,
+          "2025-06-01": 74,
+          "2025-07-01": 67,
+          "2025-08-01": 65,
+          "2025-09-01": 66,
+          "2025-10-01": 54,
+          "2025-11-01": 60,
+          "2025-12-01": 60,
+          "2026-01-01": 75,
+          "2026-02-01": 52,
+          "2026-03-01": 65,
+          "2026-04-01": 61,
+          "2026-05-01": 55,
+          "2026-06-01": 62,
+          "2026-07-01": 47,
+          "2026-08-01": 51,
+          "2026-09-01": 34
+        },
+        "cf": {
+          "2023-10-01": 36,
+          "2023-11-01": 35,
+          "2023-12-01": 40,
+          "2024-01-01": 50,
+          "2024-02-01": 39,
+          "2024-03-01": 48,
+          "2024-04-01": 46,
+          "2024-05-01": 40,
+          "2024-06-01": 41,
+          "2024-07-01": 49,
+          "2024-08-01": 33,
+          "2024-09-01": 44,
+          "2024-10-01": 61,
+          "2024-11-01": 48,
+          "2024-12-01": 44,
+          "2025-01-01": 45,
+          "2025-02-01": 47,
+          "2025-03-01": 40,
+          "2025-04-01": 45,
+          "2025-05-01": 52,
+          "2025-06-01": 57,
+          "2025-07-01": 54,
+          "2025-08-01": 49,
+          "2025-09-01": 42,
+          "2025-10-01": 34,
+          "2025-11-01": 38,
+          "2025-12-01": 37,
+          "2026-01-01": 61,
+          "2026-02-01": 42,
+          "2026-03-01": 51,
+          "2026-04-01": 51,
+          "2026-05-01": 48,
+          "2026-06-01": 61,
+          "2026-07-01": 46,
+          "2026-08-01": 51,
+          "2026-09-01": 34
+        }
+      },
+      "seconds": 0.11
+    },
+    {
+      "id": "R5",
+      "status": "PASS",
+      "measured": "0 shipped, 0 installed",
+      "target": "0 and 0",
+      "evidence": "Durgapur Line 2 serials to Assam / North Bengal (8 districts) distributors or installation pincodes; 0 shipped outside the WB/JH/BR/OD footprint",
+      "detail": {
+        "shipped": 0,
+        "installed": 0,
+        "outside_footprint": 0
+      },
+      "seconds": 0.2
+    },
+    {
+      "id": "R6",
+      "status": "PASS",
+      "measured": "alarm 2025-06 (cf never)",
+      "target": "alarm by 2026-08, none in cf",
+      "evidence": "k=1.0, h=4.0, mu = mean(t-15..t-4), monitored 2025-02..2026-08; cf max S 1.23; ground-truth alarm range 2025-06..2025-12 (inside)",
+      "detail": {
+        "raw_path": [
+          [
+            "2025-02",
+            47,
+            43.8,
+            0.0
+          ],
+          [
+            "2025-03",
+            40,
+            44.9,
+            0.0
+          ],
+          [
+            "2025-04",
+            52,
+            45.2,
+            0.0
+          ],
+          [
+            "2025-05",
+            65,
+            44.8,
+            2.02
+          ],
+          [
+            "2025-06",
+            74,
+            45.5,
+            5.24
+          ],
+          [
+            "2025-07",
+            67,
+            44.8,
+            7.55
+          ],
+          [
+            "2025-08",
+            65,
+            45.3,
+            9.47
+          ],
+          [
+            "2025-09",
+            66,
+            47.4,
+            11.17
+          ],
+          [
+            "2025-10",
+            54,
+            50.2,
+            10.71
+          ],
+          [
+            "2025-11",
+            60,
+            51.7,
+            10.87
+          ],
+          [
+            "2025-12",
+            60,
+            54.3,
+            10.64
+          ],
+          [
+            "2026-01",
+            75,
+            56.2,
+            12.15
+          ],
+          [
+            "2026-02",
+            52,
+            55.6,
+            10.67
+          ],
+          [
+            "2026-03",
+            65,
+            56.6,
+            10.79
+          ],
+          [
+            "2026-04",
+            61,
+            57.9,
+            10.2
+          ],
+          [
+            "2026-05",
+            55,
+            60.4,
+            8.5
+          ],
+          [
+            "2026-06",
+            62,
+            60.8,
+            7.65
+          ],
+          [
+            "2026-07",
+            47,
+            62.9,
+            4.64
+          ],
+          [
+            "2026-08",
+            51,
+            63.7,
+            2.05
+          ]
+        ],
+        "cf_path": [
+          [
+            "2025-02",
+            47,
+            43.8,
+            0.0
+          ],
+          [
+            "2025-03",
+            40,
+            44.9,
+            0.0
+          ],
+          [
+            "2025-04",
+            45,
+            45.2,
+            0.0
+          ],
+          [
+            "2025-05",
+            52,
+            44.8,
+            0.07
+          ],
+          [
+            "2025-06",
+            57,
+            45.5,
+            0.78
+          ],
+          [
+            "2025-07",
+            54,
+            44.8,
+            1.14
+          ],
+          [
+            "2025-08",
+            49,
+            44.8,
+            0.78
+          ],
+          [
+            "2025-09",
+            42,
+            45.8,
+            0.0
+          ],
+          [
+            "2025-10",
+            34,
+            47.1,
+            0.0
+          ],
+          [
+            "2025-11",
+            38,
+            47.5,
+            0.0
+          ],
+          [
+            "2025-12",
+            37,
+            48.8,
+            0.0
+          ],
+          [
+            "2026-01",
+            61,
+            48.7,
+            0.77
+          ],
+          [
+            "2026-02",
+            42,
+            46.4,
+            0.0
+          ],
+          [
+            "2026-03",
+            51,
+            45.6,
+            0.0
+          ],
+          [
+            "2026-04",
+            51,
+            45,
+            0.0
+          ],
+          [
+            "2026-05",
+            48,
+            46.3,
+            0.0
+          ],
+          [
+            "2026-06",
+            61,
+            45.9,
+            1.23
+          ],
+          [
+            "2026-07",
+            46,
+            46.8,
+            0.1
+          ],
+          [
+            "2026-08",
+            51,
+            47.3,
+            0.0
+          ]
+        ]
+      },
+      "seconds": 0.11
+    },
+    {
+      "id": "R7",
+      "status": "DEFERRED",
+      "measured": "-",
+      "target": "lot scan flags the lot by 2025-09-28; only / top flagged lot",
+      "evidence": "needs the pre-registered lot_scan detector (not built yet)",
+      "detail": {},
+      "seconds": 0.0
+    },
+    {
+      "id": "C1",
+      "status": "PASS",
+      "measured": "D0084 qualifies; 4 qualify",
+      "target": ">= 3 qualify, id among them",
+      "evidence": "Tier 2, Darjeeling, 7340xx, onboarded < 2022-07-01: ['D0084', 'D0085', 'D0086', 'D0088']; pick rule (median base_demand) not observable in raw - proxy rank by pre-window secondary units 2/4 (D0086 21794, D0084 25378, D0088 37204, D0085 45636)",
+      "detail": {
+        "qualifying": [
+          "D0084",
+          "D0085",
+          "D0086",
+          "D0088"
+        ],
+        "proxy_rank": 2,
+        "proxy_units": {
+          "D0084": 25378,
+          "D0085": 45636,
+          "D0086": 21794,
+          "D0088": 37204
+        }
+      },
+      "seconds": 0.11
+    },
+    {
+      "id": "C2",
+      "status": "FAIL",
+      "measured": "Feb 0.542",
+      "target": "[0.5, 0.6]; Oct-Feb multipliers +-0.05",
+      "evidence": "secondary units raw/cf by sale month: 2025-10 0.956 (x0.91), 2025-11 0.817 (x0.82), 2025-12 0.789 (x0.73), 2026-01 0.623 (x0.64), 2026-02 0.542 (x0.55); Mar-Aug 2026 hold 0.57, 0.58, 0.60, 0.55, 0.58, 0.60 (x0.55); off by > 0.05: {'2025-12': 0.059}",
+      "detail": {
+        "ratios": {
+          "2025-10": 0.9564989517819706,
+          "2025-11": 0.8167777104784979,
+          "2025-12": 0.788741302972802,
+          "2026-01": 0.6230661040787623,
+          "2026-02": 0.5415512465373962
+        },
+        "hold": [
+          0.5738636363636364,
+          0.5815822002472187,
+          0.5953536754507628,
+          0.5540240106714095,
+          0.5763293310463122,
+          0.6042334830019244
+        ],
+        "raw": {
+          "2023-10-01": 1478,
+          "2023-11-01": 2035,
+          "2023-12-01": 887,
+          "2024-01-01": 2823,
+          "2024-02-01": 3294,
+          "2024-03-01": 1843,
+          "2024-04-01": 1282,
+          "2024-05-01": 1145,
+          "2024-06-01": 2382,
+          "2024-07-01": 1070,
+          "2024-08-01": 980,
+          "2024-09-01": 206,
+          "2024-10-01": 2129,
+          "2024-11-01": 2712,
+          "2024-12-01": 2161,
+          "2025-01-01": 2123,
+          "2025-02-01": 1590,
+          "2025-03-01": 4375,
+          "2025-04-01": 1654,
+          "2025-05-01": 2779,
+          "2025-06-01": 2241,
+          "2025-07-01": 1994,
+          "2025-08-01": 955,
+          "2025-09-01": 665,
+          "2025-10-01": 1825,
+          "2025-11-01": 2697,
+          "2025-12-01": 1247,
+          "2026-01-01": 886,
+          "2026-02-01": 782,
+          "2026-03-01": 1111,
+          "2026-04-01": 941,
+          "2026-05-01": 1717,
+          "2026-06-01": 1246,
+          "2026-07-01": 1008,
+          "2026-08-01": 942,
+          "2026-09-01": 318
+        },
+        "raw_cf_distributor_churn": {
+          "2023-10-01": 1478,
+          "2023-11-01": 2035,
+          "2023-12-01": 887,
+          "2024-01-01": 2823,
+          "2024-02-01": 3294,
+          "2024-03-01": 1843,
+          "2024-04-01": 1282,
+          "2024-05-01": 1145,
+          "2024-06-01": 2382,
+          "2024-07-01": 1070,
+          "2024-08-01": 980,
+          "2024-09-01": 206,
+          "2024-10-01": 2129,
+          "2024-11-01": 2712,
+          "2024-12-01": 2161,
+          "2025-01-01": 2123,
+          "2025-02-01": 1590,
+          "2025-03-01": 4375,
+          "2025-04-01": 1654,
+          "2025-05-01": 2779,
+          "2025-06-01": 2241,
+          "2025-07-01": 1994,
+          "2025-08-01": 955,
+          "2025-09-01": 665,
+          "2025-10-01": 1908,
+          "2025-11-01": 3302,
+          "2025-12-01": 1581,
+          "2026-01-01": 1422,
+          "2026-02-01": 1444,
+          "2026-03-01": 1936,
+          "2026-04-01": 1618,
+          "2026-05-01": 2884,
+          "2026-06-01": 2249,
+          "2026-07-01": 1749,
+          "2026-08-01": 1559,
+          "2026-09-01": 586
+        }
+      },
+      "seconds": 0.14
+    },
+    {
+      "id": "C3",
+      "status": "PASS",
+      "measured": "10: 1.000, 11: 1.000, 12: 1.000",
+      "target": "each [0.99, 1.01]",
+      "evidence": "primary units raw/cf by invoice month 2025-10..12: 2309/2309, 3193/3193, 447/447",
+      "detail": {
+        "ratios": {
+          "10": 1.0,
+          "11": 1.0,
+          "12": 1.0
+        }
+      },
+      "seconds": 0.14
+    },
+    {
+      "id": "C4",
+      "status": "PASS",
+      "measured": "0.263",
+      "target": "<= 0.35",
+      "evidence": "Jan+Feb 2026 primary units raw 1254 vs cf 4768; Mar 2026 ratio 0.74",
+      "detail": {
+        "raw": 1254,
+        "cf": 4768,
+        "march_ratio": 0.7437533227006912
+      },
+      "seconds": 0.14
+    },
+    {
+      "id": "C5",
+      "status": "PASS",
+      "measured": "32.0 d (2025: 3.0 d)",
+      "target": "[28, 42]; 2025 <= 5",
+      "evidence": "last payment - due date, median over 4 invoices due 2026-01-01..02-28 (0 unpaid) (days late [35, 19, 48, 29]) and 26 due in 2025 (0 of them > 14 d late)",
+      "detail": {
+        "median": 32.0,
+        "median_2025": 3.0,
+        "invoices": 4,
+        "unpaid": 0
+      },
+      "seconds": 0.14
+    },
+    {
+      "id": "C6",
+      "status": "PASS",
+      "measured": "0 tagged, status active",
+      "target": "0, active",
+      "evidence": "scheme_id on D0084's invoices; distributors.status",
+      "detail": {
+        "tagged": 0,
+        "status": "active"
+      },
+      "seconds": 0.14
+    },
+    {
+      "id": "C7",
+      "status": "DEFERRED",
+      "measured": "-",
+      "target": "health score crosses by 2026-01-31; < 5% of stuffers cross",
+      "evidence": "needs distributor_health_score (not built yet)",
+      "detail": {},
+      "seconds": 0.0
+    },
+    {
+      "id": "S1",
+      "status": "PASS",
+      "measured": "11 windows x [6] rows",
+      "target": "11 windows x 6; none before 2024-03-17",
+      "evidence": "windows match ground truth (names, 0.03/0.04 discounts); 0 before 2024-03-17, 0 in Dec 2023; 0 unexpected windows; stuffing-off schema has 66 scheme rows",
+      "detail": {
+        "problems": [],
+        "extra": []
+      },
+      "seconds": 0.01
+    },
+    {
+      "id": "S2",
+      "status": "FAIL",
+      "measured": "11.6%-20.7%",
+      "target": "each settled cycle [15%, 20%]",
+      "evidence": "stuffers (window units >= 1.8x stuffing-off run, tank or pipe) / active (onboarded, invoiced in trailing 90 d): FY24Q4 49/325, FY25Q1 59/328, FY25Q2 48/335, FY25Q3 59/335, FY25Q4 39/337, FY26Q1 70/338, FY26Q2 43/340, FY26Q3 55/344, FY26Q4 45/344; outside: {'FY25Q2': 0.143, 'FY25Q4': 0.116, 'FY26Q1': 0.207, 'FY26Q2': 0.126, 'FY26Q4': 0.131}; rule diagnostic: it misses 244 cells with the planted signature (raw != off, window/trailing-90 in [2.25, 2.75]) and admits 25 outside it; signature + slab-invoice share 16.0%-20.1%",
+      "detail": {
+        "per_cycle": {
+          "FY24Q4": {
+            "stuffers": 49,
+            "cells": 67,
+            "active": 325,
+            "share": 0.15076923076923077,
+            "rate_mean": 2.5461659964658963,
+            "rate_min": 2.3147482014388485,
+            "rate_mean_flagged_with_slab": 2.5461659964658963,
+            "no_slab_invoice": [],
+            "no_slab_invoice_outside_k_band": 0,
+            "signature_cells_missed_by_rule": 28,
+            "flagged_cells_outside_k_band": 0,
+            "planted_signature_share": 0.19692307692307692,
+            "perturbed_cells": 95,
+            "non_stuffer_tagged_invoices": 156,
+            "non_stuffer_tagged_distributors": 119,
+            "stuffer_tagged_invoices": 87,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY25Q1": {
+            "stuffers": 59,
+            "cells": 96,
+            "active": 328,
+            "share": 0.1798780487804878,
+            "rate_mean": 2.3771359274928567,
+            "rate_min": 0.28655660377358494,
+            "rate_mean_flagged_with_slab": 2.4877905627976515,
+            "no_slab_invoice": [
+              "D0035",
+              "D0043",
+              "D0050",
+              "D0157",
+              "D0218"
+            ],
+            "no_slab_invoice_outside_k_band": 5,
+            "signature_cells_missed_by_rule": 6,
+            "flagged_cells_outside_k_band": 7,
+            "planted_signature_share": 0.1676829268292683,
+            "perturbed_cells": 142,
+            "non_stuffer_tagged_invoices": 35,
+            "non_stuffer_tagged_distributors": 35,
+            "stuffer_tagged_invoices": 110,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY25Q2": {
+            "stuffers": 48,
+            "cells": 53,
+            "active": 335,
+            "share": 0.14328358208955225,
+            "rate_mean": 2.442765857443369,
+            "rate_min": 0.8517887563884158,
+            "rate_mean_flagged_with_slab": 2.504049898183847,
+            "no_slab_invoice": [
+              "D0070",
+              "D0160"
+            ],
+            "no_slab_invoice_outside_k_band": 2,
+            "signature_cells_missed_by_rule": 25,
+            "flagged_cells_outside_k_band": 2,
+            "planted_signature_share": 0.18208955223880596,
+            "perturbed_cells": 151,
+            "non_stuffer_tagged_invoices": 106,
+            "non_stuffer_tagged_distributors": 95,
+            "stuffer_tagged_invoices": 74,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY25Q3": {
+            "stuffers": 59,
+            "cells": 84,
+            "active": 335,
+            "share": 0.1761194029850746,
+            "rate_mean": 2.40308894161715,
+            "rate_min": 0.22641509433962262,
+            "rate_mean_flagged_with_slab": 2.494849226954789,
+            "no_slab_invoice": [
+              "D0044",
+              "D0147",
+              "D0323"
+            ],
+            "no_slab_invoice_outside_k_band": 2,
+            "signature_cells_missed_by_rule": 25,
+            "flagged_cells_outside_k_band": 4,
+            "planted_signature_share": 0.2,
+            "perturbed_cells": 150,
+            "non_stuffer_tagged_invoices": 65,
+            "non_stuffer_tagged_distributors": 62,
+            "stuffer_tagged_invoices": 106,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY25Q4": {
+            "stuffers": 39,
+            "cells": 43,
+            "active": 337,
+            "share": 0.11572700296735905,
+            "rate_mean": 2.428297523628978,
+            "rate_min": 0.6000000000000001,
+            "rate_mean_flagged_with_slab": 2.5101656955133183,
+            "no_slab_invoice": [
+              "D0260"
+            ],
+            "no_slab_invoice_outside_k_band": 1,
+            "signature_cells_missed_by_rule": 47,
+            "flagged_cells_outside_k_band": 3,
+            "planted_signature_share": 0.16023738872403562,
+            "perturbed_cells": 161,
+            "non_stuffer_tagged_invoices": 170,
+            "non_stuffer_tagged_distributors": 127,
+            "stuffer_tagged_invoices": 76,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 1
+          },
+          "FY26Q1": {
+            "stuffers": 70,
+            "cells": 113,
+            "active": 338,
+            "share": 0.20710059171597633,
+            "rate_mean": 2.449560697940088,
+            "rate_min": 0.40033571128829204,
+            "rate_mean_flagged_with_slab": 2.494813044733159,
+            "no_slab_invoice": [
+              "D0108",
+              "D0233",
+              "D0313"
+            ],
+            "no_slab_invoice_outside_k_band": 3,
+            "signature_cells_missed_by_rule": 7,
+            "flagged_cells_outside_k_band": 4,
+            "planted_signature_share": 0.20118343195266272,
+            "perturbed_cells": 172,
+            "non_stuffer_tagged_invoices": 37,
+            "non_stuffer_tagged_distributors": 34,
+            "stuffer_tagged_invoices": 138,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY26Q2": {
+            "stuffers": 43,
+            "cells": 52,
+            "active": 340,
+            "share": 0.1264705882352941,
+            "rate_mean": 2.482193624926435,
+            "rate_min": 1.5,
+            "rate_mean_flagged_with_slab": 2.501452323454404,
+            "no_slab_invoice": [
+              "D0055"
+            ],
+            "no_slab_invoice_outside_k_band": 1,
+            "signature_cells_missed_by_rule": 34,
+            "flagged_cells_outside_k_band": 1,
+            "planted_signature_share": 0.17352941176470588,
+            "perturbed_cells": 163,
+            "non_stuffer_tagged_invoices": 104,
+            "non_stuffer_tagged_distributors": 88,
+            "stuffer_tagged_invoices": 69,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY26Q3": {
+            "stuffers": 55,
+            "cells": 73,
+            "active": 344,
+            "share": 0.15988372093023256,
+            "rate_mean": 2.4532549225529006,
+            "rate_min": 0.1935483870967742,
+            "rate_mean_flagged_with_slab": 2.5088098484376284,
+            "no_slab_invoice": [
+              "D0056",
+              "D0117",
+              "D0180",
+              "D0346"
+            ],
+            "no_slab_invoice_outside_k_band": 3,
+            "signature_cells_missed_by_rule": 17,
+            "flagged_cells_outside_k_band": 4,
+            "planted_signature_share": 0.16279069767441862,
+            "perturbed_cells": 143,
+            "non_stuffer_tagged_invoices": 62,
+            "non_stuffer_tagged_distributors": 59,
+            "stuffer_tagged_invoices": 92,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY26Q4": {
+            "stuffers": 45,
+            "cells": 56,
+            "active": 344,
+            "share": 0.1308139534883721,
+            "rate_mean": 2.5562829263290476,
+            "rate_min": 2.3225806451612905,
+            "rate_mean_flagged_with_slab": 2.5562829263290476,
+            "no_slab_invoice": [],
+            "no_slab_invoice_outside_k_band": 0,
+            "signature_cells_missed_by_rule": 55,
+            "flagged_cells_outside_k_band": 0,
+            "planted_signature_share": 0.2005813953488372,
+            "perturbed_cells": 182,
+            "non_stuffer_tagged_invoices": 198,
+            "non_stuffer_tagged_distributors": 144,
+            "stuffer_tagged_invoices": 97,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY27Q1": {
+            "stuffers": 62,
+            "cells": 92,
+            "active": 347,
+            "share": 0.1786743515850144,
+            "rate_mean": 2.340510490610327,
+            "rate_min": 0.14795441808331777,
+            "rate_mean_flagged_with_slab": 2.490261534741113,
+            "no_slab_invoice": [
+              "D0040",
+              "D0089",
+              "D0136",
+              "D0179",
+              "D0195",
+              "D0198",
+              "D0218"
+            ],
+            "no_slab_invoice_outside_k_band": 7,
+            "signature_cells_missed_by_rule": 9,
+            "flagged_cells_outside_k_band": 10,
+            "planted_signature_share": 0.15561959654178675,
+            "perturbed_cells": 163,
+            "non_stuffer_tagged_invoices": 45,
+            "non_stuffer_tagged_distributors": 42,
+            "stuffer_tagged_invoices": 103,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          },
+          "FY27Q2": {
+            "stuffers": 31,
+            "cells": 35,
+            "active": 347,
+            "share": 0.0893371757925072,
+            "rate_mean": 2.195750516872128,
+            "rate_min": 0.15789473684210525,
+            "rate_mean_flagged_with_slab": 2.2738848769663416,
+            "no_slab_invoice": [
+              "D0040",
+              "D0257"
+            ],
+            "no_slab_invoice_outside_k_band": 2,
+            "signature_cells_missed_by_rule": 8,
+            "flagged_cells_outside_k_band": 8,
+            "planted_signature_share": 0.08069164265129683,
+            "perturbed_cells": 125,
+            "non_stuffer_tagged_invoices": 57,
+            "non_stuffer_tagged_distributors": 55,
+            "stuffer_tagged_invoices": 37,
+            "tagged_below_slab": 0,
+            "tagged_wrong_tier": 0,
+            "untagged_at_slab": 0
+          }
+        }
+      },
+      "seconds": 1.2
+    },
+    {
+      "id": "S3",
+      "status": "FAIL",
+      "measured": "2.38-2.56",
+      "target": "each settled cycle [2.4, 2.6]",
+      "evidence": "mean over rule-stuffer cells of window daily / own [start-90, start-1] daily units: FY24Q4 2.55 (min 2.31), FY25Q1 2.38 (min 0.29), FY25Q2 2.44 (min 0.85), FY25Q3 2.40 (min 0.23), FY25Q4 2.43 (min 0.60), FY26Q1 2.45 (min 0.40), FY26Q2 2.48 (min 1.50), FY26Q3 2.45 (min 0.19), FY26Q4 2.56 (min 2.32); outside: {'FY25Q1': 2.377}; restricted to cells with a slab invoice in the category: 2.49-2.56",
+      "detail": {},
+      "seconds": 1.2
+    },
+    {
+      "id": "S4",
+      "status": "FAIL",
+      "measured": "19 of 467 without a slab invoice",
+      "target": "0",
+      "evidence": "in-window scheme_id invoice with category units >= min_slab_units, settled cycles; missing ['FY25Q1:D0035', 'FY25Q1:D0043', 'FY25Q1:D0050', 'FY25Q1:D0157', 'FY25Q1:D0218', 'FY25Q2:D0070', 'FY25Q2:D0160', 'FY25Q3:D0044'] ... (17 of them have no cell in the planted k band); tagging-rule exceptions {'FY25Q4': {'untagged_at_slab': 1}}",
+      "detail": {
+        "missing": [
+          "FY25Q1:D0035",
+          "FY25Q1:D0043",
+          "FY25Q1:D0050",
+          "FY25Q1:D0157",
+          "FY25Q1:D0218",
+          "FY25Q2:D0070",
+          "FY25Q2:D0160",
+          "FY25Q3:D0044",
+          "FY25Q3:D0147",
+          "FY25Q3:D0323",
+          "FY25Q4:D0260",
+          "FY26Q1:D0108",
+          "FY26Q1:D0233",
+          "FY26Q1:D0313",
+          "FY26Q2:D0055",
+          "FY26Q3:D0056",
+          "FY26Q3:D0117",
+          "FY26Q3:D0180",
+          "FY26Q3:D0346"
+        ]
+      },
+      "seconds": 1.2
+    },
+    {
+      "id": "S5",
+      "status": "FAIL",
+      "measured": "min -4.4 d; next start max 59.7 d",
+      "target": ">= +3 d QE+1..QE+60; <= +1 d at next start",
+      "evidence": "stuffer cohort mean of (category stock / trailing-30 daily de-duplicated secondary) - own [start-90, start-1] median, min over QE+1..QE+60 / at next start: FY24Q4 14.7/16.4, FY25Q1 58.0/50.1, FY25Q2 -4.4/4.9, FY25Q3 26.3/12.3, FY25Q4 13.3/21.1, FY26Q1 45.6/59.7, FY26Q2 -0.8/-4.1, FY26Q3 17.8/16.5, FY26Q4 4.7/11.3; failing: ['FY24Q4', 'FY25Q1', 'FY25Q2', 'FY25Q3', 'FY25Q4', 'FY26Q1', 'FY26Q2', 'FY26Q3', 'FY26Q4']; same cohort's aggregate days of stock at QE+1 and next start, raw vs stuffing-off run: FY24Q4 78/50 vs 51/48, FY25Q1 88/64 vs 54/53, FY25Q2 78/46 vs 49/45, FY25Q3 76/42 vs 46/39, FY25Q4 69/47 vs 45/44, FY26Q1 83/56 vs 47/44, FY26Q2 91/47 vs 57/45, FY26Q3 64/42 vs 38/40, FY26Q4 62/42 vs 40/39",
+      "detail": {
+        "per_cycle": {
+          "FY24Q4": {
+            "min_excess_qe1_qe60": 14.69561798380747,
+            "max_excess_qe1_qe60": 75.12661455691236,
+            "excess_at_next_start": 16.41747241324383,
+            "cohort_dos_qe1": 78.27529470571083,
+            "cohort_dos_next_start": 50.210908557385466,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 5.2589872033504035,
+              "max_excess_qe1_qe60": 33.77932862364452,
+              "excess_at_next_start": 12.583676971841966,
+              "cohort_dos_qe1": 50.606380337636544,
+              "cohort_dos_next_start": 47.99922636261489
+            }
+          },
+          "FY25Q1": {
+            "min_excess_qe1_qe60": 58.038692114931614,
+            "max_excess_qe1_qe60": 151.68635866129935,
+            "excess_at_next_start": 50.13249212078465,
+            "cohort_dos_qe1": 88.42581401749494,
+            "cohort_dos_next_start": 64.34790062653907,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 17.50876992174022,
+              "max_excess_qe1_qe60": 80.00817330353446,
+              "excess_at_next_start": 29.600623077163124,
+              "cohort_dos_qe1": 53.526289241707296,
+              "cohort_dos_next_start": 53.04712748266449
+            }
+          },
+          "FY25Q2": {
+            "min_excess_qe1_qe60": -4.385730893736926,
+            "max_excess_qe1_qe60": 68.75494727890323,
+            "excess_at_next_start": 4.9246657011244945,
+            "cohort_dos_qe1": 77.89698625308425,
+            "cohort_dos_next_start": 45.51292222861336,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": -7.472278306705894,
+              "max_excess_qe1_qe60": 40.27334034703488,
+              "excess_at_next_start": 6.985490958294679,
+              "cohort_dos_qe1": 48.90477723786663,
+              "cohort_dos_next_start": 44.87009877282251
+            }
+          },
+          "FY25Q3": {
+            "min_excess_qe1_qe60": 26.3075896017322,
+            "max_excess_qe1_qe60": 79.91940070405137,
+            "excess_at_next_start": 12.252179390512792,
+            "cohort_dos_qe1": 76.35362496176201,
+            "cohort_dos_next_start": 41.56008248976729,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 10.714734456582455,
+              "max_excess_qe1_qe60": 40.33350718664642,
+              "excess_at_next_start": 8.78064264620424,
+              "cohort_dos_qe1": 45.72767320784942,
+              "cohort_dos_next_start": 39.30872722693309
+            }
+          },
+          "FY25Q4": {
+            "min_excess_qe1_qe60": 13.325307489328326,
+            "max_excess_qe1_qe60": 75.08167382118866,
+            "excess_at_next_start": 21.13505687408799,
+            "cohort_dos_qe1": 69.19816628464264,
+            "cohort_dos_next_start": 46.753419147224456,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 4.1173340066807125,
+              "max_excess_qe1_qe60": 40.156701944576234,
+              "excess_at_next_start": 18.29191285751202,
+              "cohort_dos_qe1": 45.11472395202073,
+              "cohort_dos_next_start": 43.54499274310595
+            }
+          },
+          "FY26Q1": {
+            "min_excess_qe1_qe60": 45.62024322403861,
+            "max_excess_qe1_qe60": 78.55243132622782,
+            "excess_at_next_start": 59.704918327461726,
+            "cohort_dos_qe1": 83.27267846528484,
+            "cohort_dos_next_start": 55.580062660210764,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 12.749599271568439,
+              "max_excess_qe1_qe60": 35.568163189525855,
+              "excess_at_next_start": 36.44706314104953,
+              "cohort_dos_qe1": 47.12806341496065,
+              "cohort_dos_next_start": 44.403370979762656
+            }
+          },
+          "FY26Q2": {
+            "min_excess_qe1_qe60": -0.8355774783242321,
+            "max_excess_qe1_qe60": 58.57901242721022,
+            "excess_at_next_start": -4.08028176122029,
+            "cohort_dos_qe1": 91.02052135330005,
+            "cohort_dos_next_start": 47.38497609294116,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": -4.436096302791434,
+              "max_excess_qe1_qe60": 26.40136641784614,
+              "excess_at_next_start": 1.2075387718917696,
+              "cohort_dos_qe1": 57.31895223420647,
+              "cohort_dos_next_start": 44.702911702043714
+            }
+          },
+          "FY26Q3": {
+            "min_excess_qe1_qe60": 17.803790967057157,
+            "max_excess_qe1_qe60": 63.180180957082975,
+            "excess_at_next_start": 16.542334328781944,
+            "cohort_dos_qe1": 64.01668565548164,
+            "cohort_dos_next_start": 42.36680183356841,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": 6.21823147858758,
+              "max_excess_qe1_qe60": 24.204124107394538,
+              "excess_at_next_start": 11.43595456263167,
+              "cohort_dos_qe1": 38.47536114237219,
+              "cohort_dos_next_start": 39.91502671475026
+            }
+          },
+          "FY26Q4": {
+            "min_excess_qe1_qe60": 4.735806007249852,
+            "max_excess_qe1_qe60": 56.71677267923388,
+            "excess_at_next_start": 11.26182011756228,
+            "cohort_dos_qe1": 62.074420455676055,
+            "cohort_dos_next_start": 41.914185175375536,
+            "stuffing_off": {
+              "min_excess_qe1_qe60": -1.3048537471275077,
+              "max_excess_qe1_qe60": 25.42928972482517,
+              "excess_at_next_start": 9.613919892618156,
+              "cohort_dos_qe1": 39.514049718210465,
+              "cohort_dos_next_start": 39.300751736967996
+            }
+          }
+        }
+      },
+      "seconds": 12.6
+    },
+    {
+      "id": "S6",
+      "status": "PASS",
+      "measured": "933 non-stuffer tagged invoices",
+      "target": "> 0",
+      "evidence": "scheme-tagged in-window invoices of non-stuffers, settled cycles (distributors / vs stuffer invoices): FY24Q4 156 (119 / 87), FY25Q1 35 (35 / 110), FY25Q2 106 (95 / 74), FY25Q3 65 (62 / 106), FY25Q4 170 (127 / 76), FY26Q1 37 (34 / 138), FY26Q2 104 (88 / 69), FY26Q3 62 (59 / 92), FY26Q4 198 (144 / 97)",
+      "detail": {},
+      "seconds": 1.2
+    },
+    {
+      "id": "I1",
+      "status": "PASS",
+      "measured": "41.6/month, 14.4% of district",
+      "target": "about 45/mo, 15%; >= 6 peers; first >= 2024-07-01",
+      "evidence": "INS0227 in Kamrup Metropolitan, Assam; first attributed install 2024-07-02; 42 other installers active since 2024-07-01; 0 of its installs outside the district's pincodes",
+      "detail": {
+        "district": "Kamrup Metropolitan",
+        "state": "Assam",
+        "first_install": "2024-07-02",
+        "other_active": 42,
+        "per_month": 41.61538461538461,
+        "share": "0.14437367303609341826"
+      },
+      "seconds": 0.04
+    },
+    {
+      "id": "I2",
+      "status": "FAIL",
+      "measured": "2.94x / 2.58x (cf 1.18 / 1.04)",
+      "target": "[2.6, 3.4] at 180 and 365 d; cf [0.6, 1.6]",
+      "evidence": "claims per unit, installer vs same-district other installers, install clock: raw 180 d: 77/829 vs 225/7119 = 2.94 (2.27-3.81); raw 365 d: 92/580 vs 345/5611 = 2.58 (2.05-3.25); raw_cf_installer_decoy 180 d: 31/829 vs 225/7119 = 1.18 (0.81-1.72); raw_cf_installer_decoy 365 d: 37/580 vs 345/5611 = 1.04 (0.74-1.46); installer's own claims raw / decoy-off run (same units): 180 d 2.48x, 365 d 2.49x",
+      "detail": {
+        "raw.180": {
+          "units": 829,
+          "claims": 77,
+          "loo_units": 7119,
+          "loo_claims": 225,
+          "ratio": 2.938817852834741,
+          "ci95": [
+            2.2687568759805927,
+            3.8067765054848812
+          ]
+        },
+        "raw.365": {
+          "units": 580,
+          "claims": 92,
+          "loo_units": 5611,
+          "loo_claims": 345,
+          "ratio": 2.5797701149425287,
+          "ci95": [
+            2.049751500278099,
+            3.246839358355217
+          ]
+        },
+        "raw_cf_installer_decoy.180": {
+          "units": 829,
+          "claims": 31,
+          "loo_units": 7119,
+          "loo_claims": 225,
+          "ratio": 1.1831604342581425,
+          "ci95": [
+            0.8127712081292393,
+            1.7223403083089066
+          ]
+        },
+        "raw_cf_installer_decoy.365": {
+          "units": 580,
+          "claims": 37,
+          "loo_units": 5611,
+          "loo_claims": 345,
+          "ratio": 1.0375162418790604,
+          "ci95": [
+            0.7391673082567631,
+            1.4562872845411718
+          ]
+        }
+      },
+      "seconds": 0.32
+    },
+    {
+      "id": "I3",
+      "status": "PASS",
+      "measured": "2 plants >= 20%, 73 lots, 0 DGP-L2",
+      "target": ">= 2 plants >= 20%, >= 5 lots, 0 DGP-L2",
+      "evidence": "1,088 attributed units by plant: GHY 72.6%, HWH 27.4%",
+      "detail": {
+        "plant_shares": {
+          "GHY": 0.7261029411764706,
+          "HWH": 0.27389705882352944
+        },
+        "resin_lots": 73,
+        "dgp_l2_units": 0
+      },
+      "seconds": 0.24
+    },
+    {
+      "id": "I4",
+      "status": "PASS",
+      "measured": "batches>=100: 0 exist (max share n/a); lots max 1.800%",
+      "target": "<= 5% of every batch >= 100 units and every lot",
+      "evidence": "no batch reaches 100 units (largest 90), so the batch clause is vacuous as written; over the 7,997 batches with >= 20 units (installer in 703) its max share is 13.8% (most units in one batch: 6) and it exceeds 5% in 67 of them; max share over its 73 resin lots 1.800%",
+      "detail": {
+        "batches_ge_100": 0,
+        "max_share_ge_100": null,
+        "batches_ge_20": 7997,
+        "max_share_ge_20": 0.13793103448275862,
+        "batches_ge_20_over_cap": 67,
+        "largest_batch": 90,
+        "max_share_lot": 0.018001241464928614,
+        "lots": 73
+      },
+      "seconds": 0.24
+    },
+    {
+      "id": "I5",
+      "status": "DEFERRED",
+      "measured": "-",
+      "target": "installer scan flags it; no batch/lot outside the resin lot flagged",
+      "evidence": "needs installer_scan and lot_scan detectors (not built yet)",
+      "detail": {},
+      "seconds": 0.0
+    }
+  ]
+}

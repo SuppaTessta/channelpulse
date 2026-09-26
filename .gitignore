@@ -1,6 +1,7 @@
 # Local-only planning docs and agent config
 CHANNELPULSE_PLAN.md
 CHANNELPULSE_BUILD_PROMPT.md
+CHANNELPULSE_PHASE2_PROMPT.md
 .claude/
 
 # Secrets / local overrides

@@ -38,8 +38,7 @@ jobs:
           --health-cmd "pg_isready -U channelpulse" --health-interval 2s --health-timeout 3s --health-retries 30
     env:
       POSTGRES_HOST: 127.0.0.1
-      # Present only if the repo has the secret; without it the eval validates its golden answers and reports not_run.
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # No model credential, ever: paid calls are opt-in (make eval locally). Here the eval only validates its goldens.
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

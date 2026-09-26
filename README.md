@@ -43,21 +43,25 @@ Requires Docker, Python 3.12, Node 24 and GNU make (Windows: `winget install ezw
 
 ```bash
 cp .env.example .env   # optional: override ports/credentials
-make setup             # .venv + Python deps, web deps
+make setup             # .venv + Python deps, web deps (~2 min)
 make up                # Postgres 17, waits until healthy
-make seed              # synthetic data -> raw (idempotent, ~4 min)
-make dbt               # build + test the warehouse, run the detectors, apply the API's DB roles (~5-8 min)
+make seed              # synthetic data -> raw (idempotent, ~1 min)
+make dbt               # build + test the warehouse, run the detectors, apply the API's DB roles (~6 min)
 make api               # FastAPI on :$API_PORT (default 8000)
 make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
 make web-start         # or: production build, then serve it (restart it after every rebuild)
 make test lint         # 459 Python tests, ruff, dbt parse, eslint
-make smoke             # browser smoke test of every page against the running API and dashboard
+make smoke             # browser smoke test of every page against the running API and dashboard (SMOKE_URL if not :3000)
 make eval              # golden-set eval; scores the agent when ANTHROPIC_API_KEY is set
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
 make down
 ```
 
 All Python runs from the repo-root `.venv`. The Ask panel needs `ANTHROPIC_API_KEY`; everything else runs without it.
+
+Timings are from a clean clone on the Windows build machine (decisions E2); the sequence above was run end to end there, finishing with `make smoke`.
+
+**A second copy alongside the first:** Docker Compose names its project, container and data volume after the folder, so a clone in another folder gets its own Postgres volume. Give it a free `POSTGRES_PORT` and `API_PORT` in its `.env`, point `web/.env.local` at that API, and serve the dashboard on another port (`npm --prefix web run start -- -p 3100`, then `SMOKE_URL=http://127.0.0.1:3100 make smoke`).
 
 **Ports:** if something else already holds port 8000, set `API_PORT` in `.env` and `NEXT_PUBLIC_API_URL=http://127.0.0.1:<port>` in `web/.env.local`. `NEXT_PUBLIC_API_URL` is compiled into the browser code, so rebuild after changing it. `make smoke` reads `API_PORT` too, and fails with a clear message if the API or the dashboard server is older than the code (decisions D28).
 

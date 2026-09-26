@@ -176,3 +176,15 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**
 On the build machine, Smart App Control (enforcement mode) blocks the newest psycopg2-binary 2.9.13's bundled `libcrypto` DLL, a build with no reputation yet. That stops dbt entirely. 2.9.10's DLLs load. No security setting was changed. Linux and CI are unaffected.
+
+**E2. Clean-clone verification (Phase 2, A2, 2026-09-27).**
+A fresh `git clone` of `phase2` at `45bca02` into `D:\cpc` ran the README quickstart end to end with no code changes. It used its own Compose project and data volume (`cpc`, Postgres on 5433, API on 8020, dashboard on 3100), so the existing database was never touched.
+- `make setup` took 2 min, `make seed` 56 s and `make dbt` 5 min 49 s: dbt passed 162 of 162.
+- `make lint` and `make test` passed, with 459 tests including the database-backed ones; the web build passed; `make smoke` passed 13 of 13.
+- The detectors' output (`detectors/results/latest.json`) came out identical to the committed file, apart from its runtime, so the data regenerates exactly.
+- Machine-specific steps, all now in the README:
+  - port 8000 was taken by another project, so `API_PORT` and `NEXT_PUBLIC_API_URL` were changed;
+  - the psycopg2-binary pin (E1) for Smart App Control;
+  - Playwright uses the installed Edge.
+- Nothing broke. npm warns that one ESLint dependency's install script (`unrs-resolver`) isn't approved to run; lint passes without it.
+

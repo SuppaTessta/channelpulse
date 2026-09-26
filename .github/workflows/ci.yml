@@ -24,7 +24,7 @@ jobs:
       - run: make test
       - run: npm --prefix web run build
 
-  warehouse:   # end to end: seed -> dbt build + tests -> detectors -> DB-backed tests -> eval
+  warehouse:   # end to end: seed -> dbt build + tests -> detectors -> DB-backed tests -> eval -> browser smoke test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -52,6 +52,14 @@ jobs:
       - run: make dbt
       - run: make test   # now with the database: the DB-marked tests run instead of skipping
       - run: make eval
+      - name: Serve the API and a production build of the dashboard
+        run: |
+          nohup .venv/bin/python -m uvicorn app.main:app --app-dir api --port 8000 > api.log 2>&1 &
+          npm --prefix web run build
+          (cd web && nohup npx next start -p 3000 > ../web.log 2>&1 &)
+          timeout 90 sh -c 'until curl -sf http://127.0.0.1:8000/health && curl -sf -o /dev/null http://127.0.0.1:3000/ask; do sleep 1; done'
+      - run: cd web && npx playwright install --with-deps chromium
+      - run: make smoke
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -59,3 +67,6 @@ jobs:
           path: |
             evals/results/latest.json
             detectors/results/latest.json
+            api.log
+            web.log
+            web/test-results/

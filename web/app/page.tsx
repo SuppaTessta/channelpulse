@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { DateRangeControl } from "@/components/date-range";
 import { KpiStrip, KpiStripSkeleton } from "@/components/kpi-strip";
 import { PageError } from "@/components/page-error";
+import { Panel } from "@/components/panel";
 import { PendingStatus } from "@/components/providers";
 import { RegionStockPanel } from "@/components/region-stock-panel";
 import { FilterBar, PageBody, TopBar } from "@/components/top-bar";
@@ -45,11 +45,11 @@ export default async function ExecutivePage({ searchParams }: { searchParams: Pr
         <PendingStatus />
       </FilterBar>
       <PageBody>
-        <Suspense fallback={<KpiStripSkeleton />}>
+        <Panel title="Key figures" fallback={<KpiStripSkeleton />}>
           <KpiStrip {...common} />
-        </Suspense>
+        </Panel>
         <Sheet className="md:grid-cols-12">
-          <Suspense fallback={<TrendSkeleton title="Primary and secondary sales" className={SALES} />}>
+          <Panel title="Primary and secondary sales" className={SALES} fallback={<TrendSkeleton title="Primary and secondary sales" className={SALES} />}>
             <TrendPanel
               {...common}
               id="sales"
@@ -63,8 +63,8 @@ export default async function ExecutivePage({ searchParams }: { searchParams: Pr
               mark="bar"
               className={SALES}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Channel days of stock" className={STOCK} />}>
+          </Panel>
+          <Panel title="Channel days of stock" className={STOCK} fallback={<TrendSkeleton title="Channel days of stock" className={STOCK} />}>
             <TrendPanel
               {...common}
               id="stock"
@@ -75,8 +75,8 @@ export default async function ExecutivePage({ searchParams }: { searchParams: Pr
               mark="line"
               className={STOCK}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Days sales outstanding" className={DSO} />}>
+          </Panel>
+          <Panel title="Days sales outstanding" className={DSO} fallback={<TrendSkeleton title="Days sales outstanding" className={DSO} />}>
             <TrendPanel
               {...common}
               id="dso"
@@ -88,10 +88,10 @@ export default async function ExecutivePage({ searchParams }: { searchParams: Pr
               className={DSO}
               footer={<p className="text-xs text-subtle">Recent months include invoices still open, aged to the as-of date.</p>}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Stock-out and overstock by region" className={REGION} />}>
+          </Panel>
+          <Panel title="Stock-out and overstock by region" className={REGION} fallback={<TrendSkeleton title="Stock-out and overstock by region" className={REGION} />}>
             <RegionStockPanel period={period} region={region} catalog={catalog} className={REGION} />
-          </Suspense>
+          </Panel>
         </Sheet>
       </PageBody>
     </>

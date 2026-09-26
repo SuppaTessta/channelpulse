@@ -1,7 +1,6 @@
 import { Database, Hourglass, PlugsConnected, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import type { ApiError } from "@/lib/api";
-import { API_URL } from "@/lib/config";
 import { RetryButton } from "./retry-button";
 import { cx, ICON } from "./ui";
 
@@ -11,12 +10,19 @@ export function describeError(error: ApiError): { title: string; body: string; i
   if (error.kind === "unreachable") {
     return {
       title: "Can't reach the ChannelPulse API",
-      body: `The dashboard couldn't connect to ${API_URL}. Check that the API server is running, then retry.`,
+      body: "The dashboard couldn't connect to the API server. Check that it's running, then retry. The address it tried is under Technical detail.",
       icon: icon(PlugsConnected),
     };
   }
   if (error.kind === "timeout") {
     return { title: "The API didn't answer in time", body: "The query ran too long. Retry, or narrow the date range.", icon: icon(Hourglass) };
+  }
+  if (error.kind === "shape") {
+    return {
+      title: "The API sent a response this panel can't read",
+      body: "Its shape doesn't match what the dashboard expects, so nothing is drawn from it. This usually means the API and the dashboard are from different versions: restart both, then retry.",
+      icon: icon(WarningOctagon),
+    };
   }
   if (error.kind === "empty") {
     return { title: "No data in the warehouse yet", body: "The marts exist but hold no rows for this view. Reload once the warehouse has been loaded.", icon: icon(Database) };
@@ -64,10 +70,24 @@ export function ErrorDetail({ error, className }: { error: ApiError; className?:
   );
 }
 
-export function ErrorState({ error, compact = false, className }: { error: ApiError; compact?: boolean; className?: string }) {
-  const { title, body, icon } = describeError(error);
+/** The failure layout shared by API errors and render failures: icon, what happened, what to do, then actions. */
+export function FailureMessage({
+  icon,
+  title,
+  body,
+  actions,
+  compact = false,
+  className,
+}: {
+  icon: ReactNode;
+  title: string;
+  body: ReactNode;
+  actions: ReactNode;
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <div role="status" className={cx("flex flex-col items-start gap-3 text-left", compact ? "py-2" : "py-8", className)}>
+    <div role="status" data-panel-error="" className={cx("flex flex-col items-start gap-3 text-left", compact ? "py-2" : "py-8", className)}>
       <div className="flex items-start gap-3">
         <span className="mt-0.5 text-danger">{icon}</span>
         <div className="max-w-[60ch]">
@@ -75,11 +95,27 @@ export function ErrorState({ error, compact = false, className }: { error: ApiEr
           <p className="mt-1 text-sm text-muted">{body}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-8">
-        <RetryButton />
-        <ErrorDetail error={error} />
-      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-8">{actions}</div>
     </div>
+  );
+}
+
+export function ErrorState({ error, compact = false, className }: { error: ApiError; compact?: boolean; className?: string }) {
+  const { title, body, icon } = describeError(error);
+  return (
+    <FailureMessage
+      icon={icon}
+      title={title}
+      body={body}
+      compact={compact}
+      className={className}
+      actions={
+        <>
+          <RetryButton />
+          <ErrorDetail error={error} />
+        </>
+      }
+    />
   );
 }
 

@@ -48,8 +48,10 @@ make up                # Postgres 17, waits until healthy
 make seed              # synthetic data -> raw (idempotent, ~4 min)
 make dbt               # build + test the warehouse, run the detectors, apply the API's DB roles (~5-8 min)
 make api               # FastAPI on :$API_PORT (default 8000)
-make web               # dashboard on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
-make test lint         # 456 Python tests, ruff, dbt parse, eslint
+make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
+make web-start         # or: production build, then serve it (restart it after every rebuild)
+make test lint         # 459 Python tests, ruff, dbt parse, eslint
+make smoke             # browser smoke test of every page against the running API and dashboard
 make eval              # golden-set eval; scores the agent when ANTHROPIC_API_KEY is set
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
 make down
@@ -57,9 +59,12 @@ make down
 
 All Python runs from the repo-root `.venv`. The Ask panel needs `ANTHROPIC_API_KEY`; everything else runs without it.
 
+**Ports:** if something else already holds port 8000, set `API_PORT` in `.env` and `NEXT_PUBLIC_API_URL=http://127.0.0.1:<port>` in `web/.env.local`. `NEXT_PUBLIC_API_URL` is compiled into the browser code, so rebuild after changing it. `make smoke` reads `API_PORT` too, and fails with a clear message if the API or the dashboard server is older than the code (decisions D28).
+
 **Windows:**
 - Clone to a short path (e.g. `C:\src\channelpulse`), because dbt's dependencies exceed MAX_PATH beyond about 85 characters of repo path.
 - Smart App Control can block brand-new native wheels (decisions E1).
+- `make smoke` drives the installed Microsoft Edge locally, so Playwright needs no browser download (CI uses Playwright's Chromium).
 
 ## Metric glossary
 Each metric is defined once in [`warehouse/semantic_models/`](warehouse/semantic_models). The dashboard and the agent's `query_metric` both compile from those definitions.
@@ -145,7 +150,7 @@ Golden answers come from hand-written SQL against the marts, never from the agen
 export ANTHROPIC_API_KEY=...        # a full run costs about $4-7 with claude-opus-5 (estimate)
 make eval                           # or: python evals/run_eval.py --budget-usd 8 [--model claude-sonnet-5]
 ```
-CI's `warehouse` job runs the same eval, and scores it when the repo has an `ANTHROPIC_API_KEY` secret.
+CI's `warehouse` job runs the same eval, but CI never receives a model credential (a test enforces it), so there it only validates the golden answers. Paid calls happen only when you run the eval yourself.
 
 ## Anomaly detection
 The data contains planted anomalies, and the pre-registered detectors look for them blind. The full story, including the detectors' false positives and the one detector that fired late, is in the [case study](docs/case-study.md). It contains spoilers, so read the dashboard first if you want to find them yourself.

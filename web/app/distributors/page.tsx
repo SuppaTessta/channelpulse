@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { DateRangeControl } from "@/components/date-range";
 import { DefinitionButton } from "@/components/definition";
 import { DistributorTable, type DistributorRow, type RiskFlag } from "@/components/distributor-table";
 import { PageError } from "@/components/page-error";
+import { Panel } from "@/components/panel";
 import { PendingStatus } from "@/components/providers";
 import { describeError, ErrorState } from "@/components/states";
 import { FilterBar, PageBody, TopBar } from "@/components/top-bar";
@@ -130,9 +130,9 @@ export default async function DistributorsPage({ searchParams }: { searchParams:
         <PendingStatus />
       </FilterBar>
       <PageBody>
-        <Suspense fallback={<ListSkeleton />}>
+        <Panel title="Distributors" fallback={<ListSkeleton />}>
           <DistributorList period={period} region={region} catalog={catalog} sp={sp} />
-        </Suspense>
+        </Panel>
       </PageBody>
     </>
   );

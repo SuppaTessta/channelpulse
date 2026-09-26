@@ -153,6 +153,25 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
   - Non-June cycles end within +1 to +2.8 days of the counterfactual at the next window.
   - June cycles end about 11–12 days over. Stock sized on the March–June peak meets the monsoon trough, and distributors can't return stock. Clearing that fully would mean changing ground truth's k or θ, which were fixed before generation, so it's reported, not tuned away.
 
+**D28. The dashboard crash was stale processes, and panels now fail one at a time (Phase 2, A1).**
+
+*What was seen:* `/api/meta` answered 404, `localhost:3000` often showed Next.js's "Application error" page, and at other times the "Primary and secondary sales" and "Channel days of stock" charts stayed empty.
+
+*Root cause, in plain language:* both servers were older than the code on disk.
+- **The API** had been started before `/api/meta` existed and was never restarted. The dashboard doesn't call `/api/meta`, so that 404 was a symptom of age, not the crash.
+- **The dashboard** was a long-running `next start`, and later verification builds (`next build`) replaced the `.next` folder underneath it. The old server kept handing out HTML that named code files the new build had deleted, and it answered those requests with HTTP 400. The browser then couldn't load the page's JavaScript (`ChunkLoadError`), which is the "Application error" page. React's streaming script also couldn't place the panels that arrive last, which are the two charts that stayed empty. Whether a visit crashed or only lost those charts depended on which files the browser still had cached.
+- Reproduced on purpose: rebuilding under a running `next start` gives exactly these errors in a fresh browser, and restarting the server clears them. That this is what happened on the owner's machine is an inference: Phase 1 ran verification builds while that server stayed up, and this was the only cause found that produces both symptoms. With a server that matches its build, all four pages load cleanly in every region tested.
+
+*What changed:*
+- `next dev` now builds into `web/.next-dev`, so a production build can't swap files under a running dev server. `make web-start` always builds and then serves.
+- The smoke test (`make smoke`, and in CI) checks first that the dashboard server is running the build on disk and that the API serves `/api/meta`. So a stale process fails with a message that names it, instead of as a crashed page.
+- **Containment:** every panel is wrapped in `Panel`, which is `Suspense` around a client error boundary.
+  - A render exception replaces only that panel with a failure state and a Retry button.
+  - `app/error.tsx` and a new `app/global-error.tsx` catch what's left. A code file that fails to load gets "The dashboard was updated. Reload".
+  - Responses are shape-checked where they enter the dashboard (`web/lib/validate.ts`), so a response of the wrong shape becomes that panel's error state instead of a crash further down.
+- **One wrong turn, kept on record:** the first version put the boundary outside `Suspense`. That made the still-streaming server content a prop of a client component, and on the Executive page React then abandoned the server render (error #419) on every load. The smoke test caught it: 8 of 8 runs failed, against 12 of 12 passes with plain `Suspense`. With `Suspense` outside the boundary, 12 of 12 passed.
+- `web/e2e/faults.spec.ts` proves the containment against the real API. A proxy breaks two metrics, one with the wrong shape and one with HTTP 500. Exactly those panels show errors, and the rest of the page draws.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

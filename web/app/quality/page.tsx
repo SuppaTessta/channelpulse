@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { PageError } from "@/components/page-error";
+import { Panel } from "@/components/panel";
 import { ParamSelect } from "@/components/param-select";
 import { PendingStatus } from "@/components/providers";
 import { CohortHeatmap, EntityDrill, loadOptions, LotFlags, MonthDrill, type QualityCtx } from "@/components/quality-sections";
@@ -68,19 +68,19 @@ export default async function QualityPage({ searchParams }: { searchParams: Prom
         ) : null}
         <div className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-[minmax(0,1fr)_400px]">
           <Sheet className="self-start">
-            <Suspense fallback={<PanelSkeleton label="cohort heatmap" chartHeight="h-[520px]" />}>
+            <Panel title="Cohort heatmap" fallback={<PanelSkeleton label="cohort heatmap" chartHeight="h-[520px]" />}>
               <CohortHeatmap ctx={ctx} activeMonth={month} />
-            </Suspense>
+            </Panel>
           </Sheet>
           <div className="flex flex-col gap-4 md:gap-5" data-dim="">
             {lot || batch ? (
-              <Suspense key={`${lot}|${batch}`} fallback={<Skeleton className="h-96 w-full rounded-panel" />}>
+              <Panel title="Drill-down" key={`${lot}|${batch}`} fallback={<Skeleton className="h-96 w-full rounded-panel" />}>
                 <EntityDrill ctx={ctx} kind={lot ? "lot" : "batch"} id={(lot ?? batch)!} anomalies={anomalies} />
-              </Suspense>
+              </Panel>
             ) : month ? (
-              <Suspense key={month} fallback={<Skeleton className="h-72 w-full rounded-panel" />}>
+              <Panel title="Month drill-down" key={month} fallback={<Skeleton className="h-72 w-full rounded-panel" />}>
                 <MonthDrill ctx={ctx} month={month} />
-              </Suspense>
+              </Panel>
             ) : null}
             <LotFlags anomalies={anomalies} sp={sp} activeLot={lot} className="rounded-panel border border-line bg-surface p-4 md:p-5" />
           </div>

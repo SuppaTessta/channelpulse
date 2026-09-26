@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AskPanel } from "@/components/ask/ask-panel";
+import { Panel } from "@/components/panel";
 import { PageBody, TopBar } from "@/components/top-bar";
 import { getDataWindow, getMetrics } from "@/lib/api";
 import { parseRegion } from "@/lib/config";
@@ -17,7 +18,9 @@ export default async function AskPage({ searchParams }: { searchParams: Promise<
       <TopBar title="Ask ChannelPulse" region={region} win={win} catalog={catalog} />
       <PageBody>
         <div className="mx-auto w-full max-w-[960px]">
-          <AskPanel region={region} pagesQuery={sharedQuery(sp)} />
+          <Panel title="Ask ChannelPulse" fallback={null}>
+            <AskPanel region={region} pagesQuery={sharedQuery(sp)} />
+          </Panel>
         </div>
       </PageBody>
     </>

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { DateRangeControl } from "@/components/date-range";
 import { HealthPanel, loadProfile, ProfileFacts, Receivables, SchemePanel } from "@/components/distributor-sections";
 import { PageError } from "@/components/page-error";
+import { Panel } from "@/components/panel";
 import { PendingStatus } from "@/components/providers";
 import { EmptyState } from "@/components/states";
 import { FilterBar, PageBody, TopBar } from "@/components/top-bar";
@@ -104,10 +105,10 @@ export default async function DistributorPage({ params, searchParams }: { params
       <PageBody>
         <ProfileFacts profile={p} flag={flag} pastFlag={pastFlag} />
         <Sheet className="md:grid-cols-12">
-          <Suspense fallback={<TrendSkeleton title="Distributor health score" className={WIDE} height="h-80" />}>
+          <Panel title="Distributor health score" className={WIDE} fallback={<TrendSkeleton title="Distributor health score" className={WIDE} height="h-80" />}>
             <HealthPanel ctx={ctx} flag={flag} pastFlag={pastFlag} className={WIDE} />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Sell-in and sell-out" className={LEFT} />}>
+          </Panel>
+          <Panel title="Sell-in and sell-out" className={LEFT} fallback={<TrendSkeleton title="Sell-in and sell-out" className={LEFT} />}>
             <TrendPanel
               {...ctx}
               id="units"
@@ -121,8 +122,8 @@ export default async function DistributorPage({ params, searchParams }: { params
               mark="bar"
               className={LEFT}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Channel days of stock" className={RIGHT} />}>
+          </Panel>
+          <Panel title="Channel days of stock" className={RIGHT} fallback={<TrendSkeleton title="Channel days of stock" className={RIGHT} />}>
             <TrendPanel
               {...ctx}
               id="stock"
@@ -133,8 +134,8 @@ export default async function DistributorPage({ params, searchParams }: { params
               mark="line"
               className={RIGHT}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Collections" className={LEFT} />}>
+          </Panel>
+          <Panel title="Collections" className={LEFT} fallback={<TrendSkeleton title="Collections" className={LEFT} />}>
             <TrendPanel
               {...ctx}
               id="collections"
@@ -150,8 +151,8 @@ export default async function DistributorPage({ params, searchParams }: { params
                 </Suspense>
               }
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Field visits" className={RIGHT} />}>
+          </Panel>
+          <Panel title="Field visits" className={RIGHT} fallback={<TrendSkeleton title="Field visits" className={RIGHT} />}>
             <TrendPanel
               {...ctx}
               id="visits"
@@ -166,10 +167,10 @@ export default async function DistributorPage({ params, searchParams }: { params
               barMode="overlay"
               className={RIGHT}
             />
-          </Suspense>
-          <Suspense fallback={<TrendSkeleton title="Scheme participation" className={WIDE} height="h-40" />}>
+          </Panel>
+          <Panel title="Scheme participation" className={WIDE} fallback={<TrendSkeleton title="Scheme participation" className={WIDE} height="h-40" />}>
             <SchemePanel ctx={ctx} className={WIDE} />
-          </Suspense>
+          </Panel>
         </Sheet>
       </PageBody>
     </>

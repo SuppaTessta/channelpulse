@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AskResponse } from "@/lib/ask";
 import { API_URL, regionName, type Region } from "@/lib/config";
+import { isAskResponse } from "@/lib/validate";
 import { Answer, AnswerHeader, LabelBadge, PendingAnswer } from "./answer";
 import { buttonClass, cx, ICON } from "../ui";
 
@@ -208,9 +209,15 @@ export function AskPanel({ region, pagesQuery }: { region: Region; pagesQuery: s
         settle(id, { state: "failed", error });
         setAnnounce(isUnconfigured(error) ? "Not answered: the analyst isn't configured on this server." : "Not answered.");
       } else {
-        const response = (await res.json()) as AskResponse;
-        settle(id, { state: "answered", response });
-        setAnnounce(`Answer ready, labelled ${response.label.replace(/_/g, " ")}.`);
+        const response: unknown = await res.json().catch(() => undefined);
+        if (isAskResponse(response)) {
+          settle(id, { state: "answered", response });
+          setAnnounce(`Answer ready, labelled ${response.label.replace(/_/g, " ")}.`);
+        } else {
+          const detail = "The API's answer doesn't have the shape this page expects, so it isn't shown. The API and the dashboard are probably from different versions.";
+          settle(id, { state: "failed", error: { status: res.status, detail } });
+          setAnnounce("Not answered.");
+        }
       }
     } catch {
       const reason = controller.signal.aborted ? controller.signal.reason : null;

@@ -15,8 +15,10 @@ PY := "$(VENV_BIN)/python"
 DBT := "$(VENV_BIN)/dbt"
 DBT_ARGS := --project-dir warehouse --profiles-dir warehouse
 API_PORT ?= 8000
+# The smoke test checks the API directly as well as through the dashboard (exported to recipes by `export`).
+SMOKE_API_URL ?= http://127.0.0.1:$(API_PORT)
 
-.PHONY: setup lock up down seed dbt detect roles semantic acceptance eval dbt-debug api web lint test
+.PHONY: setup lock up down seed dbt detect roles semantic acceptance eval dbt-debug api web web-start smoke lint test
 
 setup:  ## create .venv + install Python and web deps
 	$(BOOTSTRAP_PY) -m venv .venv
@@ -61,8 +63,15 @@ dbt-debug:
 api:  ## dev server from .venv
 	$(PY) -m uvicorn app.main:app --app-dir api --reload --reload-dir api --port $(API_PORT)
 
-web:
+web:  ## dev server (builds into web/.next-dev, so a production build can't swap files under it)
 	npm --prefix web run dev
+
+web-start:  ## production build, then serve it. Restart after every build: a server older than .next breaks pages (D28)
+	npm --prefix web run build
+	npm --prefix web run start
+
+smoke:  ## browser smoke test of every page against the running API and dashboard (make api, make web-start)
+	cd web && npx playwright test
 
 lint:
 	$(PY) -m ruff check .

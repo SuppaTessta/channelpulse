@@ -252,7 +252,7 @@ export function TimeChart({
         ) : null}
         <div ref={plotRef} className="cp-plot relative" />
         {failed ? (
-          <p role="status" className="absolute inset-0 flex items-center justify-center text-sm text-muted">
+          <p role="status" data-panel-error="" className="absolute inset-0 flex items-center justify-center text-sm text-muted">
             This chart couldn&apos;t be drawn. The table view has every value.
           </p>
         ) : null}

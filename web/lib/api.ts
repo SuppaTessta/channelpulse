@@ -4,6 +4,7 @@ import { cache } from "react";
 import { API_URL, type Region } from "./config";
 import { monthEnd, toISODate } from "./dates";
 import { column, records, type Table } from "./table";
+import { isGoverned, isMetricList } from "./validate";
 
 export type Scalar = string | number | boolean;
 export type Filter = { dimension: string; op: "=" | "!=" | ">" | ">=" | "<" | "<=" | "in" | "not_in"; value: Scalar | Scalar[] };
@@ -25,12 +26,18 @@ export type Metric = {
   dimensions: string[];
   glossary: boolean;
 };
-export type ApiError = { kind: "unreachable" | "timeout" | "http" | "empty"; status?: number; detail: string; endpoint: string };
+export type ApiError = { kind: "unreachable" | "timeout" | "http" | "empty" | "shape"; status?: number; detail: string; endpoint: string };
 export type Result<T> = { ok: true; value: T } | { ok: false; error: ApiError };
 /** A governed query together with the request that produced it, for the Definition and SQL disclosure. */
 export type Query = { request: MetricQuery; region: Region; result: Governed };
 
 const TIMEOUT_MS = 20_000;
+
+// Server-side calls may use a different base than the browser's baked-in NEXT_PUBLIC_API_URL: read at run time, so
+// one build can be pointed elsewhere (the smoke test's fault-injection proxy, or a private URL in deployment).
+const SERVER_API_URL = (process.env.CHANNELPULSE_API_URL || API_URL).replace(/\/+$/, "");
+
+type Check<T> = (value: unknown) => value is T;
 
 // A page runs about 25 governed queries. Fired all at once they contend in Postgres and the heavy ones (weekly
 // stock snapshots) pass the API's 5 s statement timeout, so at most this many calls run at a time per server process.
@@ -72,35 +79,39 @@ const CACHE_MS = 60_000;
 const MAX_CACHED = 500;
 const recent = new Map<string, { at: number; value: Promise<Result<unknown>> }>();
 
-function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
   const key = `${region} ${init.method ?? "GET"} ${endpoint} ${init.body ?? ""}`;
   const hit = recent.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as Promise<Result<T>>;
   if (recent.size >= MAX_CACHED) recent.clear();
-  const value = callOnce<T>(endpoint, init, region);
+  const value = callOnce<T>(endpoint, init, region, check);
   recent.set(key, { at: Date.now(), value });
   value.then((r) => !r.ok && recent.delete(key)); // failures are never reused: Retry must really retry
   return value;
 }
 
-function callOnce<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+function callOnce<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
   return withSlot(async () => {
-    const first = await send<T>(endpoint, init, region);
+    const first = await send<T>(endpoint, init, region, check);
     // A statement timeout under contention is usually transient: one retry, then the error is shown as it is.
     const transient = !first.ok && first.error.status === 502 && first.error.detail.includes("statement timeout");
-    return transient ? send<T>(endpoint, init, region) : first;
+    return transient ? send<T>(endpoint, init, region, check) : first;
   });
 }
 
-async function send<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region): Promise<Result<T>> {
+async function send<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    const res = await fetch(`${SERVER_API_URL}${endpoint}`, {
       ...init,
       headers: { "Content-Type": "application/json", "X-Demo-Region": region },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) return { ok: false, error: { kind: "http", status: res.status, detail: await errorDetail(res), endpoint } };
-    return { ok: true, value: (await res.json()) as T };
+    const body: unknown = await res.json().catch(() => undefined);
+    if (!check(body)) {
+      return { ok: false, error: { kind: "shape", status: res.status, detail: `Unexpected response: ${JSON.stringify(body)?.slice(0, 200) ?? "not JSON"}`, endpoint } };
+    }
+    return { ok: true, value: body };
   } catch (e) {
     const timedOut = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
     const cause = (e as { cause?: { code?: string } })?.cause?.code;
@@ -108,7 +119,7 @@ async function send<T>(endpoint: string, init: RequestInit & { next?: { revalida
       ok: false,
       error: {
         kind: timedOut ? "timeout" : "unreachable",
-        detail: timedOut ? `No response within ${TIMEOUT_MS / 1000} seconds.` : `Couldn't connect to ${API_URL}${cause ? ` (${cause})` : ""}.`,
+        detail: timedOut ? `No response within ${TIMEOUT_MS / 1000} seconds.` : `Couldn't connect to ${SERVER_API_URL}${cause ? ` (${cause})` : ""}.`,
         endpoint,
       },
     };
@@ -117,7 +128,7 @@ async function send<T>(endpoint: string, init: RequestInit & { next?: { revalida
 
 // Keyed by the request's JSON, so identical queries on one page share a single API call.
 const runQuery = cache((body: string, region: Region) =>
-  call<Governed>("/api/metrics/query", { method: "POST", body, cache: "no-store" }, region),
+  call<Governed>("/api/metrics/query", { method: "POST", body, cache: "no-store" }, region, isGoverned),
 );
 
 export async function query(request: MetricQuery, region: Region): Promise<Result<Query>> {
@@ -141,7 +152,7 @@ export async function queryAll(requests: MetricQuery[], region: Region): Promise
 
 /** The governed catalogue from GET /api/metrics: labels, definitions, formulas and each metric's dimensions. */
 export const getMetrics = cache(async (): Promise<Result<Record<string, Metric>>> => {
-  const r = await call<{ metrics: Metric[] }>("/api/metrics", { method: "GET", next: { revalidate: 300 } }, "ALL");
+  const r = await call<{ metrics: Metric[] }>("/api/metrics", { method: "GET", next: { revalidate: 300 } }, "ALL", isMetricList);
   return r.ok ? { ok: true, value: Object.fromEntries(r.value.metrics.map((m) => [m.name, m])) } : r;
 });
 
@@ -163,7 +174,7 @@ export type Anomalies = { rows: Anomaly[]; asOf: string | null; result: Governed
 /** GET /api/anomalies: each pre-registered detector's latest flags on or before `asOf`, under the region claim. */
 export const getAnomalies = cache(async (region: Region, asOf?: string): Promise<Result<Anomalies>> => {
   const endpoint = `/api/anomalies${asOf ? `?as_of=${encodeURIComponent(asOf)}` : ""}`;
-  const r = await call<Governed>(endpoint, { method: "GET", cache: "no-store" }, region);
+  const r = await call<Governed>(endpoint, { method: "GET", cache: "no-store" }, region, isGoverned);
   if (!r.ok) return r;
   const rows = records(r.value.data) as Anomaly[];
   return { ok: true, value: { rows, asOf: toISODate(rows[0]?.as_of) ?? asOf ?? null, result: r.value, endpoint, region } };

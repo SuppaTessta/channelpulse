@@ -14,11 +14,18 @@ def response(model="claude-opus-5", **usage):
 
 @pytest.mark.parametrize(
     ("model", "expected"),
-    [("claude-opus-5", (5.0, 25.0)), ("claude-sonnet-5", (2.0, 10.0)), ("claude-haiku-4-5-20251001", (1.0, 5.0)),
-     ("claude-opus-4-8", (5.0, 25.0)), ("some-future-model", (5.0, 25.0))],
+    [("claude-opus-5-5", (4.0, 20.0, 0.20)), ("claude-opus-5", (5.0, 25.0, 0.50)), ("claude-sonnet-5", (2.0, 10.0, 0.20)),
+     ("claude-haiku-4-5-20251001", (1.0, 5.0, 0.10)), ("claude-opus-4-8", (5.0, 25.0, 0.50)),
+     ("some-future-model", (10.0, 50.0, 0.25))],
 )
 def test_models_are_priced_from_the_table_and_unknown_ones_at_the_dearest_rate(model, expected):
     assert price(model) == expected
+
+
+def test_cache_reads_bill_at_each_models_own_rate():
+    trace = Trace(question="q", region_claim="ALL", model="claude-opus-5-5")
+    trace.add_usage(response(model="claude-opus-5-5", cache_read_input_tokens=1_000_000))
+    assert trace.est_cost_usd == pytest.approx(0.20)  # 0.05x input on Opus 5.5, not the usual 0.1x
 
 
 def test_usage_adds_up_tokens_and_cost_across_rounds():

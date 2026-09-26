@@ -1,7 +1,7 @@
 // Shape checks where API responses enter the dashboard. A response that fails one becomes an ApiError of kind
 // "shape" for its own panel, instead of a crash somewhere downstream (typically an API and a dashboard from
 // different commits).
-import type { AskResponse } from "./ask";
+import type { AskResponse, AskStatus, Replay } from "./ask";
 import type { Governed, Metric } from "./api";
 
 type Obj = Record<string, unknown>;
@@ -51,5 +51,39 @@ export function isAskResponse(v: unknown): v is AskResponse {
     LABELS.has(v.label as string) &&
     isStr(v.confidence_note) &&
     isStr(v.trace_id)
+  );
+}
+
+function isRecording(v: unknown): boolean {
+  return (
+    isObj(v) &&
+    isStr(v.model) &&
+    isStr(v.effort) &&
+    isStr(v.recorded_at) &&
+    isStr(v.as_of) &&
+    isStr(v.region) &&
+    typeof v.count === "number"
+  );
+}
+
+export function isAskStatus(v: unknown): v is AskStatus {
+  return (
+    isObj(v) &&
+    (v.mode === "live" || v.mode === "replay") &&
+    (v.reason === null || v.reason === "no_credentials" || v.reason === "live_off") &&
+    isStr(v.model) &&
+    (v.recording === null || isRecording(v.recording))
+  );
+}
+
+export function isReplay(v: unknown): v is Replay {
+  return (
+    isObj(v) &&
+    (v.recording === null || isRecording(v.recording)) &&
+    typeof v.withheld === "boolean" &&
+    Array.isArray(v.answers) &&
+    v.answers.every(
+      (a) => isObj(a) && isStr(a.id) && isStr(a.category) && isStr(a.question) && isAskResponse(a.response) && isObj(a.eval) && typeof a.eval.correct === "boolean",
+    )
   );
 }

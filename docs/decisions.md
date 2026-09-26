@@ -172,6 +172,26 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
 - **One wrong turn, kept on record:** the first version put the boundary outside `Suspense`. That made the still-streaming server content a prop of a client component, and on the Executive page React then abandoned the server render (error #419) on every load. The smoke test caught it: 8 of 8 runs failed, against 12 of 12 passes with plain `Suspense`. With `Suspense` outside the boundary, 12 of 12 passed.
 - `web/e2e/faults.spec.ts` proves the containment against the real API. A proxy breaks two metrics, one with the wrong shape and one with HTTP 500. Exactly those panels show errors, and the rest of the page draws.
 
+**D29. The agent's model, live mode and replay (Phase 2, A3; owner-approved 2026-09-27).**
+- **Model:** `claude-opus-5-5` by default (`CHANNELPULSE_MODEL`), with no separate routing model.
+  - It was chosen from Anthropic's models and pricing pages on 2026-09-27. Opus 5.5 is the docs' recommended default, at $4 / $20 per million input/output tokens with cache reads at $0.20. The old default, `claude-opus-5`, is $5 / $25 / $0.50 and now legacy. Sonnet 5 is $2 / $10 / $0.20.
+  - Haiku 4.5 was ruled out: its retirement can come as soon as 2026-10-15.
+  - A routing model was ruled out because it adds a call and a second prompt cache to every question, and the routing is already enforced in code. Part B's two-model eval shows whether a cheaper model is enough on its own.
+- **Effort:** `medium` (`CHANNELPULSE_EFFORT`). It is Opus 5.5's own API default, and Anthropic reports Opus 5.5 at `medium` beating Opus 5 at `high` on analysis work. This is a default, not a measured choice; Part B can compare levels.
+- **Compatibility:** the loop already fits Opus 5.5's breaking changes. It uses adaptive thinking and never forces `tool_choice` (only `none` on the last round). Its history is append-only, with fallback turns echoed as documented.
+- **Pricing fix:** trace costs, and so the daily spend cap, now use each model's own cache-read price. They had priced every cache read at 0.1x input, which is wrong for Opus 5.5 (0.05x).
+- **Live mode is opt-in:** `/api/ask` calls the model only when credentials resolve *and* `ASK_LIVE=1`. With either missing it answers 503 and nothing is sent. `GET /api/ask/status` says which case applies.
+- **Replay:**
+  - A complete eval run over the whole question set writes `api/app/recordings/<model>.json`: each answer exactly as `/api/ask` returned it, with the run's model, date, as-of and region claim, and the eval's verdict on it.
+  - `GET /api/ask/replay` serves the configured model's recording, or else the newest.
+  - Answers are withheld under any region claim other than the one they were recorded with (the eval asks as ALL), because they could show rows that claim may not see.
+  - The Ask page shows replay whenever it isn't live, with the verdict on every answer, including wrong ones, shown as recorded. Before any recording exists it shows an honest empty state.
+  - Fixtures for the replay view live only in the dev-only story `web/app/dev/replay-fixture`, and are never written to `recordings/`.
+- **`make eval` spends only on a yes:** it prints an estimate before any model call and waits for a typed yes. `YES=1` (`--yes`) skips the question. A non-interactive run without it stops with exit 3.
+  - The estimate is the measured mean cost of a previous run of the same model, or else a token profile (4 calls, a 14k cached prefix, 3k fresh input and 1.5k output per call) at list prices, both with a 25% margin.
+  - Windows reports `NUL` as a terminal, so end-of-input also counts as no.
+  - It warns when the estimate exceeds `--budget-usd`, because a run cut short by the budget isn't recorded for replay.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

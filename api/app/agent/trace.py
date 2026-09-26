@@ -12,8 +12,8 @@ from app import config
 from app.db import ops_conninfo
 
 
-def price(model: str) -> tuple[float, float]:
-    """(input, output) USD per MTok. An unknown model gets the dearest known rate, so the spend cap errs high."""
+def price(model: str) -> tuple[float, float, float]:
+    """(input, output, cache read) USD per MTok. An unknown model gets the dearest known rate, so the cap errs high."""
     return config.PRICES.get(re.sub(r"-\d{8}$", "", model)) or max(config.PRICES.values())
 
 
@@ -48,13 +48,12 @@ class Trace:
         self.cache_read_tokens += cache_read
         self.cache_write_tokens += cache_write
         self.served_model = response.model
-        input_price, output_price = price(response.model)
-        billed_input = (
-            usage.input_tokens
-            + cache_read * config.CACHE_READ_MULTIPLIER
-            + cache_write * config.CACHE_WRITE_MULTIPLIER
-        )
-        self.est_cost_usd += (billed_input * input_price + usage.output_tokens * output_price) / 1_000_000
+        input_price, output_price, cache_read_price = price(response.model)
+        self.est_cost_usd += (
+            (usage.input_tokens + cache_write * config.CACHE_WRITE_MULTIPLIER) * input_price
+            + cache_read * cache_read_price
+            + usage.output_tokens * output_price
+        ) / 1_000_000
 
 
 _COLUMNS = [f.name for f in fields(Trace)]

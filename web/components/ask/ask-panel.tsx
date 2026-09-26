@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowClockwise, ChatCenteredText, GridFour, Key, PaperPlaneRight, PlugsConnected, PresentationChart, Storefront, Warning, X } from "@phosphor-icons/react";
-import Link from "next/link";
+import { ArrowClockwise, ChatCenteredText, Key, PaperPlaneRight, PlugsConnected, Warning, X } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AskResponse } from "@/lib/ask";
 import { API_URL, regionName, type Region } from "@/lib/config";
 import { isAskResponse } from "@/lib/validate";
 import { Answer, AnswerHeader, LabelBadge, PendingAnswer } from "./answer";
+import { OtherPages } from "./replay-panel";
 import { buttonClass, cx, ICON } from "../ui";
 
 type Failure = { status: number | null; detail: string; retryAfter?: number; cancelled?: boolean };
@@ -41,15 +41,10 @@ async function readDetail(res: Response): Promise<string> {
   }
 }
 
-const isUnconfigured = (e: Failure) => e.status === 503 && /llm not configured/i.test(e.detail);
+const isUnconfigured = (e: Failure) => e.status === 503 && /llm not configured|live mode is off/i.test(e.detail);
 
-/** The expected state on a machine without an Anthropic key: explained, with the pages that still work. */
+/** Live mode was on when the page loaded, but the API now says it isn't configured: explained, with the pages that still work. */
 function AnalystOffline({ pagesQuery }: { pagesQuery: string }) {
-  const links = [
-    { href: "/", label: "Executive KPIs", icon: PresentationChart },
-    { href: "/distributors", label: "Distributor 360", icon: Storefront },
-    { href: "/quality", label: "Batch cohort heatmap", icon: GridFour },
-  ];
   return (
     <section aria-labelledby="offline-title" className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 md:p-5">
       <div className="flex items-start gap-3">
@@ -59,8 +54,8 @@ function AnalystOffline({ pagesQuery }: { pagesQuery: string }) {
             The analyst isn&apos;t configured on this server
           </h2>
           <p className="mt-1 text-base/7 text-muted">
-            Ask ChannelPulse needs an Anthropic API key on the API server, set as <code className="font-mono text-[14px] text-ink">ANTHROPIC_API_KEY</code>. Until one is
-            set, the API answers every question with &ldquo;LLM not configured&rdquo; and nothing is sent to a model.
+            The API answered that live questions are off, so nothing was sent to a model. Reload the page to see the recorded answers from the last evaluation run, if
+            there is one.
           </p>
           <p className="mt-2 text-base/7 text-muted">
             Governed metrics still work everywhere else. Every figure on the other pages comes from the same semantic layer the analyst would query, with its SQL one click
@@ -68,16 +63,7 @@ function AnalystOffline({ pagesQuery }: { pagesQuery: string }) {
           </p>
         </div>
       </div>
-      <ul className="flex flex-wrap gap-2 pl-0 md:pl-9">
-        {links.map(({ href, label, icon: Icon }) => (
-          <li key={href}>
-            <Link href={`${href}${pagesQuery}`} className={buttonClass("secondary", "sm")}>
-              <Icon size={16} {...ICON} aria-hidden />
-              {label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <OtherPages query={pagesQuery} className="pl-0 md:pl-9" />
     </section>
   );
 }

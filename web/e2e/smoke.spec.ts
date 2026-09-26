@@ -71,3 +71,14 @@ for (const region of REGIONS) {
     await expectHealthy(page, errors);
   });
 }
+
+// Without a live analyst the Ask page explains itself (replay, or an honest empty state), never an error.
+test("/ask without a live analyst shows replay mode or says why not", async ({ page, request }) => {
+  const status = await (await request.get(`${API}/api/ask/status`)).json();
+  test.skip(status.mode === "live", "this API answers live");
+  const errors = watchErrors(page);
+  await page.goto("/ask");
+  await expectHealthy(page, errors);
+  await expect(page.getByRole("heading", { name: /Replay mode|live analyst/ })).toBeVisible();
+});
+

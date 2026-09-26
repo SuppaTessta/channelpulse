@@ -1,12 +1,16 @@
 """Golden-set eval of the Ask agent (PLAN §10). Writes evals/results/latest.json and prints a markdown scorecard.
 
-    python evals/run_eval.py [--model M] [--effort E] [--limit N] [--only SL01,MH02] [--budget-usd 5] [--require-llm]
+    python evals/run_eval.py [--model M] [--effort E] [--limit N] [--only SL01,MH02] [--budget-usd 5] [--yes]
+                             [--require-llm]
 
 1. Validates the question set and computes every golden answer from its hand-written SQL on marts.* (read-only),
    failing loudly on any error. Golden answers never come from the agent or the generator's answer key.
 2. With no Anthropic credentials, records status not_run (exit 0; exit 2 with --require-llm).
-3. Otherwise asks each question in-process through run_agent with region ALL, stopping once --budget-usd is spent,
-   and scores the answers (evals/scoring.py). Everything but the model is deterministic.
+3. Otherwise prints an estimated cost and spends nothing until you confirm (or pass --yes; a non-interactive run
+   without --yes stops there). Then asks each question in-process through run_agent with region ALL, stopping once
+   --budget-usd is spent, and scores the answers (evals/scoring.py). Everything but the model is deterministic.
+4. A complete run over the whole set also records every answer as served, for the Ask page's replay mode
+   (api/app/recordings/<model>.json, decisions D29).
 """
 
 import argparse
@@ -33,6 +37,7 @@ from evals import scoring
 
 QUESTIONS = ROOT / "evals" / "questions.yaml"
 RESULTS = ROOT / "evals" / "results" / "latest.json"
+RECORDINGS = ROOT / "api" / "app" / "recordings"
 CATEGORIES = ("simple_lookup", "filtered_grouped", "time_comparison", "multi_hop_why", "trap")
 PER_CATEGORY = 8
 LABELS = ("governed_metric", "ad_hoc_sql_verify", "refused")
@@ -40,6 +45,13 @@ COMPARE_BY_CATEGORY = {"trap": {"refusal"}, "multi_hop_why": {"rubric"}}
 MAX_GOLDEN_ROWS = 20
 GOLDEN_TIMEOUT = "120s"
 REGION = "ALL"
+
+
+# The per-question token profile an estimate assumes before a model has been measured: about 4 model calls, each
+# reading a ~14k-token cached prefix (tools, rules, metric glossary; written once per run), plus ~3k new input and
+# ~1.5k output tokens per call. Once a run of the same model exists, its measured mean cost replaces the profile.
+PROFILE = {"calls": 4, "prefix_tokens": 14_000, "fresh_input_tokens": 3_000, "output_tokens": 1_500}
+ESTIMATE_MARGIN = 1.25
 
 
 class GoldenError(Exception):
@@ -131,6 +143,49 @@ def _check_shape(spec: dict, table: dict) -> None:
         raise GoldenError(f"golden values are not numbers in {non_numeric}")
 
 
+# --- spending gate ----------------------------------------------------------------------------------------------
+
+
+def estimate_usd(model: str, questions: int, previous: dict | None = None) -> float:
+    """Expected spend for asking `questions` questions: the measured mean of a previous run of the same model, or
+    the token profile priced at the model's rates; either way with a safety margin."""
+    from app.agent.trace import price
+
+    measured = [r["cost_usd"] for r in (previous or {}).get("results", []) if "cost_usd" in r]
+    if previous and previous.get("model") == model and measured:
+        per_question = sum(measured) / len(measured)
+    else:
+        input_price, output_price, cache_read_price = price(model)
+        p = PROFILE
+        per_question = p["calls"] * (
+            p["prefix_tokens"] * cache_read_price
+            + p["fresh_input_tokens"] * input_price
+            + p["output_tokens"] * output_price
+        ) / 1_000_000
+    return questions * per_question * ESTIMATE_MARGIN
+
+
+def previous_results() -> dict | None:
+    try:
+        return json.loads(RESULTS.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def confirm_spend(estimate: float, assume_yes: bool, stdin=sys.stdin) -> bool:
+    """Paid calls need an explicit yes: --yes, or typing it. A non-interactive run without --yes never spends."""
+    if assume_yes:
+        return True
+    if not stdin.isatty():
+        print("Not interactive and --yes not given: nothing was sent to the model.", file=sys.stderr)
+        return False
+    try:
+        reply = input(f"Spend up to about ${estimate:.2f} on model calls? [y/N] ")
+    except EOFError:  # Windows reports NUL as a terminal, so "no input" can still arrive here
+        return False
+    return reply.strip().lower() in ("y", "yes")
+
+
 # --- agent run --------------------------------------------------------------------------------------------------
 
 
@@ -175,7 +230,8 @@ def ask_all(client, questions: list[dict], goldens: dict, budget_usd: float) -> 
             tools_used = [call["name"] for call in trace.tool_calls]
             evidence = _evidence(response, recorded)
             verdict = scoring.score_question(q, goldens.get(q["id"]), response, tools_used, evidence)
-            results.append(_result(q, goldens.get(q["id"]), response, trace, verdict, latency_ms, error))
+            results.append({**_result(q, goldens.get(q["id"]), response, trace, verdict, latency_ms, error),
+                            "response": response})
             print(f"[{n}/{len(questions)}] {q['id']} {'ok ' if verdict['correct'] else 'BAD'} "
                   f"{results[-1]['actual_label']} {latency_ms} ms ${trace.est_cost_usd:.4f}", flush=True)
     finally:
@@ -225,6 +281,27 @@ def _result(q, golden, response, trace, verdict, latency_ms, error) -> dict:
 # --- output -----------------------------------------------------------------------------------------------------
 
 
+def build_recording(meta: dict, status: str, results: list[dict]) -> dict:
+    """What the Ask page replays: each answer exactly as /api/ask returned it, with the eval's verdict on it."""
+    answers = [
+        {
+            "id": r["id"], "category": r["category"], "question": r["question"], "response": r["response"],
+            "eval": {"correct": r["correct"], "label_correct": r["label_correct"]},
+            "served_model": r["served_model"], "latency_ms": r["latency_ms"], "cost_usd": r["cost_usd"],
+        }
+        for r in results
+        if r.get("response")
+    ]
+    return {
+        "model": meta["model"], "effort": meta["effort"], "recorded_at": meta["timestamp"], "as_of": meta["as_of"],
+        "region": meta["region"], "status": status, "git_commit": meta["git_commit"], "answers": answers,
+    }
+
+
+def _without_response(result: dict) -> dict:
+    return {k: v for k, v in result.items() if k != "response"}
+
+
 def git_commit() -> str | None:
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
@@ -260,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, help="ask only the first N selected questions")
     parser.add_argument("--only", help="comma-separated question ids")
     parser.add_argument("--budget-usd", type=float, default=5.00, help="stop once this much is spent (default 5.00)")
+    parser.add_argument("--yes", action="store_true", help="spend without asking (after printing the estimate)")
     parser.add_argument("--require-llm", action="store_true", help="exit 2 instead of 0 when no credentials resolve")
     args = parser.parse_args(argv)
 
@@ -303,11 +381,29 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nnot_run: {reason}\nGolden answers are validated; results written to {RESULTS.relative_to(ROOT)}.")
         return 2 if args.require_llm else 0
 
+    estimate = estimate_usd(args.model, len(selected), previous_results())
+    print(f"\nAbout to ask {len(selected)} question(s) with {args.model} (effort {args.effort}). "
+          f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
+    if estimate > args.budget_usd:
+        print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded for "
+              "replay. Raise --budget-usd (make eval BUDGET=...) to ask every question.")
+    if not confirm_spend(min(estimate, args.budget_usd), args.yes):
+        print("Cancelled before any model call.")
+        return 3
+
     results = ask_all(client, selected, goldens, args.budget_usd)
     card = scoring.scorecard(results)
     status = "partial" if card["skipped"] else "complete"
-    write({"status": status, **meta, "scorecard": card, "results": results})
+    write({"status": status, **meta, "scorecard": card, "results": [_without_response(r) for r in results]})
     print(f"\n{scoring.markdown(card, meta)}\n\n{status}: results written to {RESULTS.relative_to(ROOT)}.")
+    if status == "complete" and len(selected) == len(questions):
+        RECORDINGS.mkdir(parents=True, exist_ok=True)
+        path = RECORDINGS / f"{args.model}.json"
+        path.write_text(json.dumps(build_recording(meta, status, results), indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8")
+        print(f"Recorded {len(results)} answers for replay: {path.relative_to(ROOT)}.")
+    else:
+        print("Not recorded for replay: only a complete run over the whole question set replaces the recording.")
     return 0
 
 

@@ -19,6 +19,30 @@ export type AskResponse = {
   trace_id: string;
 };
 
+/** GET /api/ask/status and /api/ask/replay (api/app/main.py): live mode is opt-in; otherwise recorded answers. */
+export type Recording = {
+  model: string;
+  effort: string;
+  recorded_at: string;
+  as_of: string;
+  region: string;
+  status: string;
+  git_commit: string | null;
+  count: number;
+};
+export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; model: string; recording: Recording | null };
+export type ReplayAnswer = {
+  id: string;
+  category: string;
+  question: string;
+  response: AskResponse;
+  eval: { correct: boolean; label_correct: boolean };
+  served_model: string | null;
+  latency_ms: number;
+  cost_usd: number;
+};
+export type Replay = { recording: Recording | null; answers: ReplayAnswer[]; withheld: boolean };
+
 export type AskChart =
   | { kind: "time"; mark: "line" | "bar"; buckets: Bucket[]; series: ChartSeries[]; valueKind: Kind; grain: string; x: string; y: string }
   | { kind: "category"; rows: { key: string; label: string }[]; series: BarSeries[]; valueKind: Kind; x: string; y: string }

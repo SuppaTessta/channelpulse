@@ -35,7 +35,7 @@ web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · 
 | Data | 36 months, 2023-10-01 to 2026-09-23, 1.84M raw rows. It's a simulator, not a CSV: four anomalies emerge from its rules. |
 | Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 123 tests (schema plus business logic). |
 | Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 50 metrics, including the 12 below. MetricFlow compiles the SQL at query time. |
-| Agent | Claude (`claude-opus-5`, adaptive thinking, server-side refusal fallback) in a hand-rolled tool-use loop with five tools. |
+| Agent | Claude (`claude-opus-5-5` at medium effort by default, `CHANNELPULSE_MODEL` to change; adaptive thinking, server-side refusal fallback) in a hand-rolled tool-use loop with five tools. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
 | Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, a daily spend cap, and a trace of every question. |
 
 ## Quickstart
@@ -52,12 +52,12 @@ make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL 
 make web-start         # or: production build, then serve it (restart it after every rebuild)
 make test lint         # 459 Python tests, ruff, dbt parse, eslint
 make smoke             # browser smoke test of every page against the running API and dashboard (SMOKE_URL if not :3000)
-make eval              # golden-set eval; scores the agent when ANTHROPIC_API_KEY is set
+make eval              # golden-set eval; with a key it prints an estimate and asks before spending (MODEL= BUDGET= YES=1)
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
 make down
 ```
 
-All Python runs from the repo-root `.venv`. The Ask panel needs `ANTHROPIC_API_KEY`; everything else runs without it.
+All Python runs from the repo-root `.venv`. Nothing needs an Anthropic key. Without one (or without `ASK_LIVE=1`), the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists.
 
 Timings are from a clean clone on the Windows build machine (decisions E2); the sequence above was run end to end there, finishing with `make smoke`.
 
@@ -149,18 +149,18 @@ Golden answers come from hand-written SQL against the marts, never from the agen
 - label correctness;
 - latency and cost per query.
 
-**Scorecard: not yet run.** This build machine has no Anthropic credentials. All 32 golden answers validate against the live marts, and the 21 governed goldens also match the semantic layer's own answers (`evals/results/latest.json`, `status: not_run`). No agent numbers are shown here because none exist yet. To produce the scorecard:
+**Scorecard: not yet run.** This build machine has no Anthropic credentials. All 32 golden answers validate against the live marts, and the 21 governed goldens also match the semantic layer's own answers (`evals/results/latest.json`, `status: not_run`). No agent numbers are shown here because none exist yet. To produce the scorecard, put `ANTHROPIC_API_KEY` in `.env`, then:
 ```bash
-export ANTHROPIC_API_KEY=...        # a full run costs about $4-7 with claude-opus-5 (estimate)
-make eval                           # or: python evals/run_eval.py --budget-usd 8 [--model claude-sonnet-5]
+make eval MODEL=claude-opus-5-5 BUDGET=10
 ```
+Before any model call it prints an estimated cost and waits for a yes (`YES=1` skips the question; a non-interactive run without it never spends). For a full 40-question run the pre-run estimate is $8.96 on `claude-opus-5-5` and $4.76 on `claude-sonnet-5`. That's the harness's token profile priced at list rates with a 25% margin, not a measurement. Once a model has been measured, its mean cost per question replaces the profile. A complete run also records every answer for the Ask page's replay mode (`api/app/recordings/<model>.json`).
 CI's `warehouse` job runs the same eval, but CI never receives a model credential (a test enforces it), so there it only validates the golden answers. Paid calls happen only when you run the eval yourself.
 
 ## Anomaly detection
 The data contains planted anomalies, and the pre-registered detectors look for them blind. The full story, including the detectors' false positives and the one detector that fired late, is in the [case study](docs/case-study.md). It contains spoilers, so read the dashboard first if you want to find them yourself.
 
 ## Cost
-- **Per Ask question:** about 3–5 model calls on `claude-opus-5` ($5 / $25 per million input/output tokens). A cached prompt prefix of about 13–15k tokens (tools, rules, metric glossary) is billed at the cache-read rate after the first call. The estimate is about $0.10–0.18 per question; the eval will measure it.
+- **Per Ask question:** several model calls on `claude-opus-5-5` ($4 / $20 per million input/output tokens; cache reads $0.20). A cached prompt prefix of tools, rules and metric glossary is billed at the cache-read rate after the first call. Not measured yet: the eval will measure it, and until then only the pre-run estimate above exists.
 - **Guardrails on spend:** a per-IP rate limit (6/minute) and a daily spend cap ($5 default, $2 in `render.yaml`), computed from the traced cost.
 - **Infrastructure:** free tiers. Render (API), Vercel (web), Supabase (marts only, about 400 MB), and GitHub Actions (CI plus the daily refresh).
 

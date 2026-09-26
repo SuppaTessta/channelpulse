@@ -4,8 +4,10 @@ import os
 
 env = os.environ.get
 
-MODEL = env("CHANNELPULSE_MODEL", "claude-opus-5")
-EFFORT = env("CHANNELPULSE_EFFORT", "high")
+# Owner-approved default (Phase 2, A3; decisions D29). Opus 5.5 at medium effort: Anthropic reports it beating
+# Opus 5 at high on analysis work, and medium is its own API default.
+MODEL = env("CHANNELPULSE_MODEL", "claude-opus-5-5")
+EFFORT = env("CHANNELPULSE_EFFORT", "medium")
 MAX_TOKENS = 16_000
 MAX_TOOL_ROUNDS = int(env("AGENT_MAX_TOOL_ROUNDS", "8"))
 AGENT_TIMEOUT_S = float(env("AGENT_TIMEOUT_S", "120"))
@@ -21,6 +23,9 @@ TRUST_PROXY = env("TRUST_PROXY") == "1"
 PROVISIONAL_DAYS = 17
 
 DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "5.00"))
+# Paid model calls are opt-in: /api/ask answers live only when this is "1" AND credentials resolve. Otherwise the
+# Ask page replays answers recorded by an eval run (decisions D29).
+ASK_LIVE = env("ASK_LIVE") == "1"
 
 CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", *(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip())]
 
@@ -34,12 +39,15 @@ MART_TABLES = frozenset({
     "mart_installer_claim_cohorts", "dim_date", "mart_anomaly_flags",
 })
 
-# USD per million tokens: (input, output). Cache reads bill at 0.1x input, 5-minute cache writes at 1.25x.
+# USD per million tokens: (input, output, cache read), from Anthropic's pricing page on 2026-09-27. Cache reads are
+# 0.1x input except on Opus 5.5 (0.05x) and Fable 5.1 (0.025x); 5-minute cache writes are 1.25x input everywhere.
+# The fallback models a refusal can be re-run on are listed too, and an unknown model is priced at the dearest row.
 PRICES = {
-    "claude-opus-5": (5.0, 25.0),
-    "claude-opus-4-8": (5.0, 25.0),  # where the server-side refusal fallback sends cyber-category declines
-    "claude-sonnet-5": (2.0, 10.0),
-    "claude-haiku-4-5": (1.0, 5.0),
+    "claude-fable-5-1": (10.0, 50.0, 0.25),
+    "claude-opus-5-5": (4.0, 20.0, 0.20),
+    "claude-opus-5": (5.0, 25.0, 0.50),
+    "claude-opus-4-8": (5.0, 25.0, 0.50),
+    "claude-sonnet-5": (2.0, 10.0, 0.20),
+    "claude-haiku-4-5": (1.0, 5.0, 0.10),
 }
-CACHE_READ_MULTIPLIER = 0.1
 CACHE_WRITE_MULTIPLIER = 1.25

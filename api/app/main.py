@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app import config, semantic
+from app import config, replay, semantic
 from app.agent.loop import AgentError, run_agent
 from app.agent.trace import Trace, write_trace
 from app.db import db_conninfo
@@ -148,10 +148,70 @@ def llm_client() -> anthropic.Anthropic | None:
     return client if client.api_key or client.auth_token or client.credentials else None
 
 
-@app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(limit_ask_rate)])
-def ask(body: AskRequest, region: Region, client: Annotated[anthropic.Anthropic | None, Depends(llm_client)]) -> dict:
+LLMClient = Annotated[anthropic.Anthropic | None, Depends(llm_client)]
+
+
+class Recording(BaseModel):
+    model: str
+    effort: str
+    recorded_at: str
+    as_of: str
+    region: str
+    status: str
+    git_commit: str | None
+    count: int
+
+
+class AskStatus(BaseModel):
+    mode: Literal["live", "replay"]
+    reason: Literal["no_credentials", "live_off"] | None
+    model: str
+    recording: Recording | None
+
+
+class ReplayAnswer(BaseModel):
+    id: str
+    category: str
+    question: str
+    response: AskResponse
+    eval: dict[str, bool]
+    served_model: str | None
+    latency_ms: int
+    cost_usd: float
+
+
+class Replay(BaseModel):
+    recording: Recording | None
+    answers: list[ReplayAnswer]
+    withheld: bool
+
+
+def _not_live_reason(client: anthropic.Anthropic | None) -> str | None:
     if client is None:
+        return "no_credentials"
+    return None if config.ASK_LIVE else "live_off"
+
+
+@app.get("/api/ask/status", response_model=AskStatus)
+def ask_status(client: LLMClient) -> dict:
+    """Whether /api/ask answers live, why not, and which recorded eval run the page can replay instead."""
+    reason = _not_live_reason(client)
+    return {"mode": "replay" if reason else "live", "reason": reason, "model": config.MODEL,
+            "recording": replay.summary(replay.load())}
+
+
+@app.get("/api/ask/replay", response_model=Replay)
+def ask_replay(region: Region) -> dict:
+    return replay.for_region(region)
+
+
+@app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(limit_ask_rate)])
+def ask(body: AskRequest, region: Region, client: LLMClient) -> dict:
+    reason = _not_live_reason(client)
+    if reason == "no_credentials":
         raise HTTPException(503, "LLM not configured")
+    if reason == "live_off":
+        raise HTTPException(503, "Live mode is off on this server (set ASK_LIVE=1 to enable paid model calls).")
     enforce_spend_cap()
     trace = Trace(question=body.question, region_claim=region, model=config.MODEL)
     started = time.monotonic()

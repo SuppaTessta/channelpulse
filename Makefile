@@ -51,8 +51,8 @@ semantic:  ## re-parse warehouse/semantic_models into the API's shipped semantic
 acceptance:  ## black-box check of the planted anomalies against generator/ground_truth.yaml (slow: extra seeds)
 	$(PY) generator/acceptance.py
 
-eval:  ## golden-set eval of the Ask agent -> evals/results/latest.json (needs Anthropic credentials to score)
-	$(PY) evals/run_eval.py
+eval:  ## golden-set eval -> evals/results/latest.json. Paid: prints an estimate, asks first. MODEL= BUDGET= YES=1
+	$(PY) evals/run_eval.py $(if $(MODEL),--model $(MODEL)) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes)
 
 down:
 	docker compose down

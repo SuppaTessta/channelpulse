@@ -4,7 +4,8 @@ import { cache } from "react";
 import { API_URL, type Region } from "./config";
 import { monthEnd, toISODate } from "./dates";
 import { column, records, type Table } from "./table";
-import { isGoverned, isMetricList } from "./validate";
+import type { AskStatus, Replay } from "./ask";
+import { isAskStatus, isGoverned, isMetricList, isReplay } from "./validate";
 
 export type Scalar = string | number | boolean;
 export type Filter = { dimension: string; op: "=" | "!=" | ">" | ">=" | "<" | "<=" | "in" | "not_in"; value: Scalar | Scalar[] };
@@ -234,3 +235,9 @@ export const getDataWindow = cache(async (region: Region): Promise<Result<DataWi
   }
   return { ok: true, value: { asOf, dataStart: monthStarts[0], provisionalFrom: provisional[0] ?? null, queries } };
 });
+
+/** GET /api/ask/status: whether the analyst answers live, why not, and which eval run can be replayed instead. */
+export const getAskStatus = cache(() => call<AskStatus>("/api/ask/status", { method: "GET", cache: "no-store" }, "ALL", isAskStatus));
+
+/** GET /api/ask/replay: the recorded answers, withheld by the API unless the region claim matches the recording's. */
+export const getReplay = cache((region: Region) => call<Replay>("/api/ask/replay", { method: "GET", cache: "no-store" }, region, isReplay));

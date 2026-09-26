@@ -400,7 +400,7 @@ def main():
             "runtime_seconds": round(time.perf_counter() - started, 1),
         }
     (HERE / "results").mkdir(exist_ok=True)
-    (HERE / "results" / "latest.json").write_text(json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8")
+    (HERE / "results" / "latest.json").write_text(json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
     d = summary["detectors"]
     print(f"as_of {as_of}; flagged lot_scan={len(d['lot_scan']['flags'])} installer_scan="
           f"{len(d['installer_scan']['flags'])} stuffing={len(d['stuffing']['flags'])} "

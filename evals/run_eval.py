@@ -313,7 +313,7 @@ def git_commit() -> str | None:
 
 def write(payload: dict) -> None:
     RESULTS.parent.mkdir(parents=True, exist_ok=True)
-    RESULTS.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    RESULTS.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 
 
 def golden_summary(goldens: dict[str, dict]) -> str:
@@ -400,7 +400,7 @@ def main(argv: list[str] | None = None) -> int:
         RECORDINGS.mkdir(parents=True, exist_ok=True)
         path = RECORDINGS / f"{args.model}.json"
         path.write_text(json.dumps(build_recording(meta, status, results), indent=2, ensure_ascii=False) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
         print(f"Recorded {len(results)} answers for replay: {path.relative_to(ROOT)}.")
     else:
         print("Not recorded for replay: only a complete run over the whole question set replaces the recording.")

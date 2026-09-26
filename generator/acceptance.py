@@ -1055,7 +1055,7 @@ def main():
               "row_counts": next((r["detail"]["per_table"] for r in results if r["id"] == "G1"), None),
               "timings_seconds": {"total": round(total, 1), "generation": round(t_gen, 1), "checks": timings},
               "checks": results}
-    REPORT.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    REPORT.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8", newline="\n")
     print(f"\n{summary['pass']} PASS, {summary['fail']} FAIL, {summary['deferred']} DEFERRED in {total:.0f} s"
           f" (generation {t_gen:.0f} s); report: {REPORT}")
     sys.exit(1 if failed else 0)

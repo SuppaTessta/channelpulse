@@ -133,7 +133,7 @@ Trade-offs:
 - **API on Render**, as a Docker web service from `render.yaml`. It bundles MetricFlow, its agent turns run 10–40 s, and it builds its semantic engine once per process. That's a poor fit for serverless Python function limits.
 - **Web on Vercel**, from `web/`.
 - **Supabase** holds only `marts`, published nightly by `.github/workflows/daily.yml` from a throwaway CI Postgres. Raw data never leaves CI. The database stays well inside the free tier, and the nightly write keeps the project from auto-pausing.
-- **Not yet deployed.** Deploying needs the owner's Render, Vercel and Supabase accounts, plus the repository secrets `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD`, `OPS_DB_PASSWORD` and optionally `ANTHROPIC_API_KEY`.
+- **Not yet deployed.** Deploying needs the owner's Render, Vercel and Supabase accounts, plus the repository secrets `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`. *Amended in Phase 2 (D30):* a model key is never a repository secret; it goes only on Render, and only for live mode.
 
 **D26. Generator implementation deviations** (reported by the generator build; verified independently by the acceptance suite).
 1. Distributors order against the 28-day mean of true demand. Trailing lumpy purchases ratcheted stock to 113 days of cover.
@@ -191,6 +191,25 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
   - The estimate is the measured mean cost of a previous run of the same model, or else a token profile (4 calls, a 14k cached prefix, 3k fresh input and 1.5k output per call) at list prices, both with a 25% margin.
   - Windows reports `NUL` as a terminal, so end-of-input also counts as no.
   - It warns when the estimate exceeds `--budget-usd`, because a run cut short by the budget isn't recorded for replay.
+
+**D30. Deployment readiness (Phase 2, A4).** The README's deployment notes were walked as a first-time deployer. What was missing is now in `docs/deploy-checklist.md`, in order:
+- **Supabase connections go through the Session pooler.** GitHub Actions and Render have no IPv6, and Supabase's free-tier direct host is IPv6-only. Pooler usernames carry the project ref (`channelpulse_agent.<ref>`).
+- **The order matters:**
+  1. The first nightly publish must run before the API can answer, and it is also what creates the roles.
+  2. Render's `CORS_ORIGINS` can only be set once the Vercel URL exists.
+  3. A replay recording should be committed before deploying.
+- **The public demo starts in replay mode.** `render.yaml` pins `ASK_LIVE=0` and `CHANNELPULSE_MODEL`. Live mode needs a key *and* `ASK_LIVE=1`, and then the per-IP rate limit and the daily spend cap (00:00 UTC reset) apply to every question.
+- **A model key is never a repository secret.** The README had listed it as one.
+- **A repeatable identifying-information check,** `make identity-check` (`scripts/identity_check.py`):
+  - It searches tracked files at every commit, commit messages, and author and committer identities.
+  - Its terms come from a gitignored `.identity-patterns` file, because committing them would be the leak. It never prints them.
+  - It fails when there is nothing to search for, rather than passing.
+  - Run on 2026-09-27 with the owner's email domain and name terms as arguments: clean.
+- **The deployed site can be smoke-tested** with `SMOKE_URL=… SMOKE_API_URL=… SMOKE_REMOTE=1 make smoke`.
+- **Known and documented rather than fixed:**
+  - Render's free plan sleeps when idle, so the first view after a quiet spell can time out in some panels.
+  - The nightly republish can interrupt queries for a few seconds.
+  - Vercel's function duration may need raising.
 
 ## Environment
 

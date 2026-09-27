@@ -4,5 +4,5 @@ target-version = "py312"
 src = ["api", "generator", "detectors", "evals"]
 
 [tool.pytest.ini_options]
-testpaths = ["api/tests", "generator/tests", "detectors/tests", "evals/tests"]
+testpaths = ["api/tests", "generator/tests", "detectors/tests", "evals/tests", "scripts/tests"]
 pythonpath = ["api", "generator"]

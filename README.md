@@ -176,9 +176,12 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 - **Secrets:** none are committed; `.env` is gitignored. The deployment uses per-role passwords from secrets.
 
 ## Deployment
-- **Topology** (decisions D25): the web app on Vercel from `web/`; the API on Render from [`render.yaml`](render.yaml); Supabase holding only the `marts` schema.
+- **Topology** (decisions D25): the web app on Vercel from `web/`; the API on Render from [`render.yaml`](render.yaml); Supabase holding only the `marts` schema, reached through its Session pooler.
 - **The daily job** ([`daily.yml`](.github/workflows/daily.yml)) regenerates the simulation through yesterday in a throwaway CI Postgres, rebuilds and tests it, runs the detectors, and publishes `marts`. This keeps the demo current and the Supabase project awake.
-- **Not deployed yet.** It needs the owner's Render, Vercel and Supabase accounts, plus these repository secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD`, `OPS_DB_PASSWORD` and `ANTHROPIC_API_KEY`.
+- **Replay by default:** the public demo never calls a model unless you set both `ANTHROPIC_API_KEY` and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
+- **Not deployed yet.** The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
+  - The repository needs three secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`.
+  - A model key never goes into GitHub: a test fails if any workflow references one.
 
 ## Known limitations
 - **Phase 1 scope:** no real auth (the RLS stub only), no forecasting, and no Weekly Brief generator (PLAN §11).

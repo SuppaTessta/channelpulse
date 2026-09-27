@@ -18,7 +18,7 @@ API_PORT ?= 8000
 # The smoke test checks the API directly as well as through the dashboard (exported to recipes by `export`).
 SMOKE_API_URL ?= http://127.0.0.1:$(API_PORT)
 
-.PHONY: setup lock up down seed dbt detect roles semantic acceptance eval dbt-debug api web web-start smoke lint test
+.PHONY: setup lock up down seed dbt detect roles semantic acceptance eval dbt-debug api web web-start smoke identity-check lint test
 
 setup:  ## create .venv + install Python and web deps
 	$(BOOTSTRAP_PY) -m venv .venv
@@ -53,6 +53,9 @@ acceptance:  ## black-box check of the planted anomalies against generator/groun
 
 eval:  ## golden-set eval -> evals/results/latest.json. Paid: prints an estimate, asks first. MODEL= BUDGET= YES=1
 	$(PY) evals/run_eval.py $(if $(MODEL),--model $(MODEL)) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes)
+
+identity-check:  ## before any public push: no term from .identity-patterns anywhere in the repo or its history
+	$(PY) scripts/identity_check.py
 
 down:
 	docker compose down

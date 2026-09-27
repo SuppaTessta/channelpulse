@@ -10,15 +10,23 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      # Least-privilege connection strings for the Supabase project (roles from api/sql/roles.sql).
+      # Least-privilege connection strings for the Supabase project (roles from api/sql/roles.sql), all through
+      # Supabase's Session pooler: Render has no IPv6, and the free tier's direct host is IPv6-only. Pooler usernames
+      # carry the project ref, e.g. channelpulse_agent.<ref> (docs/deploy-checklist.md).
       - key: DATABASE_URL          # used only by /health; point it at the agent role, not an admin
         sync: false
       - key: AGENT_DATABASE_URL
         sync: false
       - key: OPS_DATABASE_URL
         sync: false
-      - key: ANTHROPIC_API_KEY
+      # The public demo starts in replay mode: no model is ever called. Live mode needs BOTH a key and ASK_LIVE=1
+      # (decisions D29); the rate limit and the daily spend cap below then apply to every question.
+      - key: ASK_LIVE
+        value: "0"
+      - key: ANTHROPIC_API_KEY     # leave empty for replay only
         sync: false
+      - key: CHANNELPULSE_MODEL
+        value: claude-opus-5-5
       - key: CORS_ORIGINS          # the Vercel URL of the web app
         sync: false
       - key: TRUST_PROXY           # take the client IP from X-Forwarded-For for the rate limit

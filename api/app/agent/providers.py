@@ -65,9 +65,10 @@ class ProviderError(Exception):
     Messages never carry the base URL or a key."""
 
     def __init__(self, message: str, kind: Literal["infrastructure", "rate_limited", "rejected"],
-                 status: int | None = None, retry_after: float | None = None):
+                 status: int | None = None, retry_after: float | None = None, quota_id: str | None = None):
         super().__init__(message)
         self.kind, self.status, self.retry_after = kind, status, retry_after
+        self.quota_id = quota_id  # which quota a 429 hit, when the server says (Google's QuotaFailure)
 
 
 class Provider(Protocol):
@@ -208,7 +209,7 @@ class OpenAICompatProvider:
         except httpx2.HTTPError as e:  # connection refused, DNS, reset: the message would carry the URL, so it's dropped
             raise ProviderError(f"{self.name}: couldn't connect ({type(e).__name__}).", "infrastructure") from None
         if res.status_code == 429:
-            raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res))
+            raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res), _quota_id(res))
         if res.status_code >= 500 or res.status_code in _CLOUDFLARE_DOWN:
             raise ProviderError(f"{self.name}: server error {res.status_code}.", "infrastructure", res.status_code)
         if res.status_code >= 400:
@@ -224,8 +225,10 @@ class OpenAICompatProvider:
 
     def _turn(self, payload: dict) -> Turn:
         raw = payload.get("usage") or {}
-        usage = Usage(int(raw.get("prompt_tokens") or 0), int(raw.get("completion_tokens") or 0),
-                      int((raw.get("prompt_tokens_details") or {}).get("cached_tokens") or 0))
+        prompt, completion = int(raw.get("prompt_tokens") or 0), int(raw.get("completion_tokens") or 0)
+        # Gemini leaves thinking tokens out of completion_tokens but counts them in total_tokens: they're output.
+        output = max(completion, int(raw.get("total_tokens") or 0) - prompt)
+        usage = Usage(prompt, output, int((raw.get("prompt_tokens_details") or {}).get("cached_tokens") or 0))
         model = payload.get("model") or self.model
         choices = payload.get("choices") or []
         if not choices or not isinstance(choices[0], dict):  # an empty reply: the loop asks once more for an answer
@@ -294,6 +297,11 @@ def _retry_after(res: httpx2.Response) -> float | None:
         return float(header)
     match = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"', res.text)  # Google's RetryInfo in the error body
     return float(match.group(1)) if match else None
+
+
+def _quota_id(res: httpx2.Response) -> str | None:
+    match = re.search(r'"quotaId"\s*:\s*"([^"]+)"', res.text)
+    return match.group(1) if match else None
 
 
 def _error_text(res: httpx2.Response) -> str:

@@ -110,3 +110,13 @@ def test_a_rejected_request_is_not_retried():
 def test_the_wrapper_keeps_the_providers_identity():
     p, _ = throttled(Inner())
     assert (p.name, p.model, p.settings()) == ("gemini", "gemini-3.8-flash", {"temperature": 0.0})
+
+
+def test_a_429_on_a_per_day_quota_pauses_at_once_instead_of_retrying():
+    daily = ProviderError("rate limited", "rate_limited", 429, retry_after=23)
+    daily.quota_id = "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+    inner = Inner(daily)
+    p, clock = throttled(inner)
+    with pytest.raises(RunPaused, match="daily quota"):
+        call(p)
+    assert inner.calls == 1 and not clock.slept

@@ -19,7 +19,7 @@ from app.agent.providers import ProviderError, Turn
 
 HEADROOM = 0.8
 RATE_LIMIT_ATTEMPTS = 6
-INFRA_ATTEMPTS = 3
+INFRA_ATTEMPTS = 5  # waits of 15, 30, 45 and 60 s: rides out a provider's brief 503 ('high demand') or a tunnel blip
 PACIFIC = ZoneInfo("America/Los_Angeles")  # Gemini's per-day quotas reset at midnight Pacific time
 
 
@@ -66,6 +66,9 @@ class ThrottledProvider:
             try:
                 turn = self.inner.complete(*args, **kwargs)
             except ProviderError as e:
+                if e.kind == "rate_limited" and "perday" in (getattr(e, "quota_id", None) or "").lower():
+                    raise RunPaused(f"{self.name}: the daily quota is spent ({e.quota_id}). Waiting a few seconds "
+                                    "won't help; resume after it resets at midnight Pacific time.") from e
                 if e.kind == "rate_limited":
                     rate_limited += 1
                     if rate_limited >= RATE_LIMIT_ATTEMPTS:

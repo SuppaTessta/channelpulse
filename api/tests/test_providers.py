@@ -249,3 +249,31 @@ def test_the_anthropic_provider_wraps_a_resolved_client(monkeypatch):
     sentinel = object()
     built = providers.from_env(sentinel)
     assert isinstance(built, AnthropicProvider) and built.client is sentinel and built.model == config.MODEL
+
+
+# --- captured from the live tool-calling test (Part B, 2026-09-29) --------------------------------------------------
+
+
+def test_the_captured_gemini_reply_maps_to_a_query_metric_call_with_its_signature_kept():
+    turn = turn_for("captured_gemini_tool_call")
+    (use,) = turn.tool_uses
+    assert (turn.stop, use.name, use.input["metric_name"]) == ("tool_use", "query_metric", "dso")
+    assert turn.native["tool_calls"][0]["extra_content"]["google"]["thought_signature"]
+
+
+def test_thinking_tokens_count_as_output_when_the_total_says_so():
+    # Gemini leaves its thinking tokens out of completion_tokens; total_tokens includes them (892 + 68 + 122 = 1082).
+    usage = turn_for("captured_gemini_tool_call").usage
+    assert (usage.input_tokens, usage.output_tokens) == (892, 190)
+
+
+def test_a_429_carries_the_quota_it_hit():
+    body = [{"error": {"code": 429, "details": [
+        {"@type": "type.googleapis.com/google.rpc.QuotaFailure", "violations": [
+            {"quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+             "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier", "quotaValue": "20"}]},
+        {"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "23s"}]}}]
+    with pytest.raises(ProviderError) as caught:
+        provider(Server(httpx2.Response(429, json=body))).complete("s", [{"role": "user", "content": "q"}], TOOLS,
+                                                                    final_only=False, timeout=5)
+    assert (caught.value.quota_id, caught.value.retry_after) == ("GenerateRequestsPerDayPerProjectPerModel-FreeTier", 23)

@@ -51,8 +51,8 @@ semantic:  ## re-parse warehouse/semantic_models into the API's shipped semantic
 acceptance:  ## black-box check of the planted anomalies against generator/ground_truth.yaml (slow: extra seeds)
 	$(PY) generator/acceptance.py
 
-eval:  ## golden-set eval, resumable. PROVIDER=gemini|ollama|anthropic MODE=governed|raw MODEL= FRESH=1 (anthropic: BUDGET= YES=1)
-	$(PY) evals/run_eval.py $(if $(PROVIDER),--provider $(PROVIDER)) $(if $(MODE),--mode $(MODE)) $(if $(MODEL),--model $(MODEL)) $(if $(filter 1,$(FRESH)),--fresh) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes)
+eval:  ## golden-set eval, resumable. PROVIDER=gemini|ollama|anthropic MODE=governed|raw MODEL= ONLY=id,id FRESH=1 (anthropic: BUDGET= YES=1)
+	$(PY) evals/run_eval.py $(if $(PROVIDER),--provider $(PROVIDER)) $(if $(MODE),--mode $(MODE)) $(if $(MODEL),--model $(MODEL)) $(if $(ONLY),--only $(ONLY)) $(if $(filter 1,$(FRESH)),--fresh) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes)
 
 identity-check:  ## before any public push: no term from .identity-patterns anywhere in the repo or its history
 	$(PY) scripts/identity_check.py

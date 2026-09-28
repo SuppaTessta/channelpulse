@@ -13,9 +13,10 @@ ANSWER = {
 }
 
 
-def recording(model="claude-opus-5-5", recorded_at="2026-09-28T10:00:00+00:00", region="ALL", **extra):
+def recording(model="claude-opus-5-5", recorded_at="2026-09-28T10:00:00+00:00", region="ALL", provider="anthropic",
+              **extra):
     return {
-        "model": model, "effort": "medium", "recorded_at": recorded_at, "as_of": "2026-09-23", "region": region,
+        "provider": provider, "model": model, "effort": "medium", "recorded_at": recorded_at, "as_of": "2026-09-23", "region": region,
         "status": "complete", "git_commit": "abc1234",
         "answers": [{"id": "SL01", "category": "simple_lookup", "question": "What is DSO?", "response": ANSWER,
                      "eval": {"correct": True, "label_correct": True}, "served_model": model,
@@ -30,7 +31,7 @@ def recordings(tmp_path, monkeypatch):
 
     def add(**kwargs):
         rec = recording(**kwargs)
-        (tmp_path / f"{rec['model']}.json").write_text(json.dumps(rec), encoding="utf-8")
+        (tmp_path / f"{rec['provider']}__{rec['model']}.json").write_text(json.dumps(rec), encoding="utf-8")
         return rec
 
     return add
@@ -74,11 +75,19 @@ def test_replay_withholds_answers_recorded_under_another_region_claim(api, recor
     assert (body["answers"], body["withheld"], body["recording"]["region"]) == ([], True, "ALL")
 
 
-def test_replay_prefers_the_configured_models_recording(api, recordings, monkeypatch):
-    recordings(model="claude-opus-5-5", recorded_at="2026-09-28T10:00:00+00:00")
-    recordings(model="claude-sonnet-5", recorded_at="2026-09-29T10:00:00+00:00")
+def test_replay_prefers_the_configured_providers_newest_recording(api, recordings, monkeypatch):
+    recordings(provider="gemini", model="gemini-3.8-flash", recorded_at="2026-09-28T10:00:00+00:00")
+    recordings(provider="ollama", model="qwen3.8-27b-64k", recorded_at="2026-09-29T10:00:00+00:00")
     api.use_llm(None)
-    monkeypatch.setattr(config, "MODEL", "claude-opus-5-5")
-    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "claude-opus-5-5"
-    monkeypatch.setattr(config, "MODEL", "claude-haiku-4-5")  # no recording of its own: the newest one
-    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "claude-sonnet-5"
+    monkeypatch.setattr(config, "PROVIDER", "gemini")
+    assert api.http.get("/api/ask/replay").json()["recording"]["provider"] == "gemini"
+    monkeypatch.setattr(config, "PROVIDER", "anthropic")  # no recording of its own: the newest one
+    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "qwen3.8-27b-64k"
+
+
+def test_a_recording_from_before_providers_counts_as_anthropic(tmp_path, monkeypatch):
+    old = recording()
+    del old["provider"]
+    (tmp_path / "claude-opus-5-5.json").write_text(json.dumps(old), encoding="utf-8")
+    monkeypatch.setattr(replay, "RECORDINGS", tmp_path)
+    assert replay.summary(replay.load())["provider"] == "anthropic"

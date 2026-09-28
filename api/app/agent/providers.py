@@ -166,7 +166,7 @@ _CLOUDFLARE_DOWN = {520, 521, 522, 523, 524, 525, 526, 527, 530}
 class OpenAICompatProvider:
     def __init__(self, name: str, base_url: str, model: str, api_key: str | None = None, *,
                  temperature: float | None = 0.0, reasoning_effort: str | None = None, extra: dict | None = None,
-                 http: httpx2.Client | None = None, record: dict | None = None):
+                 http: httpx2.Client | None = None, record: dict | None = None, call_timeout: float = 120.0):
         self.name, self.model = name, model
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
@@ -174,6 +174,7 @@ class OpenAICompatProvider:
         self._extra = extra or {}
         self._http = http or httpx2.Client()
         self._record = record or {}  # facts about the serving setup, reported with every eval run
+        self._call_timeout = call_timeout  # one model call; the loop's own budget covers the whole question
 
     def settings(self) -> dict:
         return {"temperature": self._temperature, "reasoning_effort": self._reasoning or "provider default",
@@ -197,7 +198,7 @@ class OpenAICompatProvider:
             body["temperature"] = self._temperature
         if self._reasoning:
             body["reasoning_effort"] = self._reasoning
-        return self._turn(self._post(body, timeout))
+        return self._turn(self._post(body, min(timeout, self._call_timeout)))
 
     def _post(self, body: dict, timeout: float) -> dict:
         try:
@@ -327,10 +328,36 @@ def from_env(anthropic_client=None) -> Provider | None:
         base, model = env("OLLAMA_BASE_URL"), env("OLLAMA_MODEL")
         if not base or not model:
             return None
-        record = {k: v for k, v in {"quantization": env("OLLAMA_QUANTIZATION"), "context_length": env("OLLAMA_CONTEXT"),
-                                    "thinking": env("OLLAMA_THINKING")}.items() if v}
+        record = {"thinking": env("OLLAMA_THINKING")} if env("OLLAMA_THINKING") else {}
+        extra = {"think": env("OLLAMA_THINKING", "").lower() not in ("off", "false", "0")} if env("OLLAMA_THINKING") else {}
         return OpenAICompatProvider("ollama", base.rstrip("/") + "/v1", model, env("OLLAMA_API_TOKEN") or None,
                                     temperature=temperature, reasoning_effort=env("OLLAMA_REASONING_EFFORT") or None,
-                                    record=record)
+                                    extra=extra, record=record,
+                                    call_timeout=float(env("OLLAMA_CALL_TIMEOUT_S", "300")))
     raise ValueError(f"Unknown CHANNELPULSE_PROVIDER {name!r}: use gemini, ollama or anthropic.")
 
+
+
+def ollama_show(base_url: str, model: str, token: str | None = None, http: httpx2.Client | None = None) -> dict:
+    """What the Ollama server itself reports for `model` (POST /api/show): quantization, context length, family and
+    size. Recorded with every eval run instead of assuming them. Errors never carry the URL."""
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    try:
+        res = (http or httpx2.Client()).post(base_url.rstrip("/") + "/api/show", json={"model": model},
+                                             headers=headers, timeout=60)
+        res.raise_for_status()
+        info = res.json()
+    except (httpx2.HTTPError, ValueError) as e:
+        raise ProviderError(f"ollama: /api/show failed ({type(e).__name__}).", "infrastructure") from None
+    details, model_info = info.get("details") or {}, info.get("model_info") or {}
+    trained = next((v for k, v in model_info.items() if k.endswith(".context_length")), None)
+    num_ctx = next((int(line.split()[-1]) for line in (info.get("parameters") or "").splitlines()
+                    if line.split()[:1] == ["num_ctx"]), None)
+    return {
+        "quantization": details.get("quantization_level"),
+        "context_length": num_ctx or trained,  # num_ctx is what the served tag runs with; else the model's trained length
+        "context_length_trained": trained,
+        "family": details.get("family"),
+        "parameter_size": details.get("parameter_size"),
+        "format": details.get("format"),
+    }

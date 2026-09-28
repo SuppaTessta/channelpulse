@@ -296,3 +296,30 @@ def test_the_golden_set_is_well_formed():
     _, questions = run_eval.load_questions()
     patterns = [p for q in questions for p in q["compare"].get("must_not_mention", [])]
     assert len(questions) == 40 and all(re.compile(p) for p in patterns)
+
+
+# --- raw mode (decisions D32) and the per-provider scorecard -----------------------------------------------------
+
+
+def test_raw_mode_scores_a_why_question_on_its_answer_not_on_tools_it_never_had():
+    why = question("multi_hop_why", "governed_metric", RUBRIC)
+    text = "RL-DGP-L2-250310."
+    governed = scoring.score_question(why, LOT, answer("ad_hoc_sql_verify", text=text), ["run_readonly_sql"], [], "governed")
+    raw = scoring.score_question(why, LOT, answer("ad_hoc_sql_verify", text=text), ["run_readonly_sql"], [], "raw")
+    assert not governed["correct"] and raw["correct"]
+
+
+def test_raw_mode_expects_ad_hoc_answers_and_refused_traps():
+    assert scoring.score_question(question(), ONE, answer("ad_hoc_sql_verify", data=ONE), [], [ONE], "raw")["label_correct"]
+    assert scoring.score_question(TRAP, None, answer("refused"), [], [], "raw")["label_correct"]
+
+
+def test_the_scorecard_reports_median_tokens_per_question_and_infrastructure_separately():
+    results = [result("A", "simple_lookup", True, latency=100), result("B", "simple_lookup", True, latency=300),
+               result("C", "trap", True, refused=True, latency=200)]
+    results[0]["infra_retries"], results[1]["rate_limit_waits"] = 2, 1
+    card = scoring.scorecard(results)
+    assert (card["median_latency_ms"], card["tokens_per_question"]) == (200, {"input": 10, "output": 5})
+    assert (card["infra_retries"], card["rate_limit_waits"]) == (2, 1)
+    rendered = scoring.markdown(card, {"provider": "gemini", "mode": "governed", "model": "m", "effort": "e", "as_of": "d"})
+    assert "gemini" in rendered and "governed" in rendered and "Infrastructure retries" in rendered

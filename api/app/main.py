@@ -159,6 +159,7 @@ LLM = Annotated[Provider | None, Depends(llm_provider)]
 
 
 class Recording(BaseModel):
+    provider: str
     model: str
     effort: str
     recorded_at: str

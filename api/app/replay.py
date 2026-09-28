@@ -10,15 +10,17 @@ from pathlib import Path
 from app import config
 
 RECORDINGS = Path(__file__).with_name("recordings")
-_SUMMARY = ("model", "effort", "recorded_at", "as_of", "region", "status", "git_commit")
+_SUMMARY = ("provider", "model", "effort", "recorded_at", "as_of", "region", "status", "git_commit")
 
 
 def load() -> dict | None:
-    """The configured model's recording, else the newest one; None before any eval has recorded answers."""
+    """The newest recording from the configured provider, else the newest one; None before any eval run."""
     recordings = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(RECORDINGS.glob("*.json"))]
     if not recordings:
         return None
-    own = [r for r in recordings if r["model"] == config.MODEL]
+    for r in recordings:
+        r.setdefault("provider", "anthropic")  # recordings from before the provider layer
+    own = [r for r in recordings if r["provider"] == config.PROVIDER]
     return max(own or recordings, key=lambda r: r["recorded_at"])
 
 

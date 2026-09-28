@@ -7,6 +7,7 @@ the agent's columns carry MetricFlow names (distributor__region, metric_time__mo
 
 import math
 import re
+import statistics
 
 REFUSED = "refused"
 ERROR = "error"
@@ -165,9 +166,16 @@ def match_rubric(golden: dict, spec: dict, answer_text: str, tools_used: list[st
 
 
 def score_question(question: dict, golden: dict | None, response: dict | None, tools_used: list[str],
-                   tables: list[dict]) -> dict:
-    """Correctness, refusal, label and confidently-wrong verdicts for one answered (or failed) question."""
+                   tables: list[dict], mode: str = "governed") -> dict:
+    """Correctness, refusal, label and confidently-wrong verdicts for one answered (or failed) question.
+
+    Raw mode (decisions D32) has only run_readonly_sql, so a rubric's evidence_tools requirement is dropped (the
+    answer is judged on what it says) and every answer is expected to be ad hoc, traps refused."""
     spec = question["compare"]
+    expected_label = question["expected_label"]
+    if mode == "raw":
+        spec = {k: v for k, v in spec.items() if k != "evidence_tools"}
+        expected_label = REFUSED if question["category"] == TRAP else "ad_hoc_sql_verify"
     actual_label = response["label"] if response else ERROR
     refused = actual_label == REFUSED
     if spec["type"] == "refusal":
@@ -184,7 +192,7 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
         "correct": match["ok"],
         "refused": refused,
         "refusal_correct": refused == (question["category"] == TRAP),
-        "label_correct": actual_label == question["expected_label"],
+        "label_correct": actual_label == expected_label,
         # answered, but wrongly: the count to review by hand
         "confidently_wrong": response is not None and not refused and not match["ok"],
         "match": match,
@@ -224,12 +232,19 @@ def scorecard(results: list[dict]) -> dict:
         "label_accuracy": _share([r["label_correct"] for r in ran]),
         "confidently_wrong": [r["id"] for r in ran if r["confidently_wrong"]],
         "avg_latency_ms": round(sum(latencies) / len(latencies)) if latencies else None,
+        "median_latency_ms": round(statistics.median(latencies)) if latencies else None,
         "p95_latency_ms": p95(latencies),
         "avg_cost_usd": round(cost / len(ran), 5) if ran else None,
         "total_cost_usd": round(cost, 5),
         "total_tokens": {
             kind: sum(r["tokens"][kind] for r in ran) for kind in ("input", "output", "cache_read", "cache_write")
         },
+        "tokens_per_question": {
+            kind: round(sum(r["tokens"][kind] for r in ran) / len(ran)) if ran else None for kind in ("input", "output")
+        },
+        # Infrastructure, not the model: never scored, reported separately (decisions D32).
+        "infra_retries": sum(r.get("infra_retries", 0) for r in results),
+        "rate_limit_waits": sum(r.get("rate_limit_waits", 0) for r in results),
     }
 
 
@@ -239,8 +254,9 @@ def _percent(value: float | None) -> str:
 
 def markdown(card: dict, meta: dict) -> str:
     """The scorecard as a markdown block for the terminal and the README."""
+    who = f"{meta.get('provider', 'anthropic')} / {meta['model']}, {meta.get('mode', 'governed')} mode"
     lines = [
-        f"### Eval scorecard: {meta['model']} (effort {meta['effort']}), data as of {meta['as_of']}",
+        f"### Eval scorecard: {who} ({meta['effort']}), data as of {meta['as_of']}",
         "",
         "| Measure | Result |",
         "|---|---|",
@@ -255,8 +271,17 @@ def markdown(card: dict, meta: dict) -> str:
             f"| Confidently wrong (review by hand) | {len(card['confidently_wrong'])}"
             f"{': ' + ', '.join(card['confidently_wrong']) if card['confidently_wrong'] else ''} |"
         ),
-        f"| Latency avg / p95 | {card['avg_latency_ms']} ms / {card['p95_latency_ms']} ms |",
+        f"| Latency median / p95 | {card['median_latency_ms']} ms / {card['p95_latency_ms']} ms |",
+        (
+            f"| Tokens per question (input / output) | {card['tokens_per_question']['input']:,} / "
+            f"{card['tokens_per_question']['output']:,} |"
+            if card["tokens_per_question"]["input"] is not None else "| Tokens per question | n/a |"
+        ),
         f"| Cost avg per query / total | ${card['avg_cost_usd']} / ${card['total_cost_usd']} |",
+        (
+            f"| Infrastructure retries / rate-limit waits (not scored) | {card['infra_retries']} / "
+            f"{card['rate_limit_waits']} |"
+        ),
         (
             "| Tokens (input / output / cache read / cache write) | "
             f"{' / '.join(f'{n:,}' for n in card['total_tokens'].values())} |"

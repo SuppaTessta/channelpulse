@@ -19,7 +19,7 @@ const CATEGORIES: [string, string][] = [
 ];
 
 const WHY_NOT_LIVE: Record<NonNullable<AskStatus["reason"]>, string> = {
-  no_credentials: "This server has no Anthropic API key, so no question is sent to a model.",
+  no_credentials: "This server has no model provider configured, so no question is sent to a model.",
   live_off: "The live analyst is switched off on this server (ASK_LIVE), so no question is sent to a model.",
 };
 

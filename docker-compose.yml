@@ -26,8 +26,14 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-channelpulse}:${POSTGRES_PASSWORD:-channelpulse}@postgres:5432/${POSTGRES_DB:-channelpulse}
       AGENT_DATABASE_URL: postgresql://channelpulse_agent:${AGENT_DB_PASSWORD:-channelpulse_agent}@postgres:5432/${POSTGRES_DB:-channelpulse}
       OPS_DATABASE_URL: postgresql://channelpulse_ops:${OPS_DB_PASSWORD:-channelpulse_ops}@postgres:5432/${POSTGRES_DB:-channelpulse}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ASK_LIVE: ${ASK_LIVE:-}
+      CHANNELPULSE_PROVIDER: ${CHANNELPULSE_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      OLLAMA_API_TOKEN: ${OLLAMA_API_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CHANNELPULSE_MODEL: ${CHANNELPULSE_MODEL:-claude-opus-5-5}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"

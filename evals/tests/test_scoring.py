@@ -261,6 +261,7 @@ def final(**fields):
 
 def test_ask_all_scores_every_cited_result_refuses_traps_and_stops_at_the_budget(monkeypatch):
     from app.agent import loop
+    from app.agent.providers import AnthropicProvider
 
     def fake_tool(name, tool_input, region):
         value = tool_input["value"]
@@ -281,7 +282,7 @@ def test_ask_all_scores_every_cited_result_refuses_traps_and_stops_at_the_budget
                  {**TRAP, "id": "T2", "question": "?"}]
     golden = table(["fy25", "fy26"], [10.0, 20.0])
 
-    results = run_eval.ask_all(client, questions, {"Q1": golden}, budget_usd=0.025)
+    results = run_eval.ask_all(AnthropicProvider(client), questions, {"Q1": golden}, budget_usd=0.025)
 
     assert results[0]["correct"] and results[0]["tools_used"] == ["query_metric", "query_metric"]  # fy26 is only in t2
     assert results[1]["refused"] and results[1]["correct"] and results[2]["skipped"]

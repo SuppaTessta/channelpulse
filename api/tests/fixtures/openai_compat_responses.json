@@ -1,0 +1,65 @@
+{
+  "_about": "Chat-completions response bodies for the OpenAI-compatible adapter. Hand-written in the wire formats of Gemini's OpenAI-compatible endpoint and Ollama's /v1 (Phase 2, Part B step 1); responses captured from the smoke run are added under captured_* keys with URLs and keys removed.",
+  "gemini_tool_call": {
+    "id": "resp-1", "object": "chat.completion", "model": "gemini-3.8-flash",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": null,
+      "tool_calls": [{"id": "function-call-1", "type": "function",
+        "function": {"name": "query_metric", "arguments": "{\"metric_name\": \"dso\", \"filters\": [], \"group_by\": [\"month\"], \"date_range\": null}"},
+        "extra_content": {"google": {"thought_signature": "c2lnbmF0dXJlLWJ5dGVz"}}}]}}],
+    "usage": {"prompt_tokens": 9000, "completion_tokens": 120, "total_tokens": 9120, "prompt_tokens_details": {"cached_tokens": 8000}}
+  },
+  "gemini_final_answer": {
+    "id": "resp-2", "object": "chat.completion", "model": "gemini-3.8-flash",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": null,
+      "tool_calls": [{"id": "function-call-2", "type": "function",
+        "function": {"name": "final_answer", "arguments": "{\"answer_text\": \"DSO rose from 41.3 to 44.8 days.\", \"refused\": false, \"refusal_reason\": null, \"evidence_tool_use_ids\": [\"function-call-1\"], \"chart_hint\": {\"type\": \"line\", \"x\": \"month\", \"y\": \"dso_days\", \"series\": null}}"}}]}}],
+    "usage": {"prompt_tokens": 9400, "completion_tokens": 90}
+  },
+  "ollama_tool_call": {
+    "id": "chatcmpl-7", "object": "chat.completion", "model": "qwen3.8-27b-64k",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": "", "reasoning": "The user wants DSO; query_metric covers it.",
+      "tool_calls": [{"id": "call_abc123", "index": 0, "type": "function",
+        "function": {"name": "query_metric", "arguments": "{\"metric_name\":\"dso\",\"filters\":[],\"group_by\":[\"month\"],\"date_range\":null}"}}]}}],
+    "usage": {"prompt_tokens": 7000, "completion_tokens": 300}
+  },
+  "ollama_text_answer_with_think": {
+    "id": "chatcmpl-8", "object": "chat.completion", "model": "qwen3.8-27b-64k",
+    "choices": [{"index": 0, "finish_reason": "stop", "message": {
+      "role": "assistant",
+      "content": "<think>I have the rows.</think>\n```json\n{\"answer_text\": \"DSO rose from 41.3 to 44.8 days.\", \"refused\": false, \"refusal_reason\": null, \"evidence_tool_use_ids\": [\"call_abc123\"], \"chart_hint\": {\"type\": \"line\", \"x\": \"month\", \"y\": \"dso_days\"}}\n```"}}],
+    "usage": {"prompt_tokens": 7400, "completion_tokens": 200}
+  },
+  "malformed_arguments": {
+    "id": "chatcmpl-9", "model": "qwen3.8-27b-64k",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": "",
+      "tool_calls": [{"id": "call_bad", "type": "function", "function": {"name": "query_metric", "arguments": "{\"metric_name\": \"dso\", \"filters\": [}"}}]}}],
+    "usage": {"prompt_tokens": 7000, "completion_tokens": 40}
+  },
+  "missing_ids": {
+    "id": "chatcmpl-10", "model": "qwen3.8-27b-64k",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": "",
+      "tool_calls": [{"type": "function", "function": {"name": "list_metrics", "arguments": {}}}]}}]
+  },
+  "final_with_other_call": {
+    "id": "resp-11", "model": "gemini-3.8-flash",
+    "choices": [{"index": 0, "finish_reason": "tool_calls", "message": {
+      "role": "assistant", "content": null,
+      "tool_calls": [
+        {"id": "c1", "type": "function", "function": {"name": "query_metric", "arguments": "{\"metric_name\": \"dso\", \"filters\": [], \"group_by\": [], \"date_range\": null}"}},
+        {"id": "c2", "type": "function", "function": {"name": "final_answer", "arguments": "{\"answer_text\": \"Guessing.\", \"refused\": false, \"refusal_reason\": null, \"evidence_tool_use_ids\": [\"c1\"], \"chart_hint\": {\"type\": \"none\", \"x\": null, \"y\": null, \"series\": null}}"}}]}}]
+  },
+  "empty_choices": {"id": "resp-12", "model": "gemini-3.8-flash", "choices": [], "usage": {"prompt_tokens": 9000, "completion_tokens": 0}},
+  "content_filter": {
+    "id": "resp-13", "model": "gemini-3.8-flash",
+    "choices": [{"index": 0, "finish_reason": "content_filter", "message": {"role": "assistant", "content": null}}]
+  },
+  "length": {
+    "id": "resp-14", "model": "qwen3.8-27b-64k",
+    "choices": [{"index": 0, "finish_reason": "length", "message": {"role": "assistant", "content": "<think>still thinking"}}]
+  }
+}

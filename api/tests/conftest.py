@@ -12,6 +12,7 @@ from anthropic.types.beta import BetaMessage
 from fastapi.testclient import TestClient
 
 from app import config, main, semantic
+from app.agent.providers import AnthropicProvider
 from app.db import agent_conninfo, ops_conninfo
 from app.guardrails import rate_limit, readonly_db
 
@@ -153,7 +154,8 @@ def api(monkeypatch, fake_db, fake_semantic):
 
     def use_llm(client, live=True):
         """Serve `client` as the credentials; `live` is the ASK_LIVE switch (on unless a test turns it off)."""
-        main.app.dependency_overrides[main.llm_client] = lambda: client
+        provider = AnthropicProvider(client) if client is not None else None
+        main.app.dependency_overrides[main.llm_provider] = lambda: provider
         monkeypatch.setattr(config, "ASK_LIVE", live)
 
     yield SimpleNamespace(http=TestClient(main.app), traces=traces, db=fake_db, use_llm=use_llm)

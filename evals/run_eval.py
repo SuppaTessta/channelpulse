@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / "api")]
 
 from app import config
+from app.agent.providers import ProviderError
 from app.db import db_conninfo
 from app.guardrails.readonly_db import json_safe
 from app.guardrails.sql_validator import validate
@@ -189,14 +190,15 @@ def confirm_spend(estimate: float, assume_yes: bool, stdin=sys.stdin) -> bool:
 # --- agent run --------------------------------------------------------------------------------------------------
 
 
-def llm_client():
-    """The API's own client factory, so the eval resolves credentials exactly as /api/ask does."""
-    from app.main import llm_client
+def llm_provider():
+    """The API's own provider factory, so the eval resolves settings and credentials exactly as /api/ask does."""
+    from app.main import llm_provider
 
-    return llm_client()
+    llm_provider.cache_clear()  # --model may have changed config since the API module was imported
+    return llm_provider()
 
 
-def ask_all(client, questions: list[dict], goldens: dict, budget_usd: float) -> list[dict]:
+def ask_all(provider, questions: list[dict], goldens: dict, budget_usd: float) -> list[dict]:
     from app.agent import loop
     from app.agent.trace import Trace
 
@@ -218,12 +220,12 @@ def ask_all(client, questions: list[dict], goldens: dict, budget_usd: float) -> 
                 results.append({**_identity(q), "skipped": f"budget of ${budget_usd:.2f} spent"})
                 continue
             recorded.clear()
-            trace = Trace(question=q["question"], region_claim=REGION, model=config.MODEL)
+            trace = Trace(question=q["question"], region_claim=REGION, model=provider.model, provider=provider.name)
             started = time.monotonic()
             response = error = None
             try:
-                response = loop.run_agent(client, q["question"], REGION, trace)
-            except (loop.AgentError, anthropic.APIError) as e:  # as /api/ask does; a bug still stops the run
+                response = loop.run_agent(provider, q["question"], REGION, trace)
+            except (loop.AgentError, anthropic.APIError, ProviderError) as e:  # as /api/ask does; a bug still stops
                 error = f"{type(e).__name__}: {e}"
             latency_ms = round((time.monotonic() - started) * 1000)
             spent += trace.est_cost_usd
@@ -332,7 +334,8 @@ def _short(value) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ChannelPulse golden-set eval")
-    parser.add_argument("--model", default=config.MODEL, help="model id (default: CHANNELPULSE_MODEL)")
+    parser.add_argument("--model", help="Anthropic model id (default: CHANNELPULSE_MODEL); other providers read "
+                                         "GEMINI_MODEL / OLLAMA_MODEL")
     parser.add_argument("--effort", default=config.EFFORT, help="output effort (default: CHANNELPULSE_EFFORT)")
     parser.add_argument("--limit", type=int, help="ask only the first N selected questions")
     parser.add_argument("--only", help="comma-separated question ids")
@@ -360,9 +363,9 @@ def main(argv: list[str] | None = None) -> int:
         selected = [q for q in questions if q["id"] in wanted]
     selected = selected[: args.limit] if args.limit is not None else selected
 
-    config.MODEL, config.EFFORT = args.model, args.effort  # run_agent reads both at call time
+    config.MODEL, config.EFFORT = args.model or config.MODEL, args.effort  # the Anthropic adapter reads these
     meta = {
-        "model": args.model,
+        "model": config.MODEL,
         "effort": args.effort,
         "as_of": as_of,
         "pinned_as_of": pinned_as_of,
@@ -374,24 +377,26 @@ def main(argv: list[str] | None = None) -> int:
         "golden_count": len(goldens),
         "selected": [q["id"] for q in selected],
     }
-    client = llm_client()
-    if client is None:
-        reason = "No Anthropic credentials resolved (API key, auth token, profile or federation); agent not run."
+    provider = llm_provider()
+    if provider is None:
+        reason = f"The {config.PROVIDER} provider isn't configured (no credentials or endpoint); agent not run."
         write({"status": "not_run", "reason": reason, **meta, "goldens": goldens})
         print(f"\nnot_run: {reason}\nGolden answers are validated; results written to {RESULTS.relative_to(ROOT)}.")
         return 2 if args.require_llm else 0
 
-    estimate = estimate_usd(args.model, len(selected), previous_results())
-    print(f"\nAbout to ask {len(selected)} question(s) with {args.model} (effort {args.effort}). "
-          f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
-    if estimate > args.budget_usd:
-        print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded for "
-              "replay. Raise --budget-usd (make eval BUDGET=...) to ask every question.")
-    if not confirm_spend(min(estimate, args.budget_usd), args.yes):
-        print("Cancelled before any model call.")
-        return 3
+    meta |= {"provider": provider.name, "model": provider.model, "settings": provider.settings()}
+    if provider.name == "anthropic":  # the only paid provider: nothing is spent without a yes
+        estimate = estimate_usd(provider.model, len(selected), previous_results())
+        print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {args.effort}). "
+              f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
+        if estimate > args.budget_usd:
+            print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded "
+                  "for replay. Raise --budget-usd (make eval BUDGET=...) to ask every question.")
+        if not confirm_spend(min(estimate, args.budget_usd), args.yes):
+            print("Cancelled before any model call.")
+            return 3
 
-    results = ask_all(client, selected, goldens, args.budget_usd)
+    results = ask_all(provider, selected, goldens, args.budget_usd)
     card = scoring.scorecard(results)
     status = "partial" if card["skipped"] else "complete"
     write({"status": status, **meta, "scorecard": card, "results": [_without_response(r) for r in results]})

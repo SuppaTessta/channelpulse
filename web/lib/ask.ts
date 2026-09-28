@@ -30,7 +30,7 @@ export type Recording = {
   git_commit: string | null;
   count: number;
 };
-export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; model: string; recording: Recording | null };
+export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; provider: string; model: string | null; recording: Recording | null };
 export type ReplayAnswer = {
   id: string;
   category: string;

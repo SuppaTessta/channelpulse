@@ -71,7 +71,8 @@ export function isAskStatus(v: unknown): v is AskStatus {
     isObj(v) &&
     (v.mode === "live" || v.mode === "replay") &&
     (v.reason === null || v.reason === "no_credentials" || v.reason === "live_off") &&
-    isStr(v.model) &&
+    isStr(v.provider) &&
+    isStrOrNull(v.model) &&
     (v.recording === null || isRecording(v.recording))
   );
 }

@@ -4,7 +4,14 @@ import os
 
 env = os.environ.get
 
-# Owner-approved default (Phase 2, A3; decisions D29). Opus 5.5 at medium effort: Anthropic reports it beating
+# Which model provider answers (decisions D31): gemini (default), ollama or anthropic. Each reads its own settings:
+# gemini GEMINI_API_KEY + GEMINI_MODEL; ollama OLLAMA_BASE_URL + OLLAMA_MODEL (+ OLLAMA_API_TOKEN); anthropic the
+# SDK's credentials + CHANNELPULSE_MODEL below.
+DEFAULT_PROVIDER = "gemini"
+PROVIDER = env("CHANNELPULSE_PROVIDER", DEFAULT_PROVIDER).strip().lower()
+GEMINI_MODEL = "gemini-3.8-flash"  # pending the owner's confirmation (Part B)
+
+# Anthropic only. Owner-approved default (Phase 2, A3; decisions D29). Opus 5.5 at medium effort: Anthropic reports it beating
 # Opus 5 at high on analysis work, and medium is its own API default.
 MODEL = env("CHANNELPULSE_MODEL", "claude-opus-5-5")
 EFFORT = env("CHANNELPULSE_EFFORT", "medium")

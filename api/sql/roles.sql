@@ -50,6 +50,8 @@ create table if not exists ops.agent_traces (
     error              text
 );
 create index if not exists agent_traces_created_at_idx on ops.agent_traces (created_at);  -- daily spend cap
+-- Added with the provider layer (decisions D31); rows from before it were all Anthropic.
+alter table ops.agent_traces add column if not exists provider text not null default 'anthropic';
 
 -- PUBLIC's defaults would otherwise reach both roles: temp tables in this database and USAGE on schema public.
 do $$ begin execute format('revoke temporary on database %I from public', current_database()); end $$;

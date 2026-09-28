@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app import config, replay, semantic
 from app.agent.loop import AgentError, run_agent
+from app.agent.providers import Provider, ProviderError, from_env
 from app.agent.trace import Trace, write_trace
 from app.db import db_conninfo
 from app.guardrails.rate_limit import enforce_spend_cap, limit_ask_rate
@@ -148,7 +149,13 @@ def llm_client() -> anthropic.Anthropic | None:
     return client if client.api_key or client.auth_token or client.credentials else None
 
 
-LLMClient = Annotated[anthropic.Anthropic | None, Depends(llm_client)]
+@functools.cache
+def llm_provider() -> Provider | None:
+    """The configured model provider (CHANNELPULSE_PROVIDER), or None when it has no credentials or endpoint."""
+    return from_env(llm_client() if config.PROVIDER == "anthropic" else None)
+
+
+LLM = Annotated[Provider | None, Depends(llm_provider)]
 
 
 class Recording(BaseModel):
@@ -165,7 +172,8 @@ class Recording(BaseModel):
 class AskStatus(BaseModel):
     mode: Literal["live", "replay"]
     reason: Literal["no_credentials", "live_off"] | None
-    model: str
+    provider: str
+    model: str | None
     recording: Recording | None
 
 
@@ -186,18 +194,18 @@ class Replay(BaseModel):
     withheld: bool
 
 
-def _not_live_reason(client: anthropic.Anthropic | None) -> str | None:
-    if client is None:
+def _not_live_reason(provider: Provider | None) -> str | None:
+    if provider is None:
         return "no_credentials"
     return None if config.ASK_LIVE else "live_off"
 
 
 @app.get("/api/ask/status", response_model=AskStatus)
-def ask_status(client: LLMClient) -> dict:
+def ask_status(provider: LLM) -> dict:
     """Whether /api/ask answers live, why not, and which recorded eval run the page can replay instead."""
-    reason = _not_live_reason(client)
-    return {"mode": "replay" if reason else "live", "reason": reason, "model": config.MODEL,
-            "recording": replay.summary(replay.load())}
+    reason = _not_live_reason(provider)
+    return {"mode": "replay" if reason else "live", "reason": reason, "provider": config.PROVIDER,
+            "model": provider.model if provider else None, "recording": replay.summary(replay.load())}
 
 
 @app.get("/api/ask/replay", response_model=Replay)
@@ -206,17 +214,17 @@ def ask_replay(region: Region) -> dict:
 
 
 @app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(limit_ask_rate)])
-def ask(body: AskRequest, region: Region, client: LLMClient) -> dict:
-    reason = _not_live_reason(client)
+def ask(body: AskRequest, region: Region, provider: LLM) -> dict:
+    reason = _not_live_reason(provider)
     if reason == "no_credentials":
         raise HTTPException(503, "LLM not configured")
     if reason == "live_off":
         raise HTTPException(503, "Live mode is off on this server (set ASK_LIVE=1 to enable paid model calls).")
     enforce_spend_cap()
-    trace = Trace(question=body.question, region_claim=region, model=config.MODEL)
+    trace = Trace(question=body.question, region_claim=region, model=provider.model, provider=provider.name)
     started = time.monotonic()
     try:
-        return run_agent(client, body.question, region, trace)
+        return run_agent(provider, body.question, region, trace)
     except AgentError as e:
         trace.error = str(e)
         raise HTTPException(e.status, str(e)) from e
@@ -224,6 +232,10 @@ def ask(body: AskRequest, region: Region, client: LLMClient) -> dict:
         trace.error = f"{type(e).__name__}: {e}"
         status = 504 if isinstance(e, anthropic.APITimeoutError) else 502
         raise HTTPException(status, "The model API call failed; please try again.") from e
+    except ProviderError as e:
+        trace.error = f"{e.kind}: {e}"
+        status = 503 if e.kind == "rate_limited" else 502
+        raise HTTPException(status, "The model provider didn't answer; please try again.") from e
     except Exception as e:
         trace.error = f"{type(e).__name__}: {e}"
         raise

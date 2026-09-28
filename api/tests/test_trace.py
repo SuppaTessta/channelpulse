@@ -1,15 +1,15 @@
-from types import SimpleNamespace
-
 import psycopg
 import pytest
 
+from app.agent.providers import Turn, Usage
 from app.agent.trace import Trace, price, write_trace
 from app.db import db_conninfo, ops_conninfo
 
 
-def response(model="claude-opus-5", **usage):
-    tokens = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
-    return SimpleNamespace(model=model, usage=SimpleNamespace(**{**tokens, **usage}))
+def response(model="claude-opus-5", input_tokens=0, output_tokens=0, cache_read_input_tokens=0,
+             cache_creation_input_tokens=0):
+    usage = Usage(input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens)
+    return Turn("end_turn", "", [], usage, model)
 
 
 @pytest.mark.parametrize(
@@ -24,14 +24,14 @@ def test_models_are_priced_from_the_table_and_unknown_ones_at_the_dearest_rate(m
 
 def test_cache_reads_bill_at_each_models_own_rate():
     trace = Trace(question="q", region_claim="ALL", model="claude-opus-5-5")
-    trace.add_usage(response(model="claude-opus-5-5", cache_read_input_tokens=1_000_000))
+    trace.add_usage(response(model="claude-opus-5-5", cache_read_input_tokens=1_000_000), "anthropic")
     assert trace.est_cost_usd == pytest.approx(0.20)  # 0.05x input on Opus 5.5, not the usual 0.1x
 
 
 def test_usage_adds_up_tokens_and_cost_across_rounds():
     trace = Trace(question="q", region_claim="ALL", model="claude-opus-5")
-    trace.add_usage(response(input_tokens=1_000_000, output_tokens=100_000))
-    trace.add_usage(response(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000))
+    trace.add_usage(response(input_tokens=1_000_000, output_tokens=100_000), "anthropic")
+    trace.add_usage(response(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000), "anthropic")
     assert (trace.input_tokens, trace.output_tokens, trace.cache_read_tokens, trace.cache_write_tokens) == (
         1_000_000, 100_000, 1_000_000, 1_000_000)
     assert trace.est_cost_usd == pytest.approx(5.0 + 2.5 + 0.5 + 6.25)  # input, output, cache read, cache write
@@ -39,8 +39,14 @@ def test_usage_adds_up_tokens_and_cost_across_rounds():
 
 def test_cost_is_priced_at_the_model_that_served_the_response():
     trace = Trace(question="q", region_claim="ALL", model="claude-sonnet-5")
-    trace.add_usage(response(model="claude-opus-4-8", output_tokens=1_000_000))
+    trace.add_usage(response(model="claude-opus-4-8", output_tokens=1_000_000), "anthropic")
     assert (trace.served_model, trace.est_cost_usd) == ("claude-opus-4-8", pytest.approx(25.0))
+
+
+def test_free_providers_count_tokens_but_no_cost():
+    trace = Trace(question="q", region_claim="ALL", model="gemini-3.8-flash")
+    trace.add_usage(response(model="gemini-3.8-flash", input_tokens=5_000, output_tokens=400), "gemini")
+    assert (trace.provider, trace.input_tokens, trace.output_tokens, trace.est_cost_usd) == ("gemini", 5_000, 400, 0.0)
 
 
 @pytest.mark.db

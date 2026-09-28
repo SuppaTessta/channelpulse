@@ -7,6 +7,7 @@ import pytest
 from app import config
 from app.agent.loop import FALLBACK_BETA, AgentError, run_agent
 from app.agent.prompt import FINAL_SCHEMA
+from app.agent.providers import AnthropicProvider
 from app.agent.trace import Trace
 from app.tools.definitions import TOOLS
 
@@ -21,7 +22,7 @@ def offline(fake_db, fake_semantic):
 
 def ask(llm, question="How has DSO moved?", region="ALL"):
     trace = Trace(question=question, region_claim=region, model=config.MODEL)
-    return run_agent(llm, question, region, trace), trace
+    return run_agent(AnthropicProvider(llm), question, region, trace), trace
 
 
 def tool_result(request, index=0) -> dict:

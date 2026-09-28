@@ -211,6 +211,36 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
   - The nightly republish can interrupt queries for a few seconds.
   - Vercel's function duration may need raising.
 
+**D31. A swappable model provider; Gemini by default (Phase 2, Part B as revised by the owner on 2026-09-29).**
+The owner won't pay for model usage, so the agent is evaluated on free providers: the Gemini API free tier, and Ollama serving an open-weight model on a self-hosted GPU session. The guardrails, the labelling and the semantic layer never depended on the model, and making the model swappable is how that gets proven and measured.
+- **Interface** (`api/app/agent/providers.py`): the loop sends a system prompt, a provider-neutral transcript and the tool definitions. A provider returns one `Turn`: final text, tool calls, token usage, the model that served it, and a stop reason (`tool_use`, `end_turn`, `max_tokens`, `refusal`, `pause`). Failures raise `ProviderError` with a kind, so the eval never scores a dead server as a wrong answer:
+  - `infrastructure`: unreachable, timed out, 5xx, or a proxy's error page;
+  - `rate_limited`: 429, with its retry delay;
+  - `rejected`: other 4xx.
+- **Adapters, all hand-rolled; no agent framework, LangChain or LiteLLM:**
+  - `AnthropicProvider` sends exactly the requests the loop sent before, and all its request-shape tests pass unchanged. It is unit-tested but was **not evaluated live**, because there is no Anthropic key.
+  - `OpenAICompatProvider` speaks `/chat/completions` over `httpx2` (already installed) for both Gemini (Google's OpenAI-compatible endpoint) and Ollama (`/v1`).
+    - The final answer arrives as a call to a `final_answer` tool whose parameters are the final-answer schema, because tool calling is the one capability both share. On the last round it's the only tool offered, and it's required.
+    - Each assistant message is echoed back exactly as received, so Gemini's thought signatures survive, whatever field the compatibility layer puts them in.
+    - `<think>` blocks are stripped.
+    - Malformed tool arguments go back to the model as a tool error rather than crashing the loop.
+    - Missing tool-call ids are filled in, on the echoed message too.
+    - A final answer sent alongside other calls is refused back to the model.
+- **Provider-neutral loop changes:**
+  - A turn that ends without a readable final answer gets one nudge before it becomes an error. Weaker models often reply in prose.
+  - A final answer inside a code fence is accepted.
+  - A partial `chart_hint` is normalised.
+- **Configuration:**
+  - `CHANNELPULSE_PROVIDER` is `gemini` (default), `ollama` or `anthropic`.
+  - Gemini reads `GEMINI_API_KEY` and `GEMINI_MODEL`. Ollama reads `OLLAMA_BASE_URL` and `OLLAMA_MODEL`, plus an optional `OLLAMA_API_TOKEN` sent as a bearer header.
+  - `CHANNELPULSE_TEMPERATURE` defaults to 0.
+  - An optional `*_REASONING_EFFORT` is sent as `reasoning_effort`.
+  - The Ollama URL is treated as a secret: error messages never include it.
+- **Cost:** traces and the spend cap price only Anthropic turns. Free-tier turns cost $0 and are reported in tokens. Traces gain a `provider` column.
+- **Automation:** the CI guard now fails if any workflow references an Anthropic, Gemini, Google, Ollama or OpenAI variable. CI makes no model calls of any kind.
+- **The public demo stays replay-only** (`render.yaml`: `ASK_LIVE=0`, provider `gemini`, key empty). Gemini's free tier may use prompts to improve Google's products; that's acceptable only because every row here is synthetic.
+- **Adapter tests** (`api/tests/test_providers.py`, 33 tests) run on response fixtures through `httpx2.MockTransport`, and nothing reaches a model. The fixtures were hand-written in each provider's wire format before any live call; responses captured in the smoke run are added alongside them. Two deliberate breaks, dropping the thought signature and leaking the URL into an error, each made a test fail.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

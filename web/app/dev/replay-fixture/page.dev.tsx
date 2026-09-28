@@ -31,7 +31,7 @@ const ANSWERS = [
   answer("TC01", "time_comparison", "FIXTURE: How did DSO change against last year?", governed, false),
   answer("TR01", "trap", "FIXTURE: Forecast next quarter's sales.", refused, true),
 ];
-const STATUS: AskStatus = { mode: "replay", reason: "no_credentials", model: RECORDING.model, recording: RECORDING };
+const STATUS: AskStatus = { mode: "replay", reason: "no_credentials", provider: "gemini", model: RECORDING.model, recording: RECORDING };
 const STATES: Record<string, { status: AskStatus; replay: Replay }> = {
   recorded: { status: STATUS, replay: { recording: RECORDING, answers: ANSWERS, withheld: false } },
   withheld: { status: STATUS, replay: { recording: RECORDING, answers: [], withheld: true } },

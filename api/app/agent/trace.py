@@ -23,6 +23,7 @@ class Trace:
     region_claim: str
     model: str
     trace_id: uuid.UUID = field(default_factory=uuid.uuid4)
+    provider: str = "anthropic"
     served_model: str | None = None
     label: str = "error"
     tool_calls: list[dict] = field(default_factory=list)
@@ -37,24 +38,25 @@ class Trace:
     answer_text: str | None = None
     error: str | None = None
 
-    def add_usage(self, response) -> None:
-        """Add one Messages API response. Its usage covers the attempt that produced it, priced at the model that
-        served it: after a refusal fallback that is the fallback model, not the one requested."""
-        usage = response.usage
-        cache_read = usage.cache_read_input_tokens or 0
-        cache_write = usage.cache_creation_input_tokens or 0
+    def add_usage(self, turn, provider: str) -> None:
+        """Add one model turn. Its usage covers the attempt that produced it, priced at the model that served it
+        (after a refusal fallback, the fallback model). Only Anthropic bills here: the free tiers cost $0, and
+        their token counts are what the eval reports."""
+        usage = turn.usage
+        self.provider = provider
         self.input_tokens += usage.input_tokens
         self.output_tokens += usage.output_tokens
-        self.cache_read_tokens += cache_read
-        self.cache_write_tokens += cache_write
-        self.served_model = response.model
-        input_price, output_price, cache_read_price = price(response.model)
+        self.cache_read_tokens += usage.cache_read_tokens
+        self.cache_write_tokens += usage.cache_write_tokens
+        self.served_model = turn.model
+        if provider != "anthropic":
+            return
+        input_price, output_price, cache_read_price = price(turn.model)
         self.est_cost_usd += (
-            (usage.input_tokens + cache_write * config.CACHE_WRITE_MULTIPLIER) * input_price
-            + cache_read * cache_read_price
+            (usage.input_tokens + usage.cache_write_tokens * config.CACHE_WRITE_MULTIPLIER) * input_price
+            + usage.cache_read_tokens * cache_read_price
             + usage.output_tokens * output_price
         ) / 1_000_000
-
 
 _COLUMNS = [f.name for f in fields(Trace)]
 _INSERT = sql.SQL("insert into ops.agent_traces ({}) values ({})").format(

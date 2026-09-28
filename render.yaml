@@ -19,14 +19,14 @@ services:
         sync: false
       - key: OPS_DATABASE_URL
         sync: false
-      # The public demo starts in replay mode: no model is ever called. Live mode needs BOTH a key and ASK_LIVE=1
-      # (decisions D29); the rate limit and the daily spend cap below then apply to every question.
+      # The public demo stays in replay mode: no model is ever called. Live mode needs BOTH a configured provider
+      # and ASK_LIVE=1 (decisions D29, D31); the rate limit and the daily spend cap below then apply to every question.
       - key: ASK_LIVE
         value: "0"
-      - key: ANTHROPIC_API_KEY     # leave empty for replay only
+      - key: CHANNELPULSE_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY        # leave empty for replay only
         sync: false
-      - key: CHANNELPULSE_MODEL
-        value: claude-opus-5-5
       - key: CORS_ORIGINS          # the Vercel URL of the web app
         sync: false
       - key: TRUST_PROXY           # take the client IP from X-Forwarded-For for the rate limit

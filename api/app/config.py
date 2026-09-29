@@ -9,7 +9,10 @@ env = os.environ.get
 # SDK's credentials + CHANNELPULSE_MODEL below.
 DEFAULT_PROVIDER = "gemini"
 PROVIDER = env("CHANNELPULSE_PROVIDER", DEFAULT_PROVIDER).strip().lower()
-GEMINI_MODEL = "gemini-3.8-flash"  # pending the owner's confirmation (Part B)
+# Owner-approved (D33): 3.8 Flash's free tier allows 20 requests a day; 3.5 Flash-Lite allows 500.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+# What each model thinks at when no reasoning_effort is sent (Google's thinking docs), recorded with eval runs.
+GEMINI_DEFAULT_THINKING = {"gemini-3.5-flash-lite": "minimal", "gemini-3.8-flash": "medium"}
 
 # Anthropic only. Owner-approved default (Phase 2, A3; decisions D29). Opus 5.5 at medium effort: Anthropic reports it beating
 # Opus 5 at high on analysis work, and medium is its own API default.

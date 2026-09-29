@@ -120,3 +120,10 @@ def test_a_429_on_a_per_day_quota_pauses_at_once_instead_of_retrying():
     with pytest.raises(RunPaused, match="daily quota"):
         call(p)
     assert inner.calls == 1 and not clock.slept
+
+
+def test_every_request_is_counted_including_retried_ones():
+    inner = Inner(ProviderError("couldn't connect", "infrastructure"))
+    p, _ = throttled(inner)
+    call(p), call(p)
+    assert p.stats["requests"] == 3  # two answered calls plus the retried one: all spend quota

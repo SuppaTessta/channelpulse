@@ -241,6 +241,22 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **The public demo stays replay-only** (`render.yaml`: `ASK_LIVE=0`, provider `gemini`, key empty). Gemini's free tier may use prompts to improve Google's products; that's acceptable only because every row here is synthetic.
 - **Adapter tests** (`api/tests/test_providers.py`, 33 tests) run on response fixtures through `httpx2.MockTransport`, and nothing reaches a model. The fixtures were hand-written in each provider's wire format before any live call; responses captured in the smoke run are added alongside them. Two deliberate breaks, dropping the thought signature and leaking the URL into an error, each made a test fail.
 
+**D33. The Gemini model is `gemini-3.5-flash-lite`, not 3.8 Flash (Part B, owner's decision 2026-09-29).**
+- **Why:**
+  - `gemini-3.8-flash` was approved first, but the owner's free tier gives it 5 RPM, 250K TPM and only **20 requests per day**. Google's 429 says so in its QuotaFailure: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20. The owner reports that every Gemini Flash model on the key has the same daily cap.
+  - A governed question takes several model calls, so 40 questions in two modes would need weeks at 20 a day.
+  - `gemini-3.5-flash-lite` (version `3.5-flash-lite-07-2026`, from the models-list endpoint) gets 15 RPM, 250K TPM and **500 RPD** on the owner's key.
+  - The eval throttles to 80% of those limits (12 RPM, 200K TPM, 400 RPD). They are the runner's defaults, and `GEMINI_RPM` / `GEMINI_TPM` / `GEMINI_RPD` override them.
+- **Thinking:** left at the model's default, which Google's thinking docs give as "On (minimal)". It supports minimal, low, medium and high, and can't be turned off. Every run records it.
+- **Tool calling verified:** a single tool-calling request through the OpenAI-compatible endpoint returned a proper `query_metric` call with valid arguments and a thought signature.
+- **Discarded, not mixed:**
+  - Two smoke questions had run on 3.8 Flash (SL01 and FG01, both scored correct) before the daily quota ran out. Their run file was deleted and is kept only in git history. No scorecard, case-study figure or recording uses them.
+  - The 3.8 Flash reply captured as a test fixture stays: it tests the adapter's wire format, not the eval.
+- **The API key was replaced** by the owner. It lives only in `.env`.
+- **Two runner fixes came out of this:**
+  - A 429 on a per-day quota now pauses the run at once. Before, it retried against the 23-second `retryDelay` that Google attaches even to daily limits.
+  - Every model request, retries included, is counted per question. That count is what the day-budget estimate uses.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

@@ -49,9 +49,9 @@ QUESTIONS = ROOT / "evals" / "questions.yaml"
 RESULTS = ROOT / "evals" / "results" / "latest.json"
 RECORDINGS = ROOT / "api" / "app" / "recordings"
 RUNS = ROOT / "evals" / "results" / "runs"
-# Gemini free-tier quota for the key (AI Studio, Rate limits). The throttle keeps to 80% of these. The defaults are
-# deliberately low placeholders until GEMINI_RPM / GEMINI_TPM / GEMINI_RPD are set in .env: too low only costs time.
-GEMINI_QUOTA_DEFAULTS = {"GEMINI_RPM": 5, "GEMINI_TPM": 250_000, "GEMINI_RPD": 100}
+# Gemini free-tier quota for the owner's key on gemini-3.5-flash-lite (AI Studio, Rate limits, 2026-09-29); the
+# throttle keeps to 80% of these (D33). GEMINI_RPM / GEMINI_TPM / GEMINI_RPD in .env override them.
+GEMINI_QUOTA_DEFAULTS = {"GEMINI_RPM": 15, "GEMINI_TPM": 250_000, "GEMINI_RPD": 500}
 # Whole-question time budgets: one request at a time on a 27B model over a tunnel is slow (D32).
 AGENT_TIMEOUTS = {"gemini": 300, "ollama": 1800, "anthropic": 120}
 CATEGORIES = ("simple_lookup", "filtered_grouped", "time_comparison", "multi_hop_why", "trap")
@@ -262,7 +262,8 @@ def ask_all(provider, questions: list[dict], goldens: dict, budget_usd: float, *
             verdict = scoring.score_question(q, goldens.get(q["id"]), response, tools_used, evidence, mode)
             result = {**_result(q, goldens.get(q["id"]), response, trace, verdict, latency_ms, error),
                       "provider": provider.name, "mode": mode, "asked_at": asked_at, "response": response,
-                      **{k: (stats or {}).get(k, 0) - before.get(k, 0) for k in ("infra_retries", "rate_limit_waits")}}
+                      **{k: (stats or {}).get(k, 0) - before.get(k, 0)
+                         for k in ("requests", "infra_retries", "rate_limit_waits")}}
             results.append(result)
             if on_result:
                 on_result(result)

@@ -330,8 +330,11 @@ def from_env(anthropic_client=None) -> Provider | None:
         if not key:
             return None
         model = env("GEMINI_MODEL", config.GEMINI_MODEL)
+        reasoning = env("GEMINI_REASONING_EFFORT") or None
+        default = config.GEMINI_DEFAULT_THINKING.get(model, "unknown")
         return OpenAICompatProvider("gemini", GEMINI_BASE_URL, model, key, temperature=temperature,
-                                    reasoning_effort=env("GEMINI_REASONING_EFFORT") or None)
+                                    reasoning_effort=reasoning,
+                                    record={"thinking": reasoning or f"provider default ({default})"})
     if name == "ollama":
         base, model = env("OLLAMA_BASE_URL"), env("OLLAMA_MODEL")
         if not base or not model:

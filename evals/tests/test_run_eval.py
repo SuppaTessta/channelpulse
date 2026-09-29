@@ -166,3 +166,10 @@ def test_ollama_show_reports_what_the_server_says():
     with pytest.raises(ProviderError) as caught:
         ollama_show("https://secret.example", "m", http=down)
     assert caught.value.kind == "infrastructure" and "secret" not in str(caught.value)
+
+
+def test_gemini_defaults_are_the_owners_flash_lite_quota(monkeypatch):
+    for var in ("GEMINI_RPM", "GEMINI_TPM", "GEMINI_RPD"):
+        monkeypatch.delenv(var, raising=False)
+    limits = run_eval.limits_for("gemini")
+    assert (limits.rpm, limits.tpm, limits.rpd) == (12, 200_000, 400)

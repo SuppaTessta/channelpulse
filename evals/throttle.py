@@ -53,7 +53,7 @@ class ThrottledProvider:
         self._now, self._sleep, self._today = now, sleep, today
         self._window: deque[tuple[float, int]] = deque()  # (time, input tokens) of the last minute's calls
         self._last_tokens = 0
-        self.stats = {"rate_limit_waits": 0, "infra_retries": 0, "throttle_wait_s": 0.0}
+        self.stats = {"requests": 0, "rate_limit_waits": 0, "infra_retries": 0, "throttle_wait_s": 0.0}
         state.setdefault("requests_by_day", {})
 
     def settings(self) -> dict:
@@ -109,6 +109,7 @@ class ThrottledProvider:
             self._wait(max(0.5, 60 - (now - self._window[0][0])))
         self._window.append((self._now(), self._last_tokens))
         self.state["requests_by_day"][day] = used + 1
+        self.stats["requests"] += 1  # every request spends quota, retries included
 
     def _wait(self, seconds: float) -> None:
         self.stats["throttle_wait_s"] += seconds

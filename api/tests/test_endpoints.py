@@ -130,12 +130,12 @@ def test_a_database_failure_is_502(api, monkeypatch):
 @pytest.mark.parametrize(("query", "as_of"), [("", None), ("?as_of=2026-03-01", dt.date(2026, 3, 1))])
 def test_anomalies_read_as_of_a_date_or_the_latest_snapshot(api, query, as_of):
     response = api.http.get(f"/api/anomalies{query}")
-    assert response.status_code == 200 and api.db.calls[0][1] == {"as_of": as_of, "detector": None}
+    assert response.status_code == 200 and api.db.calls[0][1] == {"as_of": as_of, "detector": None, "failure_mode": None}
 
 
 def test_anomalies_can_be_filtered_to_one_detector(api):
     assert api.http.get("/api/anomalies?detector=lot_scan").status_code == 200
-    assert api.db.calls[0][1] == {"as_of": None, "detector": "lot_scan"}
+    assert api.db.calls[0][1] == {"as_of": None, "detector": "lot_scan", "failure_mode": None}
     assert api.http.get("/api/anomalies?detector=everything").status_code == 422
 
 

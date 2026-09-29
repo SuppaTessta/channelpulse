@@ -96,14 +96,26 @@ _TOOLS = [
             "outlying claim rates), stuffing (quarter-end channel stuffing) and distributor_health (distributors "
             "at risk). Each row is the latest weekly snapshot on or before as_of_date for an entity flagged by "
             "then, with failure_mode (lot_scan only), region (distributor-level rows), effect_size, p_value and "
-            "details. Call it for any why, what-changed, what's-unusual or risk question, together with "
-            "query_metric for context. Narrate only what it returns; never infer an anomaly it did not return."
+            "details. Rows come strongest first within each detector, interleaved across detectors, and you see "
+            f"only the first {config.MODEL_ROWS}: filter by detector (and failure_mode for lot_scan) to see one "
+            "detector's full list. Call it for any why, what-changed, what's-unusual or risk question, together "
+            "with query_metric for context. Narrate only what it returns; never infer an anomaly it did not return."
         ),
         "input_schema": _object({
             "as_of_date": _nullable({
                 "type": "string",
                 "format": "date",
                 "description": "Snapshot date to read as of; null for the latest snapshot.",
+            }),
+            "detector": _nullable({
+                "type": "string",
+                "enum": ["lot_scan", "installer_scan", "stuffing", "distributor_health"],
+                "description": "Only this detector's flags; null for all four.",
+            }),
+            "failure_mode": _nullable({
+                "type": "string",
+                "enum": ["base_crack", "leak", "fitting_failure", "discoloration", "other"],
+                "description": "lot_scan only: flags for this failure mode; null for all.",
             }),
         }),
     },

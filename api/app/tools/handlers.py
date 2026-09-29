@@ -28,7 +28,11 @@ select p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region
 from latest l, params p
 where l.first_flag_date <= p.as_of
   and (%(detector)s::text is null or l.detector = %(detector)s)
-order by l.detector, l.effect_size desc nulls last, l.entity_id, l.failure_mode"""
+  and (%(failure_mode)s::text is null or l.failure_mode = %(failure_mode)s)
+-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so
+-- one detector's long list must not push the others out of view.
+order by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),
+         l.detector"""
 
 
 class ToolError(Exception):
@@ -58,7 +62,8 @@ def run_readonly_sql(tool_input: dict, region: str) -> dict:
 
 
 def get_anomalies(tool_input: dict, region: str) -> dict:
-    params = {"as_of": tool_input["as_of_date"], "detector": tool_input.get("detector")}
+    params = {"as_of": tool_input["as_of_date"], "detector": tool_input.get("detector"),
+              "failure_mode": tool_input.get("failure_mode")}
     return _result(readonly_db.run(ANOMALIES_SQL, params, region), GOVERNED)
 
 

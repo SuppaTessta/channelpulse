@@ -118,7 +118,7 @@ Detector = Literal["lot_scan", "installer_scan", "stuffing", "distributor_health
 
 @app.get("/api/anomalies", response_model=GovernedResult)
 def anomalies(region: Region, as_of: date | None = None, detector: Detector | None = None) -> dict:
-    return _governed(handlers.get_anomalies, {"as_of_date": as_of, "detector": detector}, region)
+    return _governed(handlers.get_anomalies, {"as_of_date": as_of, "detector": detector, "failure_mode": None}, region)
 
 
 class Meta(BaseModel):

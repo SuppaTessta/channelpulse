@@ -257,6 +257,18 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - A 429 on a per-day quota now pauses the run at once. Before, it retried against the 23-second `retryDelay` that Google attaches even to daily limits.
   - Every model request, retries included, is counted per question. That count is what the day-budget estimate uses.
 
+**D34. `get_anomalies` gets filters and view-aware ordering (Part B, owner-approved 2026-09-29, before the scored run).**
+- **Found in the Gemini smoke run:** MH01 ("why did base-crack claims rise at Durgapur?") failed because the model never named the planted resin lot.
+  - `get_anomalies` returned every detector's flags, 500 rows, ordered by detector name, and the model sees only the first 50 rows of any tool result.
+  - The first 50 all came from `distributor_health`, so the lot-scan flag it needed was out of view.
+  - The API endpoint already had a `detector` filter, but the agent's tool didn't expose it.
+- **Change:**
+  - The tool takes optional `detector` and `failure_mode` filters.
+  - Unfiltered rows are ranked by effect size within each detector and interleaved across detectors, so the first rows hold every detector's strongest flags.
+  - The tool description says the model sees only the first 50 rows.
+- **On the real marts:** all four detectors appear in the first 50 unfiltered rows, and the planted lot is row 3. Filtered to `lot_scan` and `base_crack`, it is the only row.
+- **What didn't change:** no detector rule, flag, metric or ground-truth parameter. This changes which rows reach the model, not what the detectors found. The smoke results were produced before the change and are reported as such; the scored runs come after it.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

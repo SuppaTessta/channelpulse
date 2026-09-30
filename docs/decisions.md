@@ -241,6 +241,27 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **The public demo stays replay-only** (`render.yaml`: `ASK_LIVE=0`, provider `gemini`, key empty). Gemini's free tier may use prompts to improve Google's products; that's acceptable only because every row here is synthetic.
 - **Adapter tests** (`api/tests/test_providers.py`, 33 tests) run on response fixtures through `httpx2.MockTransport`, and nothing reaches a model. The fixtures were hand-written in each provider's wire format before any live call; responses captured in the smoke run are added alongside them. Two deliberate breaks, dropping the thought signature and leaking the URL into an error, each made a test fail.
 
+**D32. The eval runs on free tiers: pacing, resumable runs, and a raw text-to-SQL baseline (Part B).**
+- **Modes:**
+  - `--mode governed` is the agent as built.
+  - `--mode raw` is the baseline a plain text-to-SQL agent gets: only `run_readonly_sql` and the mart schema. There is no metric glossary, semantic layer or anomaly detectors, but the same company prompt, the same refusal rules, the same final-answer format, the same SQL validator and the same row-level security.
+  - The difference between the two modes, on the same model, is the measured lift from the semantic layer.
+- **Raw-mode scoring:**
+  - A multi-hop rubric's `evidence_tools` requirement is dropped: raw mode can't call `query_metric` or `get_anomalies`, so it's judged on what its answer says.
+  - Every answer is expected to be `ad_hoc_sql_verify`, and traps refused.
+  - Both rules make the comparison conservative: any measured lift is, if anything, understated.
+- **Pacing** (`evals/throttle.py`):
+  - Calls stay under 80% of the key's per-minute requests and tokens, and per-day requests.
+  - A 429 is backed off using the server's `retryDelay`. A 429 on a per-day quota pauses the run at once.
+  - Infrastructure failures are retried up to five times with growing waits, then the run pauses: unreachable, timed out, 5xx, or a tunnel's error page. A 5xx that says the prompt exceeds the served context is the question's own failure instead, since it would recur.
+- **Resumable runs:**
+  - Each (provider, mode, model) run saves its progress after every question in `evals/results/runs/<provider>__<mode>__<model>.json`. A paused run exits with code 4, and rerunning the same command picks up at the first unanswered question. `--fresh` starts over.
+  - Nothing infrastructural is ever scored. Retries and rate-limit waits are counted per question and shown separately on the scorecard.
+- **Recorded per question:** provider, mode, served model, input and output tokens (Gemini's thinking tokens counted as output), latency, `asked_at`, and the number of requests including retries.
+- **Recorded per run:** the provider's settings. For Ollama that includes the server's `/api/show` facts (D35).
+- **Cost:** free tiers cost $0, so the scorecard reports tokens per question rather than a made-up price. Only Anthropic turns are priced.
+- **The spend gate stays:** only the paid provider asks for confirmation before spending. CI still makes no model calls of any kind.
+
 **D33. The Gemini model is `gemini-3.5-flash-lite`, not 3.8 Flash (Part B, owner's decision 2026-09-29).**
 - **Why:**
   - `gemini-3.8-flash` was approved first, but the owner's free tier gives it 5 RPM, 250K TPM and only **20 requests per day**. Google's 429 says so in its QuotaFailure: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20. The owner reports that every Gemini Flash model on the key has the same daily cap.

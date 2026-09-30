@@ -1,7 +1,7 @@
 {
   "throttle_state": {
     "requests_by_day": {
-      "2026-09-29": 7
+      "2026-09-29": 68
     }
   },
   "results": {
@@ -300,6 +300,3344 @@
         "trace_id": "7785d2f6-0bde-4b04-be2b-b349c57ec2b3"
       },
       "requests": 3,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL04": {
+      "id": "SL04",
+      "category": "simple_lookup",
+      "question": "For invoices raised in FY26, what share of the amount due was collected within payment terms (collections efficiency)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "collections_efficiency": true
+        },
+        "golden": {
+          "collections_efficiency": 0.3268571176048383
+        }
+      },
+      "answer_text": "For invoices raised in FY26, ₹1,598.53M of the ₹4,890.60M amount due was collected within payment terms, a collections efficiency of about 32.7%.",
+      "confidence_note": "1/1 figure traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(paid_within_terms_inr) AS within_terms, SUM(invoice_amount_inr) AS total_due, SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS efficiency FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON d.date_day = c.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_luty1wk5",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT SUM(paid_within_terms_inr) AS within_terms,\n       SUM(invoice_amount_inr) AS total_due,\n       SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr),0) AS efficiency\nFROM marts.fct_invoice_collections c\nJOIN marts.dim_date d ON d.date_day = c.invoice_date\nWHERE d.fiscal_year = 2026"
+          },
+          "output": "{\"tool_use_id\":\"call_luty1wk5\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(paid_within_terms_inr) AS within_terms, SUM(invoice_amount_inr) AS total_due, SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS efficiency FROM marts.fct_invoice_collections AS c JOIN marts.d",
+          "sql": "SELECT * FROM (SELECT SUM(paid_within_terms_inr) AS within_terms, SUM(invoice_amount_inr) AS total_due, SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS efficiency FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON d.date_day = c.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 49,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "collections_efficiency"
+        ],
+        "rows": [
+          [
+            0.3268571176048383
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5426,
+        "output": 273,
+        "cache_read": 4720,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 17563,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "64bd0895-5f9b-442f-bfa1-032514673a58",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:05:29+00:00",
+      "response": {
+        "answer_text": "For invoices raised in FY26, ₹1,598.53M of the ₹4,890.60M amount due was collected within payment terms, a collections efficiency of about 32.7%.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(paid_within_terms_inr) AS within_terms, SUM(invoice_amount_inr) AS total_due, SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS efficiency FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON d.date_day = c.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "within_terms",
+            "total_due",
+            "efficiency"
+          ],
+          "rows": [
+            [
+              1598527780.3,
+              4890601104.28,
+              0.3268571176048383
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "1/1 figure traced to query results.",
+        "trace_id": "64bd0895-5f9b-442f-bfa1-032514673a58"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL05": {
+      "id": "SL05",
+      "category": "simple_lookup",
+      "question": "How many days of stock did the channel hold overall, across all distributors and SKUs, in the week of Monday 14 September 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "channel_days_of_stock": false
+        },
+        "golden": {
+          "channel_days_of_stock": 43.654565566327044
+        }
+      },
+      "answer_text": "In the week of Monday 14 September 2026, the channel held 2,471,122 stock units against an average of 35,621 secondary units sold per day, which works out to about 69.4 days of stock overall across all distributors and SKUs.",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock_units, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, SUM(stock_units) / NULLIF(SUM(avg_daily_secondary_units), 0) AS overall_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = CAST('2026-09-14' AS DATE) GROUP BY week_start) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_7u3frmhd",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT week_start,\n       SUM(stock_units) AS total_stock_units,\n       SUM(avg_daily_secondary_units) AS total_avg_daily_secondary,\n       SUM(stock_units) / NULLIF(SUM(avg_daily_secondary_units), 0) AS overall_days_of_stock\nFROM mart_channel_inventory_weekly\nWHERE week_start = DATE '2026-09-14'\nGROUP BY week_start;"
+          },
+          "output": "{\"tool_use_id\":\"call_7u3frmhd\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock_units, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, SUM(stock_units) / NULLIF(SUM(avg_daily_secondary_units), 0) AS overall_days_of_stock FROM marts.mar",
+          "sql": "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock_units, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, SUM(stock_units) / NULLIF(SUM(avg_daily_secondary_units), 0) AS overall_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = CAST('2026-09-14' AS DATE) GROUP BY week_start) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 101,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "channel_days_of_stock"
+        ],
+        "rows": [
+          [
+            43.654565566327044
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5448,
+        "output": 290,
+        "cache_read": 4725,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 18078,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "eaaa1091-e064-4ba7-848d-dd110351d4f1",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:05:46+00:00",
+      "response": {
+        "answer_text": "In the week of Monday 14 September 2026, the channel held 2,471,122 stock units against an average of 35,621 secondary units sold per day, which works out to about 69.4 days of stock overall across all distributors and SKUs.",
+        "sql": [
+          "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock_units, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, SUM(stock_units) / NULLIF(SUM(avg_daily_secondary_units), 0) AS overall_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = CAST('2026-09-14' AS DATE) GROUP BY week_start) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "week_start",
+            "total_stock_units",
+            "total_avg_daily_secondary",
+            "overall_days_of_stock"
+          ],
+          "rows": [
+            [
+              "2026-09-14",
+              2471122,
+              35621.156,
+              69.37231297762828
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "eaaa1091-e064-4ba7-848d-dd110351d4f1"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL06": {
+      "id": "SL06",
+      "category": "simple_lookup",
+      "question": "What is the warranty claim rate per 1,000 units shipped for tanks manufactured in calendar year 2024?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "claims_per_1000_units": true
+        },
+        "golden": {
+          "claims_per_1000_units": 60.72713519594247
+        }
+      },
+      "answer_text": "For tanks manufactured in calendar year 2024, 6,262 warranty claims were recorded against 103,117 units shipped, giving a claim rate of about 60.7 claims per 1,000 units shipped. (No governed metric covered this, so it was computed via ad-hoc SQL over the batch mart.)",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date < CAST('2025-01-01' AS DATE) AND category = 'tank') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_sg8yc9va",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  SUM(units_shipped) AS units_shipped,\n  SUM(claims) AS claims,\n  SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000\nFROM marts.dim_batch\nWHERE mfg_date >= DATE '2024-01-01'\n  AND mfg_date < DATE '2025-01-01'\n  AND category = 'Tanks';"
+          },
+          "output": "{\"tool_use_id\":\"call_sg8yc9va\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date <",
+          "sql": "SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date < CAST('2025-01-01' AS DATE) AND category = 'Tanks') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 32,
+          "error": null
+        },
+        {
+          "id": "call_vzdjl8sd",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1;"
+          },
+          "output": "{\"tool_use_id\":\"call_vzdjl8sd\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500\",\"row_count\":3,\"row_cap_hit\":false,\"columns\":[\"category\"],\"rows\":[[\"fitting\"],[\"pipe\"],[\"tank\"]]}",
+          "sql": "SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 29,
+          "error": null
+        },
+        {
+          "id": "call_b62rybr8",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  SUM(units_shipped) AS units_shipped,\n  SUM(claims) AS claims,\n  SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000\nFROM marts.dim_batch\nWHERE mfg_date >= DATE '2024-01-01'\n  AND mfg_date < DATE '2025-01-01'\n  AND category = 'tank';"
+          },
+          "output": "{\"tool_use_id\":\"call_b62rybr8\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date <",
+          "sql": "SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date < CAST('2025-01-01' AS DATE) AND category = 'tank') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 38,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "claims_per_1000_units"
+        ],
+        "rows": [
+          [
+            60.72713519594247
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 11823,
+        "output": 503,
+        "cache_read": 10823,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 31922,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "a3fcefb5-3512-4aa8-8ba9-f44e81197c9b",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:06:04+00:00",
+      "response": {
+        "answer_text": "For tanks manufactured in calendar year 2024, 6,262 warranty claims were recorded against 103,117 units shipped, giving a claim rate of about 60.7 claims per 1,000 units shipped. (No governed metric covered this, so it was computed via ad-hoc SQL over the batch mart.)",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0) AS claims_per_1000 FROM marts.dim_batch WHERE mfg_date >= CAST('2024-01-01' AS DATE) AND mfg_date < CAST('2025-01-01' AS DATE) AND category = 'tank') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "units_shipped",
+            "claims",
+            "claims_per_1000"
+          ],
+          "rows": [
+            [
+              103117.0,
+              6262.0,
+              60.72713519594247
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "a3fcefb5-3512-4aa8-8ba9-f44e81197c9b"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL07": {
+      "id": "SL07",
+      "category": "simple_lookup",
+      "question": "What was the channel overstock rate, the share of distributor-SKU-days above 60 days of stock, over the 13 weeks from Monday 30 March to Sunday 28 June 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "overstock_rate": false
+        },
+        "golden": {
+          "overstock_rate": 0.31451620089826765
+        }
+      },
+      "answer_text": "Over the 13 weeks from 30 March to 28 June 2026, the channel overstock rate was 24.41% — 138,405 of 567,084 distributor-SKU-days were above 60 days of stock.",
+      "confidence_note": "6/7 figures traced to query results; untraced: 13.",
+      "sql": [
+        "SELECT * FROM (SELECT COUNT(*) AS total_distributor_sku_days, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days, ROUND(CAST(100.0 * SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL), 2) AS overstock_rate_pct FROM marts.fct_channel_inventory_daily WHERE date_day >= CAST('2026-03-30' AS DATE) AND date_day <= CAST('2026-06-28' AS DATE)) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_fa2lh4h1",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  COUNT(*) AS total_distributor_sku_days,\n  SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days,\n  ROUND(100.0 * SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) / COUNT(*), 2) AS overstock_rate_pct\nFROM marts.fct_channel_inventory_daily\nWHERE date_day >= DATE '2026-03-30'\n  AND date_day <= DATE '2026-06-28';"
+          },
+          "output": "{\"tool_use_id\":\"call_fa2lh4h1\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT COUNT(*) AS total_distributor_sku_days, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days, ROUND(CAST(100.0 * SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL), 2) AS ",
+          "sql": "SELECT * FROM (SELECT COUNT(*) AS total_distributor_sku_days, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days, ROUND(CAST(100.0 * SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL), 2) AS overstock_rate_pct FROM marts.fct_channel_inventory_daily WHERE date_day >= CAST('2026-03-30' AS DATE) AND date_day <= CAST('2026-06-28' AS DATE)) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 375,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "overstock_rate"
+        ],
+        "rows": [
+          [
+            0.31451620089826765
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5533,
+        "output": 329,
+        "cache_read": 4780,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 20297,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "370d2f7a-9048-4d7b-9e78-efe0b9cdbbb5",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:06:36+00:00",
+      "response": {
+        "answer_text": "Over the 13 weeks from 30 March to 28 June 2026, the channel overstock rate was 24.41% — 138,405 of 567,084 distributor-SKU-days were above 60 days of stock.",
+        "sql": [
+          "SELECT * FROM (SELECT COUNT(*) AS total_distributor_sku_days, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days, ROUND(CAST(100.0 * SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL), 2) AS overstock_rate_pct FROM marts.fct_channel_inventory_daily WHERE date_day >= CAST('2026-03-30' AS DATE) AND date_day <= CAST('2026-06-28' AS DATE)) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_distributor_sku_days",
+            "overstock_days",
+            "overstock_rate_pct"
+          ],
+          "rows": [
+            [
+              567084,
+              138405,
+              24.41
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/7 figures traced to query results; untraced: 13.",
+        "trace_id": "370d2f7a-9048-4d7b-9e78-efe0b9cdbbb5"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL08": {
+      "id": "SL08",
+      "category": "simple_lookup",
+      "question": "On average, how many days after the sale do distributors report their sell-out? Use the gap between sale date and reported date across all secondary sales records with a sale date in FY26.",
+      "expected_label": "ad_hoc_sql_verify",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "avg_reporting_lag_days": true
+        },
+        "golden": {
+          "avg_reporting_lag_days": 5.358127373214599
+        }
+      },
+      "answer_text": "Across all FY26 secondary sales records (148,006 records), distributors report their sell-out on average about 5.4 days after the sale date.",
+      "confidence_note": "2/2 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_lag_days, COUNT(*) AS n_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_bq63hvd2",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT AVG(reporting_lag_days) AS avg_lag_days,\n       COUNT(*) AS n_records\nFROM marts.fct_secondary_sales s\nJOIN marts.dim_date d ON d.date_day = s.sale_date\nWHERE d.fiscal_year = 2026"
+          },
+          "output": "{\"tool_use_id\":\"call_bq63hvd2\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_lag_days, COUNT(*) AS n_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026) AS q LIMIT 500\",\"row_count\":1,\"r",
+          "sql": "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_lag_days, COUNT(*) AS n_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 121,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "avg_reporting_lag_days"
+        ],
+        "rows": [
+          [
+            5.358127373214599
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5377,
+        "output": 232,
+        "cache_read": 4715,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 14843,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "b39e28f7-f146-4755-9419-ffeb2e34850b",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:06:56+00:00",
+      "response": {
+        "answer_text": "Across all FY26 secondary sales records (148,006 records), distributors report their sell-out on average about 5.4 days after the sale date.",
+        "sql": [
+          "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_lag_days, COUNT(*) AS n_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "avg_lag_days",
+            "n_records"
+          ],
+          "rows": [
+            [
+              5.358127373214599,
+              148006
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "2/2 figures traced to query results.",
+        "trace_id": "b39e28f7-f146-4755-9419-ffeb2e34850b"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG01": {
+      "id": "FG01",
+      "category": "filtered_grouped",
+      "question": "Break down FY26 primary sales value by sales region.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "FY26 primary sales value by region: South Bengal leads at ₹1,229.4M, followed by Bihar & Jharkhand at ₹1,211.3M, Odisha at ₹822.9M, North East at ₹713.2M, Assam at ₹603.7M, and North Bengal & Sikkim at ₹310.0M. (No governed metric covered this, so it was computed via ad-hoc SQL.)",
+      "confidence_note": "No figures stated, so there was nothing to trace.",
+      "sql": [
+        "SELECT * FROM (SELECT s.region, SUM(s.primary_value_inr) AS primary_value_inr FROM marts.fct_primary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.invoice_date WHERE d.fiscal_year = 2026 GROUP BY s.region ORDER BY primary_value_inr DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_b8fev76q",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT s.region,\n       SUM(s.primary_value_inr) AS primary_value_inr\nFROM marts.fct_primary_sales s\nJOIN marts.dim_date d ON d.date_day = s.invoice_date\nWHERE d.fiscal_year = 2026\nGROUP BY s.region\nORDER BY primary_value_inr DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_b8fev76q\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT s.region, SUM(s.primary_value_inr) AS primary_value_inr FROM marts.fct_primary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.invoice_date WHERE d.fiscal_year = 2026 GROUP BY s.region ORDER BY primary_valu",
+          "sql": "SELECT * FROM (SELECT s.region, SUM(s.primary_value_inr) AS primary_value_inr FROM marts.fct_primary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.invoice_date WHERE d.fiscal_year = 2026 GROUP BY s.region ORDER BY primary_value_inr DESC) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 76,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            "Assam",
+            603706242.7
+          ],
+          [
+            "Bihar & Jharkhand",
+            1211336723.95
+          ],
+          [
+            "North Bengal & Sikkim",
+            310012527.57
+          ],
+          [
+            "North East",
+            713184149.36
+          ],
+          [
+            "Odisha",
+            822928105.36
+          ],
+          [
+            "South Bengal",
+            1229433355.34
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5426,
+        "output": 319,
+        "cache_read": 4697,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 19297,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "56cce88d-fde7-41c5-84af-5d6d3a6a2314",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:07:11+00:00",
+      "response": {
+        "answer_text": "FY26 primary sales value by region: South Bengal leads at ₹1,229.4M, followed by Bihar & Jharkhand at ₹1,211.3M, Odisha at ₹822.9M, North East at ₹713.2M, Assam at ₹603.7M, and North Bengal & Sikkim at ₹310.0M. (No governed metric covered this, so it was computed via ad-hoc SQL.)",
+        "sql": [
+          "SELECT * FROM (SELECT s.region, SUM(s.primary_value_inr) AS primary_value_inr FROM marts.fct_primary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.invoice_date WHERE d.fiscal_year = 2026 GROUP BY s.region ORDER BY primary_value_inr DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "primary_value_inr"
+          ],
+          "rows": [
+            [
+              "South Bengal",
+              1229433355.34
+            ],
+            [
+              "Bihar & Jharkhand",
+              1211336723.95
+            ],
+            [
+              "Odisha",
+              822928105.36
+            ],
+            [
+              "North East",
+              713184149.36
+            ],
+            [
+              "Assam",
+              603706242.7
+            ],
+            [
+              "North Bengal & Sikkim",
+              310012527.57
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "primary_value_inr",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "No figures stated, so there was nothing to trace.",
+        "trace_id": "56cce88d-fde7-41c5-84af-5d6d3a6a2314"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG02": {
+      "id": "FG02",
+      "category": "filtered_grouped",
+      "question": "What was secondary sales value by product category in FY26?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 4,
+        "expected": 4,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "In FY26, secondary sales value by product category was: pipe ₹3,059.0M, fitting ₹1,063.0M, tank ₹1,006.2M, and sanitaryware ₹927.7M. Pipe was the largest category, accounting for roughly half of total secondary sales value.",
+      "confidence_note": "No figures stated, so there was nothing to trace.",
+      "sql": [
+        "SELECT * FROM (SELECT s.category, SUM(s.secondary_value_inr) AS secondary_value_inr FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026 GROUP BY s.category ORDER BY secondary_value_inr DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 4,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_iwaqpolm",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT s.category,\n       SUM(s.secondary_value_inr) AS secondary_value_inr\nFROM marts.fct_secondary_sales s\nJOIN marts.dim_date d ON d.date_day = s.sale_date\nWHERE d.fiscal_year = 2026\nGROUP BY s.category\nORDER BY secondary_value_inr DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_iwaqpolm\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT s.category, SUM(s.secondary_value_inr) AS secondary_value_inr FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026 GROUP BY s.category ORDER BY secon",
+          "sql": "SELECT * FROM (SELECT s.category, SUM(s.secondary_value_inr) AS secondary_value_inr FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026 GROUP BY s.category ORDER BY secondary_value_inr DESC) AS q LIMIT 500",
+          "row_count": 4,
+          "duration_ms": 119,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "category",
+          "secondary_sales_value"
+        ],
+        "rows": [
+          [
+            "fitting",
+            1063001838.57
+          ],
+          [
+            "pipe",
+            3059024344.86
+          ],
+          [
+            "sanitaryware",
+            927704441.32
+          ],
+          [
+            "tank",
+            1006228094.97
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5384,
+        "output": 282,
+        "cache_read": 4698,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 17500,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "079102ec-67ca-49d1-9eaa-b037ae4dff06",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:07:31+00:00",
+      "response": {
+        "answer_text": "In FY26, secondary sales value by product category was: pipe ₹3,059.0M, fitting ₹1,063.0M, tank ₹1,006.2M, and sanitaryware ₹927.7M. Pipe was the largest category, accounting for roughly half of total secondary sales value.",
+        "sql": [
+          "SELECT * FROM (SELECT s.category, SUM(s.secondary_value_inr) AS secondary_value_inr FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON d.date_day = s.sale_date WHERE d.fiscal_year = 2026 GROUP BY s.category ORDER BY secondary_value_inr DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "category",
+            "secondary_value_inr"
+          ],
+          "rows": [
+            [
+              "pipe",
+              3059024344.86
+            ],
+            [
+              "fitting",
+              1063001838.57
+            ],
+            [
+              "tank",
+              1006228094.97
+            ],
+            [
+              "sanitaryware",
+              927704441.32
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "category",
+          "y": "secondary_value_inr",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "No figures stated, so there was nothing to trace.",
+        "trace_id": "079102ec-67ca-49d1-9eaa-b037ae4dff06"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG03": {
+      "id": "FG03",
+      "category": "filtered_grouped",
+      "question": "Which five distributors had the highest DSO on invoices raised in FY26?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 4,
+        "expected": 5,
+        "missing": [
+          {
+            "key": [
+              "D0129"
+            ],
+            "value": "dso_days"
+          }
+        ],
+        "extra_keys": [
+          [
+            "d0321"
+          ]
+        ],
+        "extra_keys_allowed": true
+      },
+      "answer_text": "Among distributors with invoices raised in FY26, the five with the highest average days sales outstanding (DSO) were: Mishra Agencies (South Bengal, 81.7 days), Rina Pradhan Sales Corporation (South Bengal, 79.0 days), Paul Traders (Assam, 78.5 days), Roy & Sons (North East, 78.3 days), and Amit Sarkar & Sons (Bihar & Jharkhand, 78.0 days). Note: no governed DSO metric was defined, so this is an ad-hoc calculation of average days_outstanding per distributor.",
+      "confidence_note": "5/5 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT d.distributor_id, d.distributor_name, d.region, SUM(i.invoice_amount_inr) AS invoiced_inr, SUM(i.paid_amount_inr) AS paid_inr, SUM(i.open_amount_inr) AS open_inr, ROUND(CAST(AVG(i.days_outstanding) AS DECIMAL), 1) AS avg_dso_days FROM marts.fct_invoice_collections AS i JOIN marts.dim_date AS dt ON dt.date_day = i.invoice_date JOIN marts.dim_distributor AS d ON d.distributor_id = i.distributor_id WHERE dt.fiscal_year = 2026 GROUP BY d.distributor_id, d.distributor_name, d.region ORDER BY avg_dso_days DESC LIMIT 5) AS q LIMIT 500"
+      ],
+      "data_rows": 5,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_m41ov53x",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT d.distributor_id, d.distributor_name, d.region,\n       SUM(i.invoice_amount_inr) AS invoiced_inr,\n       SUM(i.paid_amount_inr) AS paid_inr,\n       SUM(i.open_amount_inr) AS open_inr,\n       ROUND(AVG(i.days_outstanding)::numeric, 1) AS avg_dso_days\nFROM marts.fct_invoice_collections i\nJOIN marts.dim_date dt ON dt.date_day = i.invoice_date\nJOIN marts.dim_distributor d ON d.distributor_id = i.distributor_id\nWHERE dt.fiscal_year = 2026\nGROUP BY d.distributor_id, d.distributor_name, d.region\nORDER BY avg_dso_days DESC\nLIMIT 5;"
+          },
+          "output": "{\"tool_use_id\":\"call_m41ov53x\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT d.distributor_id, d.distributor_name, d.region, SUM(i.invoice_amount_inr) AS invoiced_inr, SUM(i.paid_amount_inr) AS paid_inr, SUM(i.open_amount_inr) AS open_inr, ROUND(CAST(AVG(i.days_outstanding) AS DECIMAL), 1",
+          "sql": "SELECT * FROM (SELECT d.distributor_id, d.distributor_name, d.region, SUM(i.invoice_amount_inr) AS invoiced_inr, SUM(i.paid_amount_inr) AS paid_inr, SUM(i.open_amount_inr) AS open_inr, ROUND(CAST(AVG(i.days_outstanding) AS DECIMAL), 1) AS avg_dso_days FROM marts.fct_invoice_collections AS i JOIN marts.dim_date AS dt ON dt.date_day = i.invoice_date JOIN marts.dim_distributor AS d ON d.distributor_id = i.distributor_id WHERE dt.fiscal_year = 2026 GROUP BY d.distributor_id, d.distributor_name, d.region ORDER BY avg_dso_days DESC LIMIT 5) AS q LIMIT 500",
+          "row_count": 5,
+          "duration_ms": 1927,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "distributor_id",
+          "distributor_name",
+          "dso_days"
+        ],
+        "rows": [
+          [
+            "D0019",
+            "Mishra Agencies",
+            81.52914601101504
+          ],
+          [
+            "D0004",
+            "Rina Pradhan Sales Corporation",
+            79.2026269296205
+          ],
+          [
+            "D0133",
+            "Paul Traders",
+            78.37714093675413
+          ],
+          [
+            "D0199",
+            "Amit Sarkar & Sons",
+            78.18637277773085
+          ],
+          [
+            "D0129",
+            "Green Valley Marketing",
+            76.7177559641504
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5759,
+        "output": 438,
+        "cache_read": 4795,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 28250,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "119f1bf7-c2cc-4034-a6b4-6ef3f7007f80",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:07:48+00:00",
+      "response": {
+        "answer_text": "Among distributors with invoices raised in FY26, the five with the highest average days sales outstanding (DSO) were: Mishra Agencies (South Bengal, 81.7 days), Rina Pradhan Sales Corporation (South Bengal, 79.0 days), Paul Traders (Assam, 78.5 days), Roy & Sons (North East, 78.3 days), and Amit Sarkar & Sons (Bihar & Jharkhand, 78.0 days). Note: no governed DSO metric was defined, so this is an ad-hoc calculation of average days_outstanding per distributor.",
+        "sql": [
+          "SELECT * FROM (SELECT d.distributor_id, d.distributor_name, d.region, SUM(i.invoice_amount_inr) AS invoiced_inr, SUM(i.paid_amount_inr) AS paid_inr, SUM(i.open_amount_inr) AS open_inr, ROUND(CAST(AVG(i.days_outstanding) AS DECIMAL), 1) AS avg_dso_days FROM marts.fct_invoice_collections AS i JOIN marts.dim_date AS dt ON dt.date_day = i.invoice_date JOIN marts.dim_distributor AS d ON d.distributor_id = i.distributor_id WHERE dt.fiscal_year = 2026 GROUP BY d.distributor_id, d.distributor_name, d.region ORDER BY avg_dso_days DESC LIMIT 5) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "distributor_id",
+            "distributor_name",
+            "region",
+            "invoiced_inr",
+            "paid_inr",
+            "open_inr",
+            "avg_dso_days"
+          ],
+          "rows": [
+            [
+              "D0019",
+              "Mishra Agencies",
+              "South Bengal",
+              3796323.79,
+              3796323.79,
+              0.0,
+              81.7
+            ],
+            [
+              "D0004",
+              "Rina Pradhan Sales Corporation",
+              "South Bengal",
+              3280457.89,
+              3280457.89,
+              0.0,
+              79.0
+            ],
+            [
+              "D0133",
+              "Paul Traders",
+              "Assam",
+              3434572.5,
+              3434572.5,
+              0.0,
+              78.5
+            ],
+            [
+              "D0321",
+              "Roy & Sons",
+              "North East",
+              651823.94,
+              651823.94,
+              0.0,
+              78.3
+            ],
+            [
+              "D0199",
+              "Amit Sarkar & Sons",
+              "Bihar & Jharkhand",
+              2595150.89,
+              2595150.89,
+              0.0,
+              78.0
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "distributor_name",
+          "y": "avg_dso_days",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "5/5 figures traced to query results.",
+        "trace_id": "119f1bf7-c2cc-4034-a6b4-6ef3f7007f80"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG04": {
+      "id": "FG04",
+      "category": "filtered_grouped",
+      "question": "Compare warranty claims per 1,000 units shipped across our three plants, for tanks manufactured in FY25.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 3,
+        "expected": 3,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For tanks manufactured in FY25 (Apr 2024–Mar 2025), warranty claims per 1,000 units shipped are: Durgapur Works 63.70 (1,544 claims on 24,238 units), Guwahati Works 63.58 (1,725 on 27,131), and Howrah Works 59.87 (3,076 on 51,377). Durgapur has the highest rate, with Howrah the lowest; the spread is about 3.8 claims per 1,000 units.",
+      "confidence_note": "11/12 figures traced to query results; untraced: 3.8.",
+      "sql": [
+        "SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'tank' AND mfg_date >= CAST('2024-04-01' AS DATE) AND mfg_date < CAST('2025-04-01' AS DATE) GROUP BY plant_id, plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 3,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_lzv7ykpt",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT plant_id,\n       plant_name,\n       SUM(units_shipped) AS units_shipped,\n       SUM(claims) AS claims,\n       ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000\nFROM marts.dim_batch\nWHERE category = 'Tanks'\n  AND mfg_date >= DATE '2024-04-01'\n  AND mfg_date < DATE '2025-04-01'\nGROUP BY plant_id, plant_name\nORDER BY claims_per_1000 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_lzv7ykpt\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'Tanks' AN",
+          "sql": "SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'Tanks' AND mfg_date >= CAST('2024-04-01' AS DATE) AND mfg_date < CAST('2025-04-01' AS DATE) GROUP BY plant_id, plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500",
+          "row_count": 0,
+          "duration_ms": 47,
+          "error": null
+        },
+        {
+          "id": "call_2gxc7bit",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1"
+          },
+          "output": "{\"tool_use_id\":\"call_2gxc7bit\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500\",\"row_count\":3,\"row_cap_hit\":false,\"columns\":[\"category\"],\"rows\":[[\"fitting\"],[\"pipe\"],[\"tank\"]]}",
+          "sql": "SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 32,
+          "error": null
+        },
+        {
+          "id": "call_44sveba2",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT plant_id,\n       plant_name,\n       SUM(units_shipped) AS units_shipped,\n       SUM(claims) AS claims,\n       ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000\nFROM marts.dim_batch\nWHERE category = 'tank'\n  AND mfg_date >= DATE '2024-04-01'\n  AND mfg_date < DATE '2025-04-01'\nGROUP BY plant_id, plant_name\nORDER BY claims_per_1000 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_44sveba2\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'tank' AND",
+          "sql": "SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'tank' AND mfg_date >= CAST('2024-04-01' AS DATE) AND mfg_date < CAST('2025-04-01' AS DATE) GROUP BY plant_id, plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 62,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "plant_id",
+          "plant_name",
+          "claims_per_1000_units"
+        ],
+        "rows": [
+          [
+            "DGP",
+            "Gangasagar Polymers Durgapur Works",
+            63.701625546662264
+          ],
+          [
+            "GHY",
+            "Gangasagar Polymers Guwahati Works",
+            63.58040617743541
+          ],
+          [
+            "HWH",
+            "Gangasagar Polymers Howrah Works",
+            59.87114856842556
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 12143,
+        "output": 643,
+        "cache_read": 11010,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 38344,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "dc005fc4-9c76-490f-b108-237a3ab0e318",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:08:16+00:00",
+      "response": {
+        "answer_text": "For tanks manufactured in FY25 (Apr 2024–Mar 2025), warranty claims per 1,000 units shipped are: Durgapur Works 63.70 (1,544 claims on 24,238 units), Guwahati Works 63.58 (1,725 on 27,131), and Howrah Works 59.87 (3,076 on 51,377). Durgapur has the highest rate, with Howrah the lowest; the spread is about 3.8 claims per 1,000 units.",
+        "sql": [
+          "SELECT * FROM (SELECT plant_id, plant_name, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE category = 'tank' AND mfg_date >= CAST('2024-04-01' AS DATE) AND mfg_date < CAST('2025-04-01' AS DATE) GROUP BY plant_id, plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "plant_id",
+            "plant_name",
+            "units_shipped",
+            "claims",
+            "claims_per_1000"
+          ],
+          "rows": [
+            [
+              "DGP",
+              "Gangasagar Polymers Durgapur Works",
+              24238.0,
+              1544.0,
+              63.7
+            ],
+            [
+              "GHY",
+              "Gangasagar Polymers Guwahati Works",
+              27131.0,
+              1725.0,
+              63.58
+            ],
+            [
+              "HWH",
+              "Gangasagar Polymers Howrah Works",
+              51377.0,
+              3076.0,
+              59.87
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "plant_name",
+          "y": "claims_per_1000",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "11/12 figures traced to query results; untraced: 3.8.",
+        "trace_id": "dc005fc4-9c76-490f-b108-237a3ab0e318"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG05": {
+      "id": "FG05",
+      "category": "filtered_grouped",
+      "question": "How does collections efficiency on FY26 invoices differ by distributor tier?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 3,
+        "missing": [
+          {
+            "key": [
+              "1"
+            ],
+            "value": "collections_efficiency"
+          },
+          {
+            "key": [
+              "2"
+            ],
+            "value": "collections_efficiency"
+          },
+          {
+            "key": [
+              "3"
+            ],
+            "value": "collections_efficiency"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "On FY26 invoices (Apr 2025–Mar 2026), all three tiers are fully collected (100% of invoiced value paid, no open balance), so the difference shows up in timing. Tier 1 is the most efficient: 32.8% of value paid within terms and an average of 33.4 days outstanding. Tier 2 is similar on within-terms (33.4%) but slower overall at 48.3 days outstanding, and Tier 3 is the weakest — only 30.4% within terms and 63.4 days outstanding on average. Average days past due is comparable across tiers (about 3.8–3.9).",
+      "confidence_note": "9/9 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT tier, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoiced_inr, SUM(paid_amount_inr) AS paid_inr, SUM(paid_within_terms_inr) AS paid_within_terms_inr, SUM(open_amount_inr) AS open_inr, ROUND(100.0 * SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_collected, ROUND(100.0 * SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_within_terms, ROUND(CAST(AVG(days_outstanding) AS DECIMAL), 1) AS avg_days_outstanding, ROUND(CAST(AVG(days_past_due) AS DECIMAL), 1) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' GROUP BY tier ORDER BY tier) AS q LIMIT 500"
+      ],
+      "data_rows": 3,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_swlf41ox",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  tier,\n  COUNT(*) AS invoices,\n  SUM(invoice_amount_inr) AS invoiced_inr,\n  SUM(paid_amount_inr) AS paid_inr,\n  SUM(paid_within_terms_inr) AS paid_within_terms_inr,\n  SUM(open_amount_inr) AS open_inr,\n  ROUND(100.0 * SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr),0), 2) AS pct_collected,\n  ROUND(100.0 * SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr),0), 2) AS pct_within_terms,\n  ROUND(AVG(days_outstanding), 1) AS avg_days_outstanding,\n  ROUND(AVG(days_past_due), 1) AS avg_days_past_due\nFROM fct_invoice_collections\nWHERE invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01'\nGROUP BY tier\nORDER BY tier"
+          },
+          "output": "{\"tool_use_id\":\"call_swlf41ox\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT tier, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoiced_inr, SUM(paid_amount_inr) AS paid_inr, SUM(paid_within_terms_inr) AS paid_within_terms_inr, SUM(open_amount_inr) AS open_inr, ROUND(100.0 * SUM(paid",
+          "sql": "SELECT * FROM (SELECT tier, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoiced_inr, SUM(paid_amount_inr) AS paid_inr, SUM(paid_within_terms_inr) AS paid_within_terms_inr, SUM(open_amount_inr) AS open_inr, ROUND(100.0 * SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_collected, ROUND(100.0 * SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_within_terms, ROUND(CAST(AVG(days_outstanding) AS DECIMAL), 1) AS avg_days_outstanding, ROUND(CAST(AVG(days_past_due) AS DECIMAL), 1) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' GROUP BY tier ORDER BY tier) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 45,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "tier",
+          "collections_efficiency"
+        ],
+        "rows": [
+          [
+            "1",
+            0.3280136167070961
+          ],
+          [
+            "2",
+            0.333663356345303
+          ],
+          [
+            "3",
+            0.303709801396653
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5896,
+        "output": 530,
+        "cache_read": 4863,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 31891,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "eae3589c-82ad-4619-b06c-24384a5247fb",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:08:55+00:00",
+      "response": {
+        "answer_text": "On FY26 invoices (Apr 2025–Mar 2026), all three tiers are fully collected (100% of invoiced value paid, no open balance), so the difference shows up in timing. Tier 1 is the most efficient: 32.8% of value paid within terms and an average of 33.4 days outstanding. Tier 2 is similar on within-terms (33.4%) but slower overall at 48.3 days outstanding, and Tier 3 is the weakest — only 30.4% within terms and 63.4 days outstanding on average. Average days past due is comparable across tiers (about 3.8–3.9).",
+        "sql": [
+          "SELECT * FROM (SELECT tier, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoiced_inr, SUM(paid_amount_inr) AS paid_inr, SUM(paid_within_terms_inr) AS paid_within_terms_inr, SUM(open_amount_inr) AS open_inr, ROUND(100.0 * SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_collected, ROUND(100.0 * SUM(paid_within_terms_inr) / NULLIF(SUM(invoice_amount_inr), 0), 2) AS pct_within_terms, ROUND(CAST(AVG(days_outstanding) AS DECIMAL), 1) AS avg_days_outstanding, ROUND(CAST(AVG(days_past_due) AS DECIMAL), 1) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' GROUP BY tier ORDER BY tier) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "tier",
+            "invoices",
+            "invoiced_inr",
+            "paid_inr",
+            "paid_within_terms_inr",
+            "open_inr",
+            "pct_collected",
+            "pct_within_terms",
+            "avg_days_outstanding",
+            "avg_days_past_due"
+          ],
+          "rows": [
+            [
+              "1",
+              2699,
+              3317151337.78,
+              3317151337.78,
+              1088070807.47,
+              0.0,
+              100.0,
+              32.8,
+              33.4,
+              3.9
+            ],
+            [
+              "2",
+              4787,
+              1087846060.16,
+              1087846060.16,
+              362974367.62,
+              0.0,
+              100.0,
+              33.37,
+              48.3,
+              3.8
+            ],
+            [
+              "3",
+              4753,
+              485603706.34,
+              485603706.34,
+              147482605.21,
+              0.0,
+              100.0,
+              30.37,
+              63.4,
+              3.8
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "tier",
+          "y": "pct_within_terms",
+          "series": "avg_days_outstanding"
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "9/9 figures traced to query results.",
+        "trace_id": "eae3589c-82ad-4619-b06c-24384a5247fb"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG06": {
+      "id": "FG06",
+      "category": "filtered_grouped",
+      "question": "For tanks installed during calendar 2025, how does the installer claim rate per 1,000 installs compare between certified and non-certified installers?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 2,
+        "missing": [
+          {
+            "key": [
+              false
+            ],
+            "value": "installer_claim_rate"
+          },
+          {
+            "key": [
+              true
+            ],
+            "value": "installer_claim_rate"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For tanks installed in calendar 2025, the installer claim rate is essentially the same for certified and non-certified installers: 37.06 claims per 1,000 installs for certified installers (366,242 installs) versus 36.81 per 1,000 for non-certified (283,804 installs). Certification is not associated with a meaningfully lower claim rate. (No governed metric covered this, so the figure comes from an ad-hoc query on the installer claim cohorts.)",
+      "confidence_note": "6/6 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT is_certified, SUM(units_installed) AS units_installed, SUM(claims) AS claims, SUM(cumulative_claims) AS cumulative_claims, SUM(cumulative_claims) * 1000.0 / NULLIF(SUM(units_installed), 0) AS claims_per_1000 FROM marts.mart_installer_claim_cohorts WHERE install_month >= '2025-01-01' AND install_month <= '2025-12-31' AND is_fully_observed GROUP BY is_certified ORDER BY is_certified DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_5q9c00ee",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  is_certified,\n  SUM(units_installed) AS units_installed,\n  SUM(claims) AS claims,\n  SUM(cumulative_claims) AS cumulative_claims,\n  SUM(cumulative_claims) * 1000.0 / NULLIF(SUM(units_installed),0) AS claims_per_1000\nFROM marts.mart_installer_claim_cohorts\nWHERE install_month >= '2025-01-01' AND install_month <= '2025-12-31'\n  AND is_fully_observed\nGROUP BY is_certified\nORDER BY is_certified DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_5q9c00ee\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT is_certified, SUM(units_installed) AS units_installed, SUM(claims) AS claims, SUM(cumulative_claims) AS cumulative_claims, SUM(cumulative_claims) * 1000.0 / NULLIF(SUM(units_installed), 0) AS claims_per_1000 FROM",
+          "sql": "SELECT * FROM (SELECT is_certified, SUM(units_installed) AS units_installed, SUM(claims) AS claims, SUM(cumulative_claims) AS cumulative_claims, SUM(cumulative_claims) * 1000.0 / NULLIF(SUM(units_installed), 0) AS claims_per_1000 FROM marts.mart_installer_claim_cohorts WHERE install_month >= '2025-01-01' AND install_month <= '2025-12-31' AND is_fully_observed GROUP BY is_certified ORDER BY is_certified DESC) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 90,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "is_certified",
+          "installer_claim_rate"
+        ],
+        "rows": [
+          [
+            false,
+            57.809330628803245
+          ],
+          [
+            true,
+            59.82199857298434
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5602,
+        "output": 411,
+        "cache_read": 4794,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 24610,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "da592ccc-8ddd-4bfe-b238-483d8902f37a",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:09:27+00:00",
+      "response": {
+        "answer_text": "For tanks installed in calendar 2025, the installer claim rate is essentially the same for certified and non-certified installers: 37.06 claims per 1,000 installs for certified installers (366,242 installs) versus 36.81 per 1,000 for non-certified (283,804 installs). Certification is not associated with a meaningfully lower claim rate. (No governed metric covered this, so the figure comes from an ad-hoc query on the installer claim cohorts.)",
+        "sql": [
+          "SELECT * FROM (SELECT is_certified, SUM(units_installed) AS units_installed, SUM(claims) AS claims, SUM(cumulative_claims) AS cumulative_claims, SUM(cumulative_claims) * 1000.0 / NULLIF(SUM(units_installed), 0) AS claims_per_1000 FROM marts.mart_installer_claim_cohorts WHERE install_month >= '2025-01-01' AND install_month <= '2025-12-31' AND is_fully_observed GROUP BY is_certified ORDER BY is_certified DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "is_certified",
+            "units_installed",
+            "claims",
+            "cumulative_claims",
+            "claims_per_1000"
+          ],
+          "rows": [
+            [
+              true,
+              366242.0,
+              1541.0,
+              13572.0,
+              37.0574647364311
+            ],
+            [
+              false,
+              283804.0,
+              1160.0,
+              10446.0,
+              36.80709221857338
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "is_certified",
+          "y": "claims_per_1000",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/6 figures traced to query results.",
+        "trace_id": "da592ccc-8ddd-4bfe-b238-483d8902f37a"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG07": {
+      "id": "FG07",
+      "category": "filtered_grouped",
+      "question": "What was the average distributor health score in each region for the week starting Monday 14 September 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For the week starting Monday 14 September 2026, average distributor health scores were very similar across regions: North Bengal & Sikkim 49.85, North East 49.80, Bihar & Jharkhand 49.77, Assam 49.75, Odisha 49.73 and South Bengal 49.72. Scores were computed over 339 scored distributors in total.",
+      "confidence_note": "7/8 figures traced to query results; untraced: 339.",
+      "sql": [
+        "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score, COUNT(*) AS distributors_scored FROM marts.mart_distributor_health_weekly WHERE week_start = CAST('2026-09-14' AS DATE) AND is_scored GROUP BY region ORDER BY region) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_124l6zzb",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT region,\n       AVG(health_score) AS avg_health_score,\n       COUNT(*) AS distributors_scored\nFROM marts.mart_distributor_health_weekly\nWHERE week_start = DATE '2026-09-14'\n  AND is_scored\nGROUP BY region\nORDER BY region"
+          },
+          "output": "{\"tool_use_id\":\"call_124l6zzb\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score, COUNT(*) AS distributors_scored FROM marts.mart_distributor_health_weekly WHERE week_start = CAST('2026-09-14' AS DATE) AND is_scored GROUP BY region ORDER BY region",
+          "sql": "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score, COUNT(*) AS distributors_scored FROM marts.mart_distributor_health_weekly WHERE week_start = CAST('2026-09-14' AS DATE) AND is_scored GROUP BY region ORDER BY region) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 1133,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "distributor_health_score"
+        ],
+        "rows": [
+          [
+            "Assam",
+            49.751020408163264
+          ],
+          [
+            "Bihar & Jharkhand",
+            49.77
+          ],
+          [
+            "North Bengal & Sikkim",
+            49.851724137931036
+          ],
+          [
+            "North East",
+            49.79833333333333
+          ],
+          [
+            "Odisha",
+            49.729268292682924
+          ],
+          [
+            "South Bengal",
+            49.72
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5480,
+        "output": 310,
+        "cache_read": 4710,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 20921,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "4d07bec4-9721-400d-bea1-888c480dcf4a",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:09:51+00:00",
+      "response": {
+        "answer_text": "For the week starting Monday 14 September 2026, average distributor health scores were very similar across regions: North Bengal & Sikkim 49.85, North East 49.80, Bihar & Jharkhand 49.77, Assam 49.75, Odisha 49.73 and South Bengal 49.72. Scores were computed over 339 scored distributors in total.",
+        "sql": [
+          "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score, COUNT(*) AS distributors_scored FROM marts.mart_distributor_health_weekly WHERE week_start = CAST('2026-09-14' AS DATE) AND is_scored GROUP BY region ORDER BY region) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "avg_health_score",
+            "distributors_scored"
+          ],
+          "rows": [
+            [
+              "Assam",
+              49.751020408163264,
+              49
+            ],
+            [
+              "Bihar & Jharkhand",
+              49.77,
+              80
+            ],
+            [
+              "North Bengal & Sikkim",
+              49.851724137931036,
+              29
+            ],
+            [
+              "North East",
+              49.79833333333333,
+              60
+            ],
+            [
+              "Odisha",
+              49.729268292682924,
+              41
+            ],
+            [
+              "South Bengal",
+              49.72,
+              80
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "avg_health_score",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "7/8 figures traced to query results; untraced: 339.",
+        "trace_id": "4d07bec4-9721-400d-bea1-888c480dcf4a"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG08": {
+      "id": "FG08",
+      "category": "filtered_grouped",
+      "question": "How many retailers are on our books in each sales region, counting the retailers attached to each region's distributors?",
+      "expected_label": "ad_hoc_sql_verify",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "Retailers on the books by region: South Bengal 2,281 (83 distributors), Bihar & Jharkhand 2,126 (84), North East 1,519 (63), Assam 1,361 (49), Odisha 1,182 (42), and North Bengal & Sikkim 672 (29). South Bengal has the largest retailer base, while North Bengal & Sikkim has the smallest.",
+      "confidence_note": "12/12 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT region, SUM(retailer_count) AS total_retailers, COUNT(*) AS distributor_count FROM marts.dim_distributor GROUP BY region ORDER BY total_retailers DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_54zmxoxr",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT region, SUM(retailer_count) AS total_retailers, COUNT(*) AS distributor_count\nFROM marts.dim_distributor\nGROUP BY region\nORDER BY total_retailers DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_54zmxoxr\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT region, SUM(retailer_count) AS total_retailers, COUNT(*) AS distributor_count FROM marts.dim_distributor GROUP BY region ORDER BY total_retailers DESC) AS q LIMIT 500\",\"row_count\":6,\"row_cap_hit\":false,\"columns\":",
+          "sql": "SELECT * FROM (SELECT region, SUM(retailer_count) AS total_retailers, COUNT(*) AS distributor_count FROM marts.dim_distributor GROUP BY region ORDER BY total_retailers DESC) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 37,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "retailers"
+        ],
+        "rows": [
+          [
+            "Assam",
+            1361.0
+          ],
+          [
+            "Bihar & Jharkhand",
+            2126.0
+          ],
+          [
+            "North Bengal & Sikkim",
+            672.0
+          ],
+          [
+            "North East",
+            1519.0
+          ],
+          [
+            "Odisha",
+            1182.0
+          ],
+          [
+            "South Bengal",
+            2281.0
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5374,
+        "output": 289,
+        "cache_read": 4678,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 17953,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "72b1ad12-1a4e-4d6c-81c4-97001e00fd35",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:10:12+00:00",
+      "response": {
+        "answer_text": "Retailers on the books by region: South Bengal 2,281 (83 distributors), Bihar & Jharkhand 2,126 (84), North East 1,519 (63), Assam 1,361 (49), Odisha 1,182 (42), and North Bengal & Sikkim 672 (29). South Bengal has the largest retailer base, while North Bengal & Sikkim has the smallest.",
+        "sql": [
+          "SELECT * FROM (SELECT region, SUM(retailer_count) AS total_retailers, COUNT(*) AS distributor_count FROM marts.dim_distributor GROUP BY region ORDER BY total_retailers DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "total_retailers",
+            "distributor_count"
+          ],
+          "rows": [
+            [
+              "South Bengal",
+              2281.0,
+              83
+            ],
+            [
+              "Bihar & Jharkhand",
+              2126.0,
+              84
+            ],
+            [
+              "North East",
+              1519.0,
+              63
+            ],
+            [
+              "Assam",
+              1361.0,
+              49
+            ],
+            [
+              "Odisha",
+              1182.0,
+              42
+            ],
+            [
+              "North Bengal & Sikkim",
+              672.0,
+              29
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "total_retailers",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "12/12 figures traced to query results.",
+        "trace_id": "72b1ad12-1a4e-4d6c-81c4-97001e00fd35"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC01": {
+      "id": "TC01",
+      "category": "time_comparison",
+      "question": "How did total primary sales value in FY26 (April 2025 to March 2026) compare with FY25 (April 2024 to March 2025)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "fy25": true,
+          "fy26": true
+        },
+        "golden": {
+          "fy25": 4563765266.46,
+          "fy26": 4890601104.28
+        }
+      },
+      "answer_text": "Total primary sales value in FY26 (April 2025–March 2026) was ₹4,890,601,104, up from ₹4,563,765,266 in FY25 (April 2024–March 2025) — an increase of about ₹326.8 million, or roughly 7.2% year over year.",
+      "confidence_note": "2/4 figures traced to query results; untraced: ₹326.8 million, 7.2%.",
+      "sql": [
+        "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' THEN 'FY26' WHEN invoice_date >= '2024-04-01' AND invoice_date < '2025-04-01' THEN 'FY25' END AS fy, SUM(primary_value_inr) AS total_value_inr FROM marts.fct_primary_sales WHERE invoice_date >= '2024-04-01' AND invoice_date < '2026-04-01' GROUP BY 1 ORDER BY 1) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_fqmrp2uz",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  CASE WHEN invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' THEN 'FY26'\n       WHEN invoice_date >= '2024-04-01' AND invoice_date < '2025-04-01' THEN 'FY25' END AS fy,\n  SUM(primary_value_inr) AS total_value_inr\nFROM marts.fct_primary_sales\nWHERE invoice_date >= '2024-04-01' AND invoice_date < '2026-04-01'\nGROUP BY 1\nORDER BY 1;"
+          },
+          "output": "{\"tool_use_id\":\"call_fqmrp2uz\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT CASE WHEN invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' THEN 'FY26' WHEN invoice_date >= '2024-04-01' AND invoice_date < '2025-04-01' THEN 'FY25' END AS fy, SUM(primary_value_inr) AS total_value_in",
+          "sql": "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' THEN 'FY26' WHEN invoice_date >= '2024-04-01' AND invoice_date < '2025-04-01' THEN 'FY25' END AS fy, SUM(primary_value_inr) AS total_value_inr FROM marts.fct_primary_sales WHERE invoice_date >= '2024-04-01' AND invoice_date < '2026-04-01' GROUP BY 1 ORDER BY 1) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 73,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "fy25",
+          "fy26"
+        ],
+        "rows": [
+          [
+            4563765266.46,
+            4890601104.28
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5581,
+        "output": 392,
+        "cache_read": 4816,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 29735,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "9f254fae-97bb-487e-8048-3d62c9db60a4",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:10:30+00:00",
+      "response": {
+        "answer_text": "Total primary sales value in FY26 (April 2025–March 2026) was ₹4,890,601,104, up from ₹4,563,765,266 in FY25 (April 2024–March 2025) — an increase of about ₹326.8 million, or roughly 7.2% year over year.",
+        "sql": [
+          "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2025-04-01' AND invoice_date < '2026-04-01' THEN 'FY26' WHEN invoice_date >= '2024-04-01' AND invoice_date < '2025-04-01' THEN 'FY25' END AS fy, SUM(primary_value_inr) AS total_value_inr FROM marts.fct_primary_sales WHERE invoice_date >= '2024-04-01' AND invoice_date < '2026-04-01' GROUP BY 1 ORDER BY 1) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "fy",
+            "total_value_inr"
+          ],
+          "rows": [
+            [
+              "FY25",
+              4563765266.46
+            ],
+            [
+              "FY26",
+              4890601104.28
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "fy",
+          "y": "total_value_inr",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "2/4 figures traced to query results; untraced: ₹326.8 million, 7.2%.",
+        "trace_id": "9f254fae-97bb-487e-8048-3d62c9db60a4"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC02": {
+      "id": "TC02",
+      "category": "time_comparison",
+      "question": "Compare the average QC pass rate of production batches at each plant for batches made in FY26 versus FY25.",
+      "expected_label": "ad_hoc_sql_verify",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "Average QC pass rates improved slightly from FY25 to FY26 at all three plants. Durgapur Works rose from 0.97 to 0.98, Guwahati Works held steady at 0.98, and Howrah Works rose from 0.97 to 0.98.",
+      "confidence_note": "5/5 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT b.plant_id, b.plant_name, d.fiscal_year_label, ROUND(CAST(AVG(b.qc_pass_rate) AS DECIMAL), 2) AS avg_qc_pass_rate FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_date WHERE d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY b.plant_id, b.plant_name, d.fiscal_year_label ORDER BY b.plant_id, d.fiscal_year_label) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_vhorvayj",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT b.plant_id,\n       b.plant_name,\n       d.fiscal_year_label,\n       ROUND(AVG(b.qc_pass_rate)::numeric, 2) AS avg_qc_pass_rate\nFROM marts.dim_batch b\nJOIN marts.dim_date d ON d.date_day = b.mfg_date\nWHERE d.fiscal_year_label IN ('FY25', 'FY26')\nGROUP BY b.plant_id, b.plant_name, d.fiscal_year_label\nORDER BY b.plant_id, d.fiscal_year_label"
+          },
+          "output": "{\"tool_use_id\":\"call_vhorvayj\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT b.plant_id, b.plant_name, d.fiscal_year_label, ROUND(CAST(AVG(b.qc_pass_rate) AS DECIMAL), 2) AS avg_qc_pass_rate FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_date WHERE d.fiscal_year_",
+          "sql": "SELECT * FROM (SELECT b.plant_id, b.plant_name, d.fiscal_year_label, ROUND(CAST(AVG(b.qc_pass_rate) AS DECIMAL), 2) AS avg_qc_pass_rate FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_date WHERE d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY b.plant_id, b.plant_name, d.fiscal_year_label ORDER BY b.plant_id, d.fiscal_year_label) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 37,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "plant_id",
+          "plant_name",
+          "fy25",
+          "fy26"
+        ],
+        "rows": [
+          [
+            "DGP",
+            "Gangasagar Polymers Durgapur Works",
+            0.9738552718286656,
+            0.9755698775510204
+          ],
+          [
+            "GHY",
+            "Gangasagar Polymers Guwahati Works",
+            0.9759959116925593,
+            0.9751914403292181
+          ],
+          [
+            "HWH",
+            "Gangasagar Polymers Howrah Works",
+            0.9747170870113493,
+            0.9758142086330935
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5590,
+        "output": 331,
+        "cache_read": 4757,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 20438,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "24dbe558-af3c-4150-b4d3-0d017541a546",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:11:00+00:00",
+      "response": {
+        "answer_text": "Average QC pass rates improved slightly from FY25 to FY26 at all three plants. Durgapur Works rose from 0.97 to 0.98, Guwahati Works held steady at 0.98, and Howrah Works rose from 0.97 to 0.98.",
+        "sql": [
+          "SELECT * FROM (SELECT b.plant_id, b.plant_name, d.fiscal_year_label, ROUND(CAST(AVG(b.qc_pass_rate) AS DECIMAL), 2) AS avg_qc_pass_rate FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_date WHERE d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY b.plant_id, b.plant_name, d.fiscal_year_label ORDER BY b.plant_id, d.fiscal_year_label) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "plant_id",
+            "plant_name",
+            "fiscal_year_label",
+            "avg_qc_pass_rate"
+          ],
+          "rows": [
+            [
+              "DGP",
+              "Gangasagar Polymers Durgapur Works",
+              "FY25",
+              0.97
+            ],
+            [
+              "DGP",
+              "Gangasagar Polymers Durgapur Works",
+              "FY26",
+              0.98
+            ],
+            [
+              "GHY",
+              "Gangasagar Polymers Guwahati Works",
+              "FY25",
+              0.98
+            ],
+            [
+              "GHY",
+              "Gangasagar Polymers Guwahati Works",
+              "FY26",
+              0.98
+            ],
+            [
+              "HWH",
+              "Gangasagar Polymers Howrah Works",
+              "FY25",
+              0.97
+            ],
+            [
+              "HWH",
+              "Gangasagar Polymers Howrah Works",
+              "FY26",
+              0.98
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "plant_name",
+          "y": "avg_qc_pass_rate",
+          "series": "fiscal_year_label"
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "5/5 figures traced to query results.",
+        "trace_id": "24dbe558-af3c-4150-b4d3-0d017541a546"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC03": {
+      "id": "TC03",
+      "category": "time_comparison",
+      "question": "How did DSO on invoices raised in Q1 FY27 (April to June 2026) compare with invoices raised in Q4 FY26 (January to March 2026)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "q4_fy26": false,
+          "q1_fy27": false
+        },
+        "golden": {
+          "q4_fy26": 39.572862936192294,
+          "q1_fy27": 40.04557444913486
+        }
+      },
+      "answer_text": "DSO was essentially flat between the two quarters: invoices raised in Q1 FY27 (Apr–Jun 2026) averaged 51.2 days outstanding versus 51.3 days for Q4 FY26 (Jan–Mar 2026), a difference of about 0.1 day. Q1 FY27 had 3,050 invoices worth ₹1,482.5M (₹147.7K still open) versus 3,139 invoices worth ₹1,363.0M (fully paid) in Q4 FY26, and average days past due was similar (3.96 vs 3.91).",
+      "confidence_note": "7/8 figures traced to query results; untraced: 0.1.",
+      "sql": [
+        "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01' THEN 'Q1 FY27 (Apr-Jun 2026)' WHEN invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01' THEN 'Q4 FY26 (Jan-Mar 2026)' END AS period, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoice_value_inr, SUM(paid_amount_inr) AS paid_inr, SUM(open_amount_inr) AS open_inr, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due, SUM(CASE WHEN is_open THEN 1 ELSE 0 END) AS open_invoices, SUM(CASE WHEN is_due THEN 1 ELSE 0 END) AS due_invoices FROM marts.fct_invoice_collections WHERE (invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01') OR (invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01') GROUP BY 1 ORDER BY 1) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_o0t774as",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  CASE WHEN invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01' THEN 'Q1 FY27 (Apr-Jun 2026)'\n       WHEN invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01' THEN 'Q4 FY26 (Jan-Mar 2026)' END AS period,\n  COUNT(*) AS invoices,\n  SUM(invoice_amount_inr) AS invoice_value_inr,\n  SUM(paid_amount_inr) AS paid_inr,\n  SUM(open_amount_inr) AS open_inr,\n  AVG(days_outstanding) AS avg_days_outstanding,\n  AVG(days_past_due) AS avg_days_past_due,\n  SUM(CASE WHEN is_open THEN 1 ELSE 0 END) AS open_invoices,\n  SUM(CASE WHEN is_due THEN 1 ELSE 0 END) AS due_invoices\nFROM marts.fct_invoice_collections\nWHERE (invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01')\n   OR (invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01')\nGROUP BY 1\nORDER BY 1;"
+          },
+          "output": "{\"tool_use_id\":\"call_o0t774as\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT CASE WHEN invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01' THEN 'Q1 FY27 (Apr-Jun 2026)' WHEN invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01' THEN 'Q4 FY26 (Jan-Mar 2026)' END AS period, ",
+          "sql": "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01' THEN 'Q1 FY27 (Apr-Jun 2026)' WHEN invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01' THEN 'Q4 FY26 (Jan-Mar 2026)' END AS period, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoice_value_inr, SUM(paid_amount_inr) AS paid_inr, SUM(open_amount_inr) AS open_inr, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due, SUM(CASE WHEN is_open THEN 1 ELSE 0 END) AS open_invoices, SUM(CASE WHEN is_due THEN 1 ELSE 0 END) AS due_invoices FROM marts.fct_invoice_collections WHERE (invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01') OR (invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01') GROUP BY 1 ORDER BY 1) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 33,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "q4_fy26",
+          "q1_fy27"
+        ],
+        "rows": [
+          [
+            39.572862936192294,
+            40.04557444913486
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 6067,
+        "output": 606,
+        "cache_read": 4973,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 34828,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "6adffcd7-3c30-4e1a-839d-a5b5ead83b6b",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:11:20+00:00",
+      "response": {
+        "answer_text": "DSO was essentially flat between the two quarters: invoices raised in Q1 FY27 (Apr–Jun 2026) averaged 51.2 days outstanding versus 51.3 days for Q4 FY26 (Jan–Mar 2026), a difference of about 0.1 day. Q1 FY27 had 3,050 invoices worth ₹1,482.5M (₹147.7K still open) versus 3,139 invoices worth ₹1,363.0M (fully paid) in Q4 FY26, and average days past due was similar (3.96 vs 3.91).",
+        "sql": [
+          "SELECT * FROM (SELECT CASE WHEN invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01' THEN 'Q1 FY27 (Apr-Jun 2026)' WHEN invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01' THEN 'Q4 FY26 (Jan-Mar 2026)' END AS period, COUNT(*) AS invoices, SUM(invoice_amount_inr) AS invoice_value_inr, SUM(paid_amount_inr) AS paid_inr, SUM(open_amount_inr) AS open_inr, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due, SUM(CASE WHEN is_open THEN 1 ELSE 0 END) AS open_invoices, SUM(CASE WHEN is_due THEN 1 ELSE 0 END) AS due_invoices FROM marts.fct_invoice_collections WHERE (invoice_date >= '2026-04-01' AND invoice_date < '2026-07-01') OR (invoice_date >= '2026-01-01' AND invoice_date < '2026-04-01') GROUP BY 1 ORDER BY 1) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "period",
+            "invoices",
+            "invoice_value_inr",
+            "paid_inr",
+            "open_inr",
+            "avg_days_outstanding",
+            "avg_days_past_due",
+            "open_invoices",
+            "due_invoices"
+          ],
+          "rows": [
+            [
+              "Q1 FY27 (Apr-Jun 2026)",
+              3050,
+              1482535220.12,
+              1482387477.37,
+              147742.75,
+              51.16360655737705,
+              3.960327868852459,
+              1,
+              3050
+            ],
+            [
+              "Q4 FY26 (Jan-Mar 2026)",
+              3139,
+              1363014036.01,
+              1363014036.01,
+              0.0,
+              51.26314112774769,
+              3.9060210258043964,
+              0,
+              3139
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "period",
+          "y": "avg_days_outstanding",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "7/8 figures traced to query results; untraced: 0.1.",
+        "trace_id": "6adffcd7-3c30-4e1a-839d-a5b5ead83b6b"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC04": {
+      "id": "TC04",
+      "category": "time_comparison",
+      "question": "Month by month, how did secondary sales value in April to August 2026 compare with the same months of 2025?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 10,
+        "missing": [
+          {
+            "key": [
+              "2025-04-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2025-05-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2025-06-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2025-07-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2025-08-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2026-04-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2026-05-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2026-06-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2026-07-01"
+            ],
+            "value": "secondary_sales_value"
+          },
+          {
+            "key": [
+              "2026-08-01"
+            ],
+            "value": "secondary_sales_value"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": true
+      },
+      "answer_text": "Secondary sales value was higher in every month from April to August 2026 than in the same months of 2025: April ₹629.5M vs ₹597.8M, May ₹635.7M vs ₹605.1M, June ₹547.0M vs ₹499.8M, July ₹426.9M vs ₹406.8M, and August ₹399.1M vs ₹392.3M. The pattern is a peak in May, a dip through July, and a partial recovery in August in both years. (No governed metric covered this, so the figures come from an ad-hoc SQL check of fct_secondary_sales.)",
+      "confidence_note": "No figures stated, so there was nothing to trace.",
+      "sql": [
+        "SELECT * FROM (SELECT TO_CHAR(sale_date, 'Mon') AS month, CASE WHEN EXTRACT(YEAR FROM sale_date) = 2026 THEN '2026' ELSE '2025' END AS yr, SUM(secondary_value_inr) AS value_inr FROM marts.fct_secondary_sales WHERE (EXTRACT(YEAR FROM sale_date) IN (2025, 2026)) AND EXTRACT(MONTH FROM sale_date) BETWEEN 4 AND 8 GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500"
+      ],
+      "data_rows": 10,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_gsetssxb",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT to_char(sale_date, 'Mon') AS month,\n       CASE WHEN EXTRACT(YEAR FROM sale_date) = 2026 THEN '2026' ELSE '2025' END AS yr,\n       SUM(secondary_value_inr) AS value_inr\nFROM marts.fct_secondary_sales\nWHERE (EXTRACT(YEAR FROM sale_date) IN (2025, 2026))\n  AND EXTRACT(MONTH FROM sale_date) BETWEEN 4 AND 8\nGROUP BY 1, 2\nORDER BY 1, 2"
+          },
+          "output": "{\"tool_use_id\":\"call_gsetssxb\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT TO_CHAR(sale_date, 'Mon') AS month, CASE WHEN EXTRACT(YEAR FROM sale_date) = 2026 THEN '2026' ELSE '2025' END AS yr, SUM(secondary_value_inr) AS value_inr FROM marts.fct_secondary_sales WHERE (EXTRACT(YEAR FROM s",
+          "sql": "SELECT * FROM (SELECT TO_CHAR(sale_date, 'Mon') AS month, CASE WHEN EXTRACT(YEAR FROM sale_date) = 2026 THEN '2026' ELSE '2025' END AS yr, SUM(secondary_value_inr) AS value_inr FROM marts.fct_secondary_sales WHERE (EXTRACT(YEAR FROM sale_date) IN (2025, 2026)) AND EXTRACT(MONTH FROM sale_date) BETWEEN 4 AND 8 GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+          "row_count": 10,
+          "duration_ms": 205,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "month",
+          "secondary_sales_value"
+        ],
+        "rows": [
+          [
+            "2025-04-01",
+            597845460.41
+          ],
+          [
+            "2025-05-01",
+            605111571.79
+          ],
+          [
+            "2025-06-01",
+            499797638.92
+          ],
+          [
+            "2025-07-01",
+            406750743.68
+          ],
+          [
+            "2025-08-01",
+            392331717.78
+          ],
+          [
+            "2026-04-01",
+            629487488.08
+          ],
+          [
+            "2026-05-01",
+            635684190.31
+          ],
+          [
+            "2026-06-01",
+            547002390.01
+          ],
+          [
+            "2026-07-01",
+            426900383.64
+          ],
+          [
+            "2026-08-01",
+            399125220.09
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5676,
+        "output": 431,
+        "cache_read": 4777,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 26438,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "80495fd7-3eb2-4323-ac35-f4daa9620537",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:11:55+00:00",
+      "response": {
+        "answer_text": "Secondary sales value was higher in every month from April to August 2026 than in the same months of 2025: April ₹629.5M vs ₹597.8M, May ₹635.7M vs ₹605.1M, June ₹547.0M vs ₹499.8M, July ₹426.9M vs ₹406.8M, and August ₹399.1M vs ₹392.3M. The pattern is a peak in May, a dip through July, and a partial recovery in August in both years. (No governed metric covered this, so the figures come from an ad-hoc SQL check of fct_secondary_sales.)",
+        "sql": [
+          "SELECT * FROM (SELECT TO_CHAR(sale_date, 'Mon') AS month, CASE WHEN EXTRACT(YEAR FROM sale_date) = 2026 THEN '2026' ELSE '2025' END AS yr, SUM(secondary_value_inr) AS value_inr FROM marts.fct_secondary_sales WHERE (EXTRACT(YEAR FROM sale_date) IN (2025, 2026)) AND EXTRACT(MONTH FROM sale_date) BETWEEN 4 AND 8 GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "month",
+            "yr",
+            "value_inr"
+          ],
+          "rows": [
+            [
+              "Apr",
+              "2025",
+              597845460.41
+            ],
+            [
+              "Apr",
+              "2026",
+              629487488.08
+            ],
+            [
+              "Aug",
+              "2025",
+              392331717.78
+            ],
+            [
+              "Aug",
+              "2026",
+              399125220.09
+            ],
+            [
+              "Jul",
+              "2025",
+              406750743.68
+            ],
+            [
+              "Jul",
+              "2026",
+              426900383.64
+            ],
+            [
+              "Jun",
+              "2025",
+              499797638.92
+            ],
+            [
+              "Jun",
+              "2026",
+              547002390.01
+            ],
+            [
+              "May",
+              "2025",
+              605111571.79
+            ],
+            [
+              "May",
+              "2026",
+              635684190.31
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "month",
+          "y": "value_inr",
+          "series": "yr"
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "No figures stated, so there was nothing to trace.",
+        "trace_id": "80495fd7-3eb2-4323-ac35-f4daa9620537"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC05": {
+      "id": "TC05",
+      "category": "time_comparison",
+      "question": "How did the number of base-crack warranty claims filed at each plant in FY26 compare with FY25?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "Base-crack warranty claims rose at all three plants in FY26 versus FY25: Durgapur Works went from 538 to 755, Guwahati Works from 592 to 709, and Howrah Works from 1,113 to 1,341. Howrah remains the largest source of base-crack claims, and every plant shows a year-over-year increase.",
+      "confidence_note": "6/6 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT c.plant_id, MAX(b.plant_name) AS plant_name, SUM(CASE WHEN d.fiscal_year = 2026 THEN 1 ELSE 0 END) AS fy26_base_crack, SUM(CASE WHEN d.fiscal_year = 2025 THEN 1 ELSE 0 END) AS fy25_base_crack FROM marts.fct_warranty_claims AS c JOIN marts.dim_date AS d ON d.date_day = c.claim_date LEFT JOIN marts.dim_batch AS b ON b.batch_id = c.batch_id WHERE d.fiscal_year IN (2025, 2026) AND c.failure_mode = 'base_crack' GROUP BY c.plant_id ORDER BY c.plant_id) AS q LIMIT 500"
+      ],
+      "data_rows": 3,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_uei92ebs",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  c.plant_id,\n  c.plant_name,\n  SUM(CASE WHEN d.fiscal_year = 2026 THEN c.claims_base_crack ELSE 0 END) AS fy26_base_crack,\n  SUM(CASE WHEN d.fiscal_year = 2025 THEN c.claims_base_crack ELSE 0 END) AS fy25_base_crack\nFROM marts.fct_warranty_claims c\nJOIN marts.dim_date d ON d.date_day = c.claim_date\nWHERE d.fiscal_year IN (2025, 2026)\n  AND c.failure_mode = 'base_crack'\nGROUP BY c.plant_id, c.plant_name\nORDER BY c.plant_id"
+          },
+          "output": "{\"tool_use_id\": \"call_uei92ebs\", \"error\": \"column c.plant_name does not exist\"}",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 40,
+          "error": "column c.plant_name does not exist"
+        },
+        {
+          "id": "call_pckgbbgb",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  c.plant_id,\n  MAX(b.plant_name) AS plant_name,\n  SUM(CASE WHEN d.fiscal_year = 2026 THEN c.claims_base_crack ELSE 0 END) AS fy26_base_crack,\n  SUM(CASE WHEN d.fiscal_year = 2025 THEN c.claims_base_crack ELSE 0 END) AS fy25_base_crack\nFROM marts.fct_warranty_claims c\nJOIN marts.dim_date d ON d.date_day = c.claim_date\nLEFT JOIN marts.dim_batch b ON b.batch_id = c.batch_id\nWHERE d.fiscal_year IN (2025, 2026)\n  AND c.failure_mode = 'base_crack'\nGROUP BY c.plant_id\nORDER BY c.plant_id"
+          },
+          "output": "{\"tool_use_id\": \"call_pckgbbgb\", \"error\": \"column c.claims_base_crack does not exist\"}",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 32,
+          "error": "column c.claims_base_crack does not exist"
+        },
+        {
+          "id": "call_1suwdb27",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  c.plant_id,\n  MAX(b.plant_name) AS plant_name,\n  SUM(CASE WHEN d.fiscal_year = 2026 THEN 1 ELSE 0 END) AS fy26_base_crack,\n  SUM(CASE WHEN d.fiscal_year = 2025 THEN 1 ELSE 0 END) AS fy25_base_crack\nFROM marts.fct_warranty_claims c\nJOIN marts.dim_date d ON d.date_day = c.claim_date\nLEFT JOIN marts.dim_batch b ON b.batch_id = c.batch_id\nWHERE d.fiscal_year IN (2025, 2026)\n  AND c.failure_mode = 'base_crack'\nGROUP BY c.plant_id\nORDER BY c.plant_id"
+          },
+          "output": "{\"tool_use_id\":\"call_1suwdb27\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT c.plant_id, MAX(b.plant_name) AS plant_name, SUM(CASE WHEN d.fiscal_year = 2026 THEN 1 ELSE 0 END) AS fy26_base_crack, SUM(CASE WHEN d.fiscal_year = 2025 THEN 1 ELSE 0 END) AS fy25_base_crack FROM marts.fct_warra",
+          "sql": "SELECT * FROM (SELECT c.plant_id, MAX(b.plant_name) AS plant_name, SUM(CASE WHEN d.fiscal_year = 2026 THEN 1 ELSE 0 END) AS fy26_base_crack, SUM(CASE WHEN d.fiscal_year = 2025 THEN 1 ELSE 0 END) AS fy25_base_crack FROM marts.fct_warranty_claims AS c JOIN marts.dim_date AS d ON d.date_day = c.claim_date LEFT JOIN marts.dim_batch AS b ON b.batch_id = c.batch_id WHERE d.fiscal_year IN (2025, 2026) AND c.failure_mode = 'base_crack' GROUP BY c.plant_id ORDER BY c.plant_id) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 62,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "plant_id",
+          "plant_name",
+          "fy25",
+          "fy26"
+        ],
+        "rows": [
+          [
+            "DGP",
+            "Gangasagar Polymers Durgapur Works",
+            538,
+            755
+          ],
+          [
+            "GHY",
+            "Gangasagar Polymers Guwahati Works",
+            592,
+            709
+          ],
+          [
+            "HWH",
+            "Gangasagar Polymers Howrah Works",
+            1113,
+            1341
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 11937,
+        "output": 805,
+        "cache_read": 11038,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 45046,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "4b28f296-4645-46f2-9b1d-463f7f5fff00",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:12:22+00:00",
+      "response": {
+        "answer_text": "Base-crack warranty claims rose at all three plants in FY26 versus FY25: Durgapur Works went from 538 to 755, Guwahati Works from 592 to 709, and Howrah Works from 1,113 to 1,341. Howrah remains the largest source of base-crack claims, and every plant shows a year-over-year increase.",
+        "sql": [
+          "SELECT * FROM (SELECT c.plant_id, MAX(b.plant_name) AS plant_name, SUM(CASE WHEN d.fiscal_year = 2026 THEN 1 ELSE 0 END) AS fy26_base_crack, SUM(CASE WHEN d.fiscal_year = 2025 THEN 1 ELSE 0 END) AS fy25_base_crack FROM marts.fct_warranty_claims AS c JOIN marts.dim_date AS d ON d.date_day = c.claim_date LEFT JOIN marts.dim_batch AS b ON b.batch_id = c.batch_id WHERE d.fiscal_year IN (2025, 2026) AND c.failure_mode = 'base_crack' GROUP BY c.plant_id ORDER BY c.plant_id) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "plant_id",
+            "plant_name",
+            "fy26_base_crack",
+            "fy25_base_crack"
+          ],
+          "rows": [
+            [
+              "DGP",
+              "Gangasagar Polymers Durgapur Works",
+              755,
+              538
+            ],
+            [
+              "GHY",
+              "Gangasagar Polymers Guwahati Works",
+              709,
+              592
+            ],
+            [
+              "HWH",
+              "Gangasagar Polymers Howrah Works",
+              1341,
+              1113
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/6 figures traced to query results.",
+        "trace_id": "4b28f296-4645-46f2-9b1d-463f7f5fff00"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC06": {
+      "id": "TC06",
+      "category": "time_comparison",
+      "question": "By region, how did the channel stock-out rate over the 13 weeks from 29 December 2025 to 29 March 2026 compare with the 13 weeks from 22 June to 20 September 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 12,
+        "missing": [
+          {
+            "key": [
+              "Assam"
+            ],
+            "value": "winter"
+          },
+          {
+            "key": [
+              "Assam"
+            ],
+            "value": "monsoon"
+          },
+          {
+            "key": [
+              "Bihar & Jharkhand"
+            ],
+            "value": "winter"
+          },
+          {
+            "key": [
+              "Bihar & Jharkhand"
+            ],
+            "value": "monsoon"
+          },
+          {
+            "key": [
+              "North Bengal & Sikkim"
+            ],
+            "value": "winter"
+          },
+          {
+            "key": [
+              "North Bengal & Sikkim"
+            ],
+            "value": "monsoon"
+          },
+          {
+            "key": [
+              "North East"
+            ],
+            "value": "winter"
+          },
+          {
+            "key": [
+              "North East"
+            ],
+            "value": "monsoon"
+          },
+          {
+            "key": [
+              "Odisha"
+            ],
+            "value": "winter"
+          },
+          {
+            "key": [
+              "Odisha"
+            ],
+            "value": "monsoon"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "Channel stock-out rates fell in every region between the 13 weeks ending 29 March 2026 and the 13 weeks ending 20 September 2026. The largest drops were in North Bengal & Sikkim (4.97% to 3.35%) and Bihar & Jharkhand (4.50% to 3.40%), while Assam improved from 3.68% to 3.25% and Odisha from 3.98% to 3.05%. North East eased from 4.71% to 3.45% and South Bengal from 4.21% to 3.38%.",
+      "confidence_note": "14/16 figures traced to query results; untraced: 13, 13.",
+      "sql": [
+        "SELECT * FROM (SELECT d.region, CASE WHEN w.week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29' WHEN w.week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period, SUM(w.stockout_days) AS stockout_days, SUM(w.days_measured) AS days_measured, ROUND(100.0 * SUM(w.stockout_days) / NULLIF(SUM(w.days_measured), 0), 2) AS stockout_rate_pct FROM marts.mart_channel_inventory_weekly AS w JOIN marts.dim_distributor AS d ON d.distributor_id = w.distributor_id WHERE w.week_start BETWEEN '2025-12-29' AND '2026-03-29' OR w.week_start BETWEEN '2026-06-22' AND '2026-09-20' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500"
+      ],
+      "data_rows": 12,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_obxze4l8",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT region,\n       CASE WHEN week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29'\n            WHEN week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period,\n       SUM(stockout_days) AS stockout_days,\n       SUM(days_measured) AS days_measured,\n       ROUND(100.0 * SUM(stockout_days) / NULLIF(SUM(days_measured),0), 2) AS stockout_rate_pct\nFROM marts.mart_channel_inventory_weekly\nWHERE week_start BETWEEN '2025-12-29' AND '2026-03-29'\n   OR week_start BETWEEN '2026-06-22' AND '2026-09-20'\nGROUP BY 1,2\nORDER BY 1,2"
+          },
+          "output": "{\"tool_use_id\": \"call_obxze4l8\", \"error\": \"column \\\"region\\\" does not exist\"}",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 42,
+          "error": "column \"region\" does not exist"
+        },
+        {
+          "id": "call_aisxri3t",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT d.region,\n       CASE WHEN w.week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29'\n            WHEN w.week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period,\n       SUM(w.stockout_days) AS stockout_days,\n       SUM(w.days_measured) AS days_measured,\n       ROUND(100.0 * SUM(w.stockout_days) / NULLIF(SUM(w.days_measured),0), 2) AS stockout_rate_pct\nFROM marts.mart_channel_inventory_weekly w\nJOIN marts.dim_distributor d ON d.distributor_id = w.distributor_id\nWHERE w.week_start BETWEEN '2025-12-29' AND '2026-03-29'\n   OR w.week_start BETWEEN '2026-06-22' AND '2026-09-20'\nGROUP BY 1,2\nORDER BY 1,2"
+          },
+          "output": "{\"tool_use_id\":\"call_aisxri3t\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT d.region, CASE WHEN w.week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29' WHEN w.week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period, SUM(w.",
+          "sql": "SELECT * FROM (SELECT d.region, CASE WHEN w.week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29' WHEN w.week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period, SUM(w.stockout_days) AS stockout_days, SUM(w.days_measured) AS days_measured, ROUND(100.0 * SUM(w.stockout_days) / NULLIF(SUM(w.days_measured), 0), 2) AS stockout_rate_pct FROM marts.mart_channel_inventory_weekly AS w JOIN marts.dim_distributor AS d ON d.distributor_id = w.distributor_id WHERE w.week_start BETWEEN '2025-12-29' AND '2026-03-29' OR w.week_start BETWEEN '2026-06-22' AND '2026-09-20' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+          "row_count": 12,
+          "duration_ms": 3459,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "winter",
+          "monsoon"
+        ],
+        "rows": [
+          [
+            "Assam",
+            0.03678562515597704,
+            0.03251594515215238
+          ],
+          [
+            "Bihar & Jharkhand",
+            0.044961655809351034,
+            0.03395366099358465
+          ],
+          [
+            "North Bengal & Sikkim",
+            0.049730561970746726,
+            0.0335274169812528
+          ],
+          [
+            "North East",
+            0.047081278829330366,
+            0.0345259555745669
+          ],
+          [
+            "Odisha",
+            0.03981781047228297,
+            0.030456190085419076
+          ],
+          [
+            "South Bengal",
+            0.042088195887298785,
+            0.03381759974064393
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 9647,
+        "output": 880,
+        "cache_read": 8179,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 53172,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "f74b4bd3-9c39-499c-bf62-36d3ad25abb4",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:13:07+00:00",
+      "response": {
+        "answer_text": "Channel stock-out rates fell in every region between the 13 weeks ending 29 March 2026 and the 13 weeks ending 20 September 2026. The largest drops were in North Bengal & Sikkim (4.97% to 3.35%) and Bihar & Jharkhand (4.50% to 3.40%), while Assam improved from 3.68% to 3.25% and Odisha from 3.98% to 3.05%. North East eased from 4.71% to 3.45% and South Bengal from 4.21% to 3.38%.",
+        "sql": [
+          "SELECT * FROM (SELECT d.region, CASE WHEN w.week_start BETWEEN '2025-12-29' AND '2026-03-29' THEN '2025-12-29 to 2026-03-29' WHEN w.week_start BETWEEN '2026-06-22' AND '2026-09-20' THEN '2026-06-22 to 2026-09-20' END AS period, SUM(w.stockout_days) AS stockout_days, SUM(w.days_measured) AS days_measured, ROUND(100.0 * SUM(w.stockout_days) / NULLIF(SUM(w.days_measured), 0), 2) AS stockout_rate_pct FROM marts.mart_channel_inventory_weekly AS w JOIN marts.dim_distributor AS d ON d.distributor_id = w.distributor_id WHERE w.week_start BETWEEN '2025-12-29' AND '2026-03-29' OR w.week_start BETWEEN '2026-06-22' AND '2026-09-20' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "period",
+            "stockout_days",
+            "days_measured",
+            "stockout_rate_pct"
+          ],
+          "rows": [
+            [
+              "Assam",
+              "2025-12-29 to 2026-03-29",
+              2211,
+              60105,
+              3.68
+            ],
+            [
+              "Assam",
+              "2026-06-22 to 2026-09-20",
+              1871,
+              57541,
+              3.25
+            ],
+            [
+              "Bihar & Jharkhand",
+              "2025-12-29 to 2026-03-29",
+              4362,
+              97016,
+              4.5
+            ],
+            [
+              "Bihar & Jharkhand",
+              "2026-06-22 to 2026-09-20",
+              3202,
+              94305,
+              3.4
+            ],
+            [
+              "North Bengal & Sikkim",
+              "2025-12-29 to 2026-03-29",
+              1615,
+              32475,
+              4.97
+            ],
+            [
+              "North Bengal & Sikkim",
+              "2026-06-22 to 2026-09-20",
+              1048,
+              31258,
+              3.35
+            ],
+            [
+              "North East",
+              "2025-12-29 to 2026-03-29",
+              3256,
+              69157,
+              4.71
+            ],
+            [
+              "North East",
+              "2026-06-22 to 2026-09-20",
+              2260,
+              65458,
+              3.45
+            ],
+            [
+              "Odisha",
+              "2025-12-29 to 2026-03-29",
+              2203,
+              55327,
+              3.98
+            ],
+            [
+              "Odisha",
+              "2026-06-22 to 2026-09-20",
+              1633,
+              53618,
+              3.05
+            ],
+            [
+              "South Bengal",
+              "2025-12-29 to 2026-03-29",
+              4335,
+              102998,
+              4.21
+            ],
+            [
+              "South Bengal",
+              "2026-06-22 to 2026-09-20",
+              3338,
+              98706,
+              3.38
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "stockout_rate_pct",
+          "series": "period"
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "14/16 figures traced to query results; untraced: 13, 13.",
+        "trace_id": "f74b4bd3-9c39-499c-bf62-36d3ad25abb4"
+      },
+      "requests": 3,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC07": {
+      "id": "TC07",
+      "category": "time_comparison",
+      "question": "Has the warranty registration rate improved? Compare tanks manufactured in FY26 with tanks manufactured in FY25.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "fy25": false,
+          "fy26": false
+        },
+        "golden": {
+          "fy25": 0.6557919529714052,
+          "fy26": 0.6581615487437825
+        }
+      },
+      "answer_text": "Yes, but only marginally. The warranty registration rate for tanks (units registered within 90 days as a share of units shipped) rose from 65.58% for tanks manufactured in FY25 (67,380 of 102,746) to 65.82% in FY26 (72,380 of 109,973), an improvement of about 0.24 percentage points.",
+      "confidence_note": "7/8 figures traced to query results; untraced: 0.24.",
+      "sql": [
+        "SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS registration_rate_pct FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_month WHERE b.category = 'tank' AND d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY d.fiscal_year_label ORDER BY d.fiscal_year_label) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_kf8btrdo",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  d.fiscal_year_label,\n  SUM(b.units_shipped) AS units_shipped,\n  SUM(b.units_registered_within_90d) AS units_registered,\n  ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped),0), 2) AS registration_rate_pct\nFROM marts.dim_batch b\nJOIN marts.dim_date d ON d.date_day = b.mfg_month\nWHERE b.category = 'Tanks'\n  AND d.fiscal_year_label IN ('FY25','FY26')\nGROUP BY d.fiscal_year_label\nORDER BY d.fiscal_year_label"
+          },
+          "output": "{\"tool_use_id\":\"call_kf8btrdo\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS regist",
+          "sql": "SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS registration_rate_pct FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_month WHERE b.category = 'Tanks' AND d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY d.fiscal_year_label ORDER BY d.fiscal_year_label) AS q LIMIT 500",
+          "row_count": 0,
+          "duration_ms": 51,
+          "error": null
+        },
+        {
+          "id": "call_nz56ub5v",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT category FROM marts.dim_batch"
+          },
+          "output": "{\"tool_use_id\":\"call_nz56ub5v\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch) AS q LIMIT 500\",\"row_count\":3,\"row_cap_hit\":false,\"columns\":[\"category\"],\"rows\":[[\"pipe\"],[\"fitting\"],[\"tank\"]]}",
+          "sql": "SELECT * FROM (SELECT DISTINCT category FROM marts.dim_batch) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 34,
+          "error": null
+        },
+        {
+          "id": "call_mf3ngf1v",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT fiscal_year_label FROM marts.dim_date ORDER BY 1"
+          },
+          "output": "{\"tool_use_id\":\"call_mf3ngf1v\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT fiscal_year_label FROM marts.dim_date ORDER BY 1) AS q LIMIT 500\",\"row_count\":4,\"row_cap_hit\":false,\"columns\":[\"fiscal_year_label\"],\"rows\":[[\"FY24\"],[\"FY25\"],[\"FY26\"],[\"FY27\"]]}",
+          "sql": "SELECT * FROM (SELECT DISTINCT fiscal_year_label FROM marts.dim_date ORDER BY 1) AS q LIMIT 500",
+          "row_count": 4,
+          "duration_ms": 17,
+          "error": null
+        },
+        {
+          "id": "call_oskwiol0",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  d.fiscal_year_label,\n  SUM(b.units_shipped) AS units_shipped,\n  SUM(b.units_registered_within_90d) AS units_registered,\n  ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped),0), 2) AS registration_rate_pct\nFROM marts.dim_batch b\nJOIN marts.dim_date d ON d.date_day = b.mfg_month\nWHERE b.category = 'tank'\n  AND d.fiscal_year_label IN ('FY25','FY26')\nGROUP BY d.fiscal_year_label\nORDER BY d.fiscal_year_label"
+          },
+          "output": "{\"tool_use_id\":\"call_oskwiol0\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS regist",
+          "sql": "SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS registration_rate_pct FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_month WHERE b.category = 'tank' AND d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY d.fiscal_year_label ORDER BY d.fiscal_year_label) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 42,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "fy25",
+          "fy26"
+        ],
+        "rows": [
+          [
+            0.6557919529714052,
+            0.6581615487437825
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 12325,
+        "output": 637,
+        "cache_read": 11179,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 38000,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "0fcd7161-eccc-4058-b88c-41e1048bd9a4",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:14:00+00:00",
+      "response": {
+        "answer_text": "Yes, but only marginally. The warranty registration rate for tanks (units registered within 90 days as a share of units shipped) rose from 65.58% for tanks manufactured in FY25 (67,380 of 102,746) to 65.82% in FY26 (72,380 of 109,973), an improvement of about 0.24 percentage points.",
+        "sql": [
+          "SELECT * FROM (SELECT d.fiscal_year_label, SUM(b.units_shipped) AS units_shipped, SUM(b.units_registered_within_90d) AS units_registered, ROUND(100.0 * SUM(b.units_registered_within_90d) / NULLIF(SUM(b.units_shipped), 0), 2) AS registration_rate_pct FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON d.date_day = b.mfg_month WHERE b.category = 'tank' AND d.fiscal_year_label IN ('FY25', 'FY26') GROUP BY d.fiscal_year_label ORDER BY d.fiscal_year_label) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "fiscal_year_label",
+            "units_shipped",
+            "units_registered",
+            "registration_rate_pct"
+          ],
+          "rows": [
+            [
+              "FY25",
+              102746.0,
+              67380.0,
+              65.58
+            ],
+            [
+              "FY26",
+              109973.0,
+              72380.0,
+              65.82
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "fiscal_year_label",
+          "y": "registration_rate_pct",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "7/8 figures traced to query results; untraced: 0.24.",
+        "trace_id": "0fcd7161-eccc-4058-b88c-41e1048bd9a4"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC08": {
+      "id": "TC08",
+      "category": "time_comparison",
+      "question": "Was quarter-end loading heavier at the Q4 FY26 scheme window than at the Q4 FY25 one? Give the average scheme concentration ratio for each.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "fy25_q4": true,
+          "fy26_q4": true
+        },
+        "golden": {
+          "fy25_q4": 1.267658208955224,
+          "fy26_q4": 1.3399008746355685
+        }
+      },
+      "answer_text": "Yes — quarter-end loading was heavier in the Q4 FY26 scheme window than in Q4 FY25. The average scheme concentration ratio was 1.34 in FY26Q4 versus 1.27 in FY25Q4 (across 692 and 672 distributor-quarter observations respectively), and the average scheme rate ratio was also higher (1.92 vs 1.77).",
+      "confidence_note": "6/6 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly WHERE fiscal_quarter_label IN ('FY26Q4', 'FY25Q4') GROUP BY fiscal_quarter_label ORDER BY fiscal_quarter_label) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_5c5hfbl7",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT fiscal_quarter_label,\n       count(*) AS distributor_quarters,\n       avg(concentration_ratio) AS avg_concentration_ratio,\n       avg(rate_ratio) AS avg_rate_ratio,\n       sum(scheme_units) AS scheme_units\nFROM marts.mart_scheme_quarterly\nWHERE fiscal_quarter_label IN ('Q4 FY26','Q4 FY25')\nGROUP BY fiscal_quarter_label\nORDER BY fiscal_quarter_label;"
+          },
+          "output": "{\"tool_use_id\":\"call_5c5hfbl7\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly W",
+          "sql": "SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly WHERE fiscal_quarter_label IN ('Q4 FY26', 'Q4 FY25') GROUP BY fiscal_quarter_label ORDER BY fiscal_quarter_label) AS q LIMIT 500",
+          "row_count": 0,
+          "duration_ms": 90,
+          "error": null
+        },
+        {
+          "id": "call_xhhjq5xs",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1;"
+          },
+          "output": "{\"tool_use_id\":\"call_xhhjq5xs\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1) AS q LIMIT 500\",\"row_count\":11,\"row_cap_hit\":false,\"columns\":[\"fiscal_quarter_label\"],\"rows\":[[\"FY24Q4\"],[\"FY25Q1\"],[\"FY25Q2\"],[\"FY25Q3\"]",
+          "sql": "SELECT * FROM (SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1) AS q LIMIT 500",
+          "row_count": 11,
+          "duration_ms": 80,
+          "error": null
+        },
+        {
+          "id": "call_8z4jr7op",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT fiscal_quarter_label,\n       count(*) AS distributor_quarters,\n       avg(concentration_ratio) AS avg_concentration_ratio,\n       avg(rate_ratio) AS avg_rate_ratio,\n       sum(scheme_units) AS scheme_units\nFROM marts.mart_scheme_quarterly\nWHERE fiscal_quarter_label IN ('FY26Q4','FY25Q4')\nGROUP BY fiscal_quarter_label\nORDER BY fiscal_quarter_label;"
+          },
+          "output": "{\"tool_use_id\":\"call_8z4jr7op\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly W",
+          "sql": "SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly WHERE fiscal_quarter_label IN ('FY26Q4', 'FY25Q4') GROUP BY fiscal_quarter_label ORDER BY fiscal_quarter_label) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 50,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "fy25_q4",
+          "fy26_q4"
+        ],
+        "rows": [
+          [
+            1.267658208955224,
+            1.3399008746355685
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 11965,
+        "output": 503,
+        "cache_read": 10854,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 31343,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "20a3eaa4-7d32-44a4-befb-9e6d0edc4e86",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:14:38+00:00",
+      "response": {
+        "answer_text": "Yes — quarter-end loading was heavier in the Q4 FY26 scheme window than in Q4 FY25. The average scheme concentration ratio was 1.34 in FY26Q4 versus 1.27 in FY25Q4 (across 692 and 672 distributor-quarter observations respectively), and the average scheme rate ratio was also higher (1.92 vs 1.77).",
+        "sql": [
+          "SELECT * FROM (SELECT fiscal_quarter_label, COUNT(*) AS distributor_quarters, AVG(concentration_ratio) AS avg_concentration_ratio, AVG(rate_ratio) AS avg_rate_ratio, SUM(scheme_units) AS scheme_units FROM marts.mart_scheme_quarterly WHERE fiscal_quarter_label IN ('FY26Q4', 'FY25Q4') GROUP BY fiscal_quarter_label ORDER BY fiscal_quarter_label) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "fiscal_quarter_label",
+            "distributor_quarters",
+            "avg_concentration_ratio",
+            "avg_rate_ratio",
+            "scheme_units"
+          ],
+          "rows": [
+            [
+              "FY25Q4",
+              672,
+              1.267658208955224,
+              1.7713328358208955,
+              235749.0
+            ],
+            [
+              "FY26Q4",
+              692,
+              1.3399008746355685,
+              1.9154963609898108,
+              266819.0
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "fiscal_quarter_label",
+          "y": "avg_concentration_ratio",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/6 figures traced to query results.",
+        "trace_id": "20a3eaa4-7d32-44a4-befb-9e6d0edc4e86"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "MH01": {
+      "id": "MH01",
+      "category": "multi_hop_why",
+      "question": "Why did base-crack warranty claims rise at our Durgapur plant in 2025?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "missing_mentions": [],
+        "forbidden_claims": [],
+        "missing_tools": [],
+        "golden": {
+          "resin_lot_id": "RL-DGP-L2-250310",
+          "units_shipped": 3376.0,
+          "base_crack_claims": 291,
+          "base_crack_per_1000": 86.19668246445498
+        }
+      },
+      "answer_text": "The 2025 rise in base-crack claims at the Durgapur plant is concentrated in a single resin lot, RL-DGP-L2-250310 (used on line 2 in March–April 2025), which logged 291 base-crack claims on 61,794 shipped units — a rate of 4.71 per 1,000, roughly 3–4× the 1.1–1.6 per 1,000 seen on every other 2025 DGP lot. The anomaly detector flagged this lot on 2025-05-18 with an effect size of ~3.84 (p ≈ 9e-79) versus ~10 peer lots, and it has stayed flagged in every weekly snapshot since. So the driver is a defective resin lot rather than a broad plant-wide quality shift; the other 2025 lots (e.g. RL-DGP-L2-250421, 250113, 250609) all sit near the normal ~1.2–1.6 per 1,000 baseline.",
+      "confidence_note": "15/15 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1 ORDER BY 3 DESC) AS q LIMIT 500",
+        "SELECT * FROM (SELECT detector, entity_type, entity_id, failure_mode, region, snapshot_date, first_flag_date, effect_size, p_value, details FROM marts.mart_anomaly_flags WHERE entity_id ILIKE '%dgp%' OR entity_id ILIKE '%durgapur%' OR (failure_mode = 'base_crack' AND region IS NOT NULL) ORDER BY snapshot_date DESC LIMIT 50) AS q LIMIT 500",
+        "SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+        "SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2025-01-01' AND claim_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 10,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_hs5a7zae",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month, plant_id, plant_name, resin_lot_id,\n       sum(units_shipped) AS units_shipped,\n       sum(claims_base_crack) AS base_crack_claims,\n       round(sum(claims_base_crack)*1000.0/nullif(sum(units_shipped),0),2) AS base_crack_per_1000\nFROM marts.dim_batch\nWHERE plant_id IN (SELECT plant_id FROM marts.dim_batch WHERE plant_name ILIKE '%durgapur%')\n  AND mfg_month >= '2024-01-01'\nGROUP BY 1,2,3,4\nORDER BY 1, 6 DESC"
+          },
+          "output": "{\"tool_use_id\": \"call_hs5a7zae\", \"error\": \"column \\\"claims_base_crack\\\" does not exist\"}",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 48,
+          "error": "column \"claims_base_crack\" does not exist"
+        },
+        {
+          "id": "call_svxbao60",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT plant_id, plant_name FROM marts.dim_batch ORDER BY 1"
+          },
+          "output": "{\"tool_use_id\":\"call_svxbao60\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT plant_id, plant_name FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500\",\"row_count\":3,\"row_cap_hit\":false,\"columns\":[\"plant_id\",\"plant_name\"],\"rows\":[[\"DGP\",\"Gangasagar Polymers Durgapur Works\"],[\"GHY\",\"Ga",
+          "sql": "SELECT * FROM (SELECT DISTINCT plant_id, plant_name FROM marts.dim_batch ORDER BY 1) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 34,
+          "error": null
+        },
+        {
+          "id": "call_3pwqwd7a",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month, resin_lot_id,\n       sum(units_shipped) AS units_shipped,\n       sum(claims) AS claims\nFROM marts.dim_batch\nWHERE plant_id='DGP' AND mfg_month >= '2024-01-01'\nGROUP BY 1,2 ORDER BY 1,2"
+          },
+          "output": "{\"tool_use_id\":\"call_3pwqwd7a\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims FROM marts.dim_batch WHERE plant_id = 'DGP' AND mfg_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500\",\"row_coun",
+          "sql": "SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims FROM marts.dim_batch WHERE plant_id = 'DGP' AND mfg_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+          "row_count": 109,
+          "duration_ms": 67,
+          "error": null
+        },
+        {
+          "id": "call_4edw4a23",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month, failure_mode, count(*) AS claims, sum(cost_inr) AS cost_inr\nFROM marts.fct_warranty_claims\nWHERE plant_id='DGP' AND claim_month >= '2024-01-01'\nGROUP BY 1,2 ORDER BY 1,3 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_4edw4a23\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT mfg_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500\",\"row_",
+          "sql": "SELECT * FROM (SELECT mfg_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500",
+          "row_count": 225,
+          "duration_ms": 39,
+          "error": null
+        },
+        {
+          "id": "call_gstz5tok",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month,\n       sum(units_shipped) AS units_shipped,\n       sum(claims) AS claims,\n       round(sum(claims)*1000.0/nullif(sum(units_shipped),0),2) AS claims_per_1000\nFROM marts.dim_batch\nWHERE plant_id='DGP' AND mfg_month >= '2024-01-01'\nGROUP BY 1 ORDER BY 1"
+          },
+          "output": "{\"tool_use_id\":\"call_gstz5tok\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT mfg_month, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE plant_id = 'DGP' AND mfg_month >",
+          "sql": "SELECT * FROM (SELECT mfg_month, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE plant_id = 'DGP' AND mfg_month >= '2024-01-01' GROUP BY 1 ORDER BY 1) AS q LIMIT 500",
+          "row_count": 33,
+          "duration_ms": 44,
+          "error": null
+        },
+        {
+          "id": "call_zgfxld4w",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT claim_month, failure_mode, count(*) AS claims, sum(cost_inr) AS cost_inr\nFROM marts.fct_warranty_claims\nWHERE plant_id='DGP' AND claim_month >= '2024-01-01'\nGROUP BY 1,2 ORDER BY 1,3 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_zgfxld4w\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500\",\"ro",
+          "sql": "SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2024-01-01' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500",
+          "row_count": 165,
+          "duration_ms": 24,
+          "error": null
+        },
+        {
+          "id": "call_okh048hs",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT claim_month, failure_mode, count(*) AS claims, sum(cost_inr) AS cost_inr\nFROM marts.fct_warranty_claims\nWHERE plant_id='DGP' AND claim_month >= '2025-01-01' AND claim_month <= '2025-12-31'\nGROUP BY 1,2 ORDER BY 1,3 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_okh048hs\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2025-01-01' AND claim_month <= '2025-12-31' GROUP BY 1, 2 ORDER B",
+          "sql": "SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2025-01-01' AND claim_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500",
+          "row_count": 60,
+          "duration_ms": 47,
+          "error": null
+        },
+        {
+          "id": "call_4pt96plk",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month, resin_lot_id, line_no,\n       sum(units_shipped) AS units_shipped,\n       sum(claims) AS claims,\n       round(sum(claims)*1000.0/nullif(sum(units_shipped),0),2) AS claims_per_1000\nFROM marts.dim_batch\nWHERE plant_id='DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31'\nGROUP BY 1,2,3 ORDER BY 1,2,3"
+          },
+          "output": "{\"tool_use_id\":\"call_4pt96plk\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT mfg_month, resin_lot_id, line_no, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE plant_id ",
+          "sql": "SELECT * FROM (SELECT mfg_month, resin_lot_id, line_no, SUM(units_shipped) AS units_shipped, SUM(claims) AS claims, ROUND(SUM(claims) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1, 2, 3 ORDER BY 1, 2, 3) AS q LIMIT 500",
+          "row_count": 42,
+          "duration_ms": 32,
+          "error": null
+        },
+        {
+          "id": "call_m0rgkr4i",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT detector, entity_type, entity_id, failure_mode, region, snapshot_date, first_flag_date, effect_size, p_value, details\nFROM marts.mart_anomaly_flags\nWHERE entity_id ILIKE '%dgp%' OR entity_id ILIKE '%durgapur%' OR (failure_mode='base_crack' AND region IS NOT NULL)\nORDER BY snapshot_date DESC\nLIMIT 50"
+          },
+          "output": "{\"tool_use_id\":\"call_m0rgkr4i\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT detector, entity_type, entity_id, failure_mode, region, snapshot_date, first_flag_date, effect_size, p_value, details FROM marts.mart_anomaly_flags WHERE entity_id ILIKE '%dgp%' OR entity_id ILIKE '%durgapur%' OR",
+          "sql": "SELECT * FROM (SELECT detector, entity_type, entity_id, failure_mode, region, snapshot_date, first_flag_date, effect_size, p_value, details FROM marts.mart_anomaly_flags WHERE entity_id ILIKE '%dgp%' OR entity_id ILIKE '%durgapur%' OR (failure_mode = 'base_crack' AND region IS NOT NULL) ORDER BY snapshot_date DESC LIMIT 50) AS q LIMIT 500",
+          "row_count": 50,
+          "duration_ms": 60,
+          "error": null
+        },
+        {
+          "id": "call_sxsd0yvk",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT mfg_month, resin_lot_id,\n       sum(units_shipped) AS units_shipped,\n       sum(claims_base_crack) AS base_crack,\n       round(sum(claims_base_crack)*1000.0/nullif(sum(units_shipped),0),2) AS base_crack_per_1000\nFROM marts.mart_batch_claim_cohorts\nWHERE plant_id='DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31'\nGROUP BY 1,2 ORDER BY 1,2"
+          },
+          "output": "{\"tool_use_id\":\"call_sxsd0yvk\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart",
+          "sql": "SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+          "row_count": 20,
+          "duration_ms": 58,
+          "error": null
+        },
+        {
+          "id": "call_e5lj915h",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT resin_lot_id,\n       sum(units_shipped) AS units_shipped,\n       sum(claims_base_crack) AS base_crack,\n       round(sum(claims_base_crack)*1000.0/nullif(sum(units_shipped),0),2) AS base_crack_per_1000\nFROM marts.mart_batch_claim_cohorts\nWHERE plant_id='DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31'\nGROUP BY 1 ORDER BY 3 DESC"
+          },
+          "output": "{\"tool_use_id\":\"call_e5lj915h\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_clai",
+          "sql": "SELECT * FROM (SELECT resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1 ORDER BY 3 DESC) AS q LIMIT 500",
+          "row_count": 10,
+          "duration_ms": 61,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "resin_lot_id",
+          "units_shipped",
+          "base_crack_claims",
+          "base_crack_per_1000"
+        ],
+        "rows": [
+          [
+            "RL-DGP-L2-250310",
+            3376.0,
+            291,
+            86.19668246445498
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 82760,
+        "output": 1763,
+        "cache_read": 63006,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 186641,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "94b5151b-4ae3-4325-ae11-c96f9369abbb",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:15:09+00:00",
+      "response": {
+        "answer_text": "The 2025 rise in base-crack claims at the Durgapur plant is concentrated in a single resin lot, RL-DGP-L2-250310 (used on line 2 in March–April 2025), which logged 291 base-crack claims on 61,794 shipped units — a rate of 4.71 per 1,000, roughly 3–4× the 1.1–1.6 per 1,000 seen on every other 2025 DGP lot. The anomaly detector flagged this lot on 2025-05-18 with an effect size of ~3.84 (p ≈ 9e-79) versus ~10 peer lots, and it has stayed flagged in every weekly snapshot since. So the driver is a defective resin lot rather than a broad plant-wide quality shift; the other 2025 lots (e.g. RL-DGP-L2-250421, 250113, 250609) all sit near the normal ~1.2–1.6 per 1,000 baseline.",
+        "sql": [
+          "SELECT * FROM (SELECT resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1 ORDER BY 3 DESC) AS q LIMIT 500",
+          "SELECT * FROM (SELECT detector, entity_type, entity_id, failure_mode, region, snapshot_date, first_flag_date, effect_size, p_value, details FROM marts.mart_anomaly_flags WHERE entity_id ILIKE '%dgp%' OR entity_id ILIKE '%durgapur%' OR (failure_mode = 'base_crack' AND region IS NOT NULL) ORDER BY snapshot_date DESC LIMIT 50) AS q LIMIT 500",
+          "SELECT * FROM (SELECT mfg_month, resin_lot_id, SUM(units_shipped) AS units_shipped, SUM(claims_base_crack) AS base_crack, ROUND(SUM(claims_base_crack) * 1000.0 / NULLIF(SUM(units_shipped), 0), 2) AS base_crack_per_1000 FROM marts.mart_batch_claim_cohorts WHERE plant_id = 'DGP' AND mfg_month >= '2025-01-01' AND mfg_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 2) AS q LIMIT 500",
+          "SELECT * FROM (SELECT claim_month, failure_mode, COUNT(*) AS claims, SUM(cost_inr) AS cost_inr FROM marts.fct_warranty_claims WHERE plant_id = 'DGP' AND claim_month >= '2025-01-01' AND claim_month <= '2025-12-31' GROUP BY 1, 2 ORDER BY 1, 3 DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "resin_lot_id",
+            "units_shipped",
+            "base_crack",
+            "base_crack_per_1000"
+          ],
+          "rows": [
+            [
+              "RL-DGP-L2-250310",
+              61794.0,
+              291.0,
+              4.71
+            ],
+            [
+              "RL-DGP-L2-250421",
+              66129.0,
+              89.0,
+              1.35
+            ],
+            [
+              "RL-DGP-L2-250113",
+              62729.0,
+              70.0,
+              1.12
+            ],
+            [
+              "RL-DGP-L2-250609",
+              43146.0,
+              66.0,
+              1.53
+            ],
+            [
+              "RL-DGP-L2-250908",
+              36577.0,
+              60.0,
+              1.64
+            ],
+            [
+              "RL-DGP-L2-250714",
+              22790.0,
+              35.0,
+              1.54
+            ],
+            [
+              "RL-DGP-L2-251201",
+              21143.0,
+              27.0,
+              1.28
+            ],
+            [
+              "RL-DGP-L2-251020",
+              18659.0,
+              27.0,
+              1.45
+            ],
+            [
+              "RL-DGP-L2-251110",
+              17719.0,
+              26.0,
+              1.47
+            ],
+            [
+              "RL-DGP-L2-241209",
+              17002.0,
+              19.0,
+              1.12
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "resin_lot_id",
+          "y": "base_crack_per_1000",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "15/15 figures traced to query results.",
+        "trace_id": "94b5151b-4ae3-4325-ae11-c96f9369abbb"
+      },
+      "requests": 8,
       "infra_retries": 0,
       "rate_limit_waits": 0
     }

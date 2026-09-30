@@ -301,3 +301,12 @@ def test_a_5xx_keeps_a_short_clean_reason_and_a_context_overflow_is_the_question
     with pytest.raises(ProviderError) as caught:
         provider(Server(crash)).complete("s", [{"role": "user", "content": "q"}], TOOLS, final_only=False, timeout=5)
     assert caught.value.kind == "infrastructure" and "unexpectedly stopped" in str(caught.value)
+
+
+def test_a_tool_call_the_server_cannot_parse_is_the_models_failure_not_an_outage():
+    # Seen live (Qwen on Ollama, MH02): the model's tool-call markup was malformed and Ollama answered 500. At
+    # temperature 0 it recurs on every retry, so it fails the question instead of pausing the run.
+    bad_markup = httpx2.Response(500, json={"error": {"message": "XML syntax error on line 13: element <parameter> closed by </function>"}})
+    with pytest.raises(ProviderError) as caught:
+        provider(Server(bad_markup)).complete("s", [{"role": "user", "content": "q"}], TOOLS, final_only=False, timeout=5)
+    assert caught.value.kind == "rejected" and "XML syntax error" in str(caught.value)

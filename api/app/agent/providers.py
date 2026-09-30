@@ -162,7 +162,11 @@ FINAL_INSTRUCTION = (
 )
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
 _CLOUDFLARE_DOWN = {520, 521, 522, 523, 524, 525, 526, 527, 530}
-_CONTEXT_OVERFLOW = re.compile(r"context (length|window)|too long|exceeds", re.IGNORECASE)
+# 5xx bodies that describe the model's own request or output, not a broken server: they recur on every retry at
+# temperature 0, so they fail the question instead of pausing the run (a prompt beyond the served context, or
+# tool-call markup the server couldn't parse).
+_QUESTION_FAILURE = re.compile(r"context (length|window)|too long|exceeds|syntax error|failed to parse|tool call",
+                               re.IGNORECASE)
 
 
 class OpenAICompatProvider:
@@ -213,8 +217,7 @@ class OpenAICompatProvider:
             raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res), _quota_id(res))
         if res.status_code >= 500 or res.status_code in _CLOUDFLARE_DOWN:
             reason = _error_text(res) if "json" in res.headers.get("content-type", "") else ""
-            # A prompt beyond the served context fails the same way every time: that question's failure, not an outage.
-            kind = "rejected" if _CONTEXT_OVERFLOW.search(reason) else "infrastructure"
+            kind = "rejected" if _QUESTION_FAILURE.search(reason) else "infrastructure"
             raise ProviderError(f"{self.name}: server error {res.status_code}{': ' + reason if reason else '.'}", kind,
                                 res.status_code)
         if res.status_code >= 400:

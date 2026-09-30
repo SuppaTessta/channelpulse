@@ -1,0 +1,1864 @@
+{
+  "throttle_state": {
+    "requests_by_day": {
+      "2026-09-29": 35
+    }
+  },
+  "results": {
+    "SL01": {
+      "id": "SL01",
+      "category": "simple_lookup",
+      "question": "What was our total primary sales value (sell-in to distributors) in Q1 FY27, April to June 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "primary_sales_value": true
+        },
+        "golden": {
+          "primary_sales_value": 1482535220.12
+        }
+      },
+      "answer_text": "Our total primary sales value (sell-in to distributors) in Q1 FY27 (April to June 2026) was 1,482,535,220.12 INR.",
+      "confidence_note": "1/1 figure traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_sales_value FROM marts.fct_primary_sales WHERE invoice_date >= '2026-04-01' AND invoice_date <= '2026-06-30') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_317843",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT sum(primary_value_inr) AS total_primary_sales_value\nFROM marts.fct_primary_sales\nWHERE invoice_date >= '2026-04-01' AND invoice_date <= '2026-06-30'\n"
+          },
+          "output": "{\"tool_use_id\":\"call_317843\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_sales_value FROM marts.fct_primary_sales WHERE invoice_date >= '2026-04-01' AND invoice_date <= '2026-06-30') AS q LIMIT 500\",\"row_count\":1,\"row_cap_hit\":false,\"columns\":[\"to",
+          "sql": "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_sales_value FROM marts.fct_primary_sales WHERE invoice_date >= '2026-04-01' AND invoice_date <= '2026-06-30') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 41,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            1482535220.12
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5570,
+        "output": 200,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2765,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "e91858d0-d007-4297-b632-078dad96237b",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:29:44+00:00",
+      "response": {
+        "answer_text": "Our total primary sales value (sell-in to distributors) in Q1 FY27 (April to June 2026) was 1,482,535,220.12 INR.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_sales_value FROM marts.fct_primary_sales WHERE invoice_date >= '2026-04-01' AND invoice_date <= '2026-06-30') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_primary_sales_value"
+          ],
+          "rows": [
+            [
+              1482535220.12
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "1/1 figure traced to query results.",
+        "trace_id": "e91858d0-d007-4297-b632-078dad96237b"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL02": {
+      "id": "SL02",
+      "category": "simple_lookup",
+      "question": "How much did distributors sell out to retailers, in rupees at list price, in FY25 (April 2024 to March 2025)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "secondary_sales_value": true
+        },
+        "golden": {
+          "secondary_sales_value": 5654720948.99
+        }
+      },
+      "answer_text": "In FY25 (April 2024 to March 2025), distributors sold out 5,654,720,948.99 rupees (at list price) to retailers.",
+      "confidence_note": "1/1 figure traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales WHERE sale_date >= '2024-04-01' AND sale_date <= '2025-03-31') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_297023",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT sum(secondary_value_inr) AS total_secondary_value_inr\nFROM marts.fct_secondary_sales\nWHERE sale_date >= '2024-04-01' AND sale_date <= '2025-03-31'\n"
+          },
+          "output": "{\"tool_use_id\":\"call_297023\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales WHERE sale_date >= '2024-04-01' AND sale_date <= '2025-03-31') AS q LIMIT 500\",\"row_count\":1,\"row_cap_hit\":false,\"columns\":[\"tota",
+          "sql": "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales WHERE sale_date >= '2024-04-01' AND sale_date <= '2025-03-31') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 156,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "secondary_sales_value"
+        ],
+        "rows": [
+          [
+            5654720948.99
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5583,
+        "output": 201,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2703,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "1e304736-5066-4702-8aa0-f0bb48b5b57e",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:29:47+00:00",
+      "response": {
+        "answer_text": "In FY25 (April 2024 to March 2025), distributors sold out 5,654,720,948.99 rupees (at list price) to retailers.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales WHERE sale_date >= '2024-04-01' AND sale_date <= '2025-03-31') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_secondary_value_inr"
+          ],
+          "rows": [
+            [
+              5654720948.99
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "1/1 figure traced to query results.",
+        "trace_id": "1e304736-5066-4702-8aa0-f0bb48b5b57e"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL03": {
+      "id": "SL03",
+      "category": "simple_lookup",
+      "question": "What was the company-wide DSO on invoices raised in FY26 (April 2025 to March 2026)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "dso_days": true
+        },
+        "golden": {
+          "dso_days": 39.78035017451129
+        }
+      },
+      "answer_text": "The company-wide average Days Sales Outstanding (DSO) on invoices raised in FY26 was approximately 50.87 days (simple average across 12,239 invoices totaling 4,890,601,104.28 INR), or 39.78 days when weighted by invoice amount.",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT AVG(days_outstanding) AS avg_dso, SUM(invoice_amount_inr) AS total_invoice_amount, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+        "SELECT * FROM (SELECT SUM(open_amount_inr) AS total_open_amount, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+        "SELECT * FROM (SELECT SUM(invoice_amount_inr * days_outstanding) / SUM(invoice_amount_inr) AS weighted_avg_dso, AVG(days_outstanding) AS simple_avg_dso, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_361525",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    AVG(days_outstanding) AS avg_dso,\n    SUM(invoice_amount_inr) AS total_invoice_amount,\n    COUNT(*) AS invoice_count\nFROM marts.fct_invoice_collections c\nJOIN marts.dim_date d ON c.invoice_date = d.date_day\nWHERE d.fiscal_year = 2026;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_361525\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT AVG(days_outstanding) AS avg_dso, SUM(invoice_amount_inr) AS total_invoice_amount, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.f",
+          "sql": "SELECT * FROM (SELECT AVG(days_outstanding) AS avg_dso, SUM(invoice_amount_inr) AS total_invoice_amount, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 79,
+          "error": null
+        },
+        {
+          "id": "call_386780",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    SUM(open_amount_inr) AS total_open_amount,\n    SUM(invoice_amount_inr) AS total_invoice_amount,\n    SUM(paid_amount_inr) AS total_paid_amount\nFROM marts.fct_invoice_collections c\nJOIN marts.dim_date d ON c.invoice_date = d.date_day\nWHERE d.fiscal_year = 2026;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_386780\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(open_amount_inr) AS total_open_amount, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_da",
+          "sql": "SELECT * FROM (SELECT SUM(open_amount_inr) AS total_open_amount, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 61,
+          "error": null
+        },
+        {
+          "id": "call_313771",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    SUM(invoice_amount_inr * days_outstanding) / SUM(invoice_amount_inr) AS weighted_avg_dso,\n    AVG(days_outstanding) AS simple_avg_dso,\n    COUNT(*) AS invoice_count\nFROM marts.fct_invoice_collections c\nJOIN marts.dim_date d ON c.invoice_date = d.date_day\nWHERE d.fiscal_year = 2026;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_313771\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(invoice_amount_inr * days_outstanding) / SUM(invoice_amount_inr) AS weighted_avg_dso, AVG(days_outstanding) AS simple_avg_dso, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_da",
+          "sql": "SELECT * FROM (SELECT SUM(invoice_amount_inr * days_outstanding) / SUM(invoice_amount_inr) AS weighted_avg_dso, AVG(days_outstanding) AS simple_avg_dso, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 61,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "dso_days"
+        ],
+        "rows": [
+          [
+            39.78035017451129
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 12625,
+        "output": 514,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 5282,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "ebc15666-e5fd-478c-a5ca-b2b8ffb1f7a9",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:29:50+00:00",
+      "response": {
+        "answer_text": "The company-wide average Days Sales Outstanding (DSO) on invoices raised in FY26 was approximately 50.87 days (simple average across 12,239 invoices totaling 4,890,601,104.28 INR), or 39.78 days when weighted by invoice amount.",
+        "sql": [
+          "SELECT * FROM (SELECT AVG(days_outstanding) AS avg_dso, SUM(invoice_amount_inr) AS total_invoice_amount, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "SELECT * FROM (SELECT SUM(open_amount_inr) AS total_open_amount, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "SELECT * FROM (SELECT SUM(invoice_amount_inr * days_outstanding) / SUM(invoice_amount_inr) AS weighted_avg_dso, AVG(days_outstanding) AS simple_avg_dso, COUNT(*) AS invoice_count FROM marts.fct_invoice_collections AS c JOIN marts.dim_date AS d ON c.invoice_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "avg_dso",
+            "total_invoice_amount",
+            "invoice_count"
+          ],
+          "rows": [
+            [
+              50.87253860609527,
+              4890601104.28,
+              12239
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "ebc15666-e5fd-478c-a5ca-b2b8ffb1f7a9"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL04": {
+      "id": "SL04",
+      "category": "simple_lookup",
+      "question": "For invoices raised in FY26, what share of the amount due was collected within payment terms (collections efficiency)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "collections_efficiency": true
+        },
+        "golden": {
+          "collections_efficiency": 0.3268571176048383
+        }
+      },
+      "answer_text": "For invoices raised in FY26, the total invoice amount was 4,890,601,104.28 INR, of which 1,598,527,803.30 INR was collected within payment terms. This represents a collection efficiency share of approximately 32.69%.",
+      "confidence_note": "3/3 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_within_terms_inr) AS total_paid_within_terms, CASE WHEN SUM(invoice_amount_inr) = 0 THEN 0 ELSE SUM(paid_within_terms_inr) / SUM(invoice_amount_inr) END AS collection_efficiency_share FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_205472",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    SUM(invoice_amount_inr) AS total_invoice_amount,\n    SUM(paid_within_terms_inr) AS total_paid_within_terms,\n    CASE \n        WHEN SUM(invoice_amount_inr) = 0 THEN 0 \n        ELSE SUM(paid_within_terms_inr) / SUM(invoice_amount_inr) \n    END AS collection_efficiency_share\nFROM marts.fct_invoice_collections\nWHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31';\n"
+          },
+          "output": "{\"tool_use_id\":\"call_205472\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_within_terms_inr) AS total_paid_within_terms, CASE WHEN SUM(invoice_amount_inr) = 0 THEN 0 ELSE SUM(paid_within_terms_inr) / SUM(invoice_amount_inr) END AS ",
+          "sql": "SELECT * FROM (SELECT SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_within_terms_inr) AS total_paid_within_terms, CASE WHEN SUM(invoice_amount_inr) = 0 THEN 0 ELSE SUM(paid_within_terms_inr) / SUM(invoice_amount_inr) END AS collection_efficiency_share FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 52,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "collections_efficiency"
+        ],
+        "rows": [
+          [
+            0.3268571176048383
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5748,
+        "output": 306,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2625,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "3ef31e37-9906-47a3-92e9-a56625c67e18",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:29:55+00:00",
+      "response": {
+        "answer_text": "For invoices raised in FY26, the total invoice amount was 4,890,601,104.28 INR, of which 1,598,527,803.30 INR was collected within payment terms. This represents a collection efficiency share of approximately 32.69%.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_within_terms_inr) AS total_paid_within_terms, CASE WHEN SUM(invoice_amount_inr) = 0 THEN 0 ELSE SUM(paid_within_terms_inr) / SUM(invoice_amount_inr) END AS collection_efficiency_share FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_invoice_amount",
+            "total_paid_within_terms",
+            "collection_efficiency_share"
+          ],
+          "rows": [
+            [
+              4890601104.28,
+              1598527780.3,
+              0.3268571176048383
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "3/3 figures traced to query results.",
+        "trace_id": "3ef31e37-9906-47a3-92e9-a56625c67e18"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL05": {
+      "id": "SL05",
+      "category": "simple_lookup",
+      "question": "How many days of stock did the channel hold overall, across all distributors and SKUs, in the week of Monday 14 September 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "channel_days_of_stock": false
+        },
+        "golden": {
+          "channel_days_of_stock": 43.654579927909
+        }
+      },
+      "answer_text": "In the week of Monday 14 September 2026, the channel held a total stock of 2,471,122 units, with an average days of stock of approximately 57.35 days (and a total stock-to-secondary ratio of 69.37 days).",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS avg_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = '2026-09-14' GROUP BY week_start) AS q LIMIT 500",
+        "SELECT * FROM (SELECT SUM(stock_units) AS total_stock, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS simple_avg_days_of_stock FROM marts.fct_channel_inventory_daily WHERE date_day = '2026-09-14') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_340108",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    sum(stock_units) as total_stock,\n    sum(avg_daily_secondary_units) as total_avg_daily_secondary,\n    -- weighted average days of stock or direct calculation\n    sum(stock_units)::numeric / nullif(sum(avg_daily_secondary_units), 0) as calculated_days_of_stock,\n    avg(days_of_stock) as simple_avg_days_of_stock\nFROM marts.fct_channel_inventory_daily\nWHERE date_day = '2026-09-14';\n"
+          },
+          "output": "{\"tool_use_id\":\"call_340108\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(stock_units) AS total_stock, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_s",
+          "sql": "SELECT * FROM (SELECT SUM(stock_units) AS total_stock, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS simple_avg_days_of_stock FROM marts.fct_channel_inventory_daily WHERE date_day = '2026-09-14') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 1085,
+          "error": null
+        },
+        {
+          "id": "call_312832",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    week_start,\n    sum(stock_units) as total_stock,\n    sum(stock_units)::numeric / nullif(sum(avg_daily_secondary_units), 0) as calculated_days_of_stock,\n    avg(days_of_stock) as avg_days_of_stock\nFROM marts.mart_channel_inventory_weekly\nWHERE week_start = '2026-09-14'\nGROUP BY week_start;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_312832\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS avg_days_of_stock FROM marts.mart_channe",
+          "sql": "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS avg_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = '2026-09-14' GROUP BY week_start) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 430,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "channel_days_of_stock"
+        ],
+        "rows": [
+          [
+            43.654579927909
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 9237,
+        "output": 431,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 48156,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "4daee5fd-aa45-4e5b-a4a9-e270b156183e",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:29:58+00:00",
+      "response": {
+        "answer_text": "In the week of Monday 14 September 2026, the channel held a total stock of 2,471,122 units, with an average days of stock of approximately 57.35 days (and a total stock-to-secondary ratio of 69.37 days).",
+        "sql": [
+          "SELECT * FROM (SELECT week_start, SUM(stock_units) AS total_stock, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS avg_days_of_stock FROM marts.mart_channel_inventory_weekly WHERE week_start = '2026-09-14' GROUP BY week_start) AS q LIMIT 500",
+          "SELECT * FROM (SELECT SUM(stock_units) AS total_stock, SUM(avg_daily_secondary_units) AS total_avg_daily_secondary, CAST(SUM(stock_units) AS DECIMAL) / NULLIF(SUM(avg_daily_secondary_units), 0) AS calculated_days_of_stock, AVG(days_of_stock) AS simple_avg_days_of_stock FROM marts.fct_channel_inventory_daily WHERE date_day = '2026-09-14') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "week_start",
+            "total_stock",
+            "calculated_days_of_stock",
+            "avg_days_of_stock"
+          ],
+          "rows": [
+            [
+              "2026-09-14",
+              2471122,
+              69.37231297762828,
+              57.3502646215156
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "4daee5fd-aa45-4e5b-a4a9-e270b156183e"
+      },
+      "requests": 3,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL06": {
+      "id": "SL06",
+      "category": "simple_lookup",
+      "question": "What is the warranty claim rate per 1,000 units shipped for tanks manufactured in calendar year 2024?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "claims_per_1000_units": true
+        },
+        "golden": {
+          "claims_per_1000_units": 60.72713519594247
+        }
+      },
+      "answer_text": "For tanks manufactured in calendar year 2024, there were 6,262 claims out of 103,117 units shipped, resulting in a warranty claim rate of 60.7271 claims per 1,000 units shipped.",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT EXTRACT(YEAR FROM mfg_date) AS mfg_year, category, SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped FROM marts.dim_batch WHERE category = 'tank' AND EXTRACT(YEAR FROM mfg_date) = 2024 GROUP BY EXTRACT(YEAR FROM mfg_date), category) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_356436",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    SUM(claims) AS total_claims,\n    SUM(units_shipped) AS total_shipped,\n    ROUND(SUM(claims)::numeric * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped\nFROM marts.dim_batch\nWHERE category = 'Tank'\n  AND EXTRACT(YEAR FROM mfg_date) = 2024\n"
+          },
+          "output": "{\"tool_use_id\":\"call_356436\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped FROM marts.dim_batch WHERE category = 'Tank",
+          "sql": "SELECT * FROM (SELECT SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped FROM marts.dim_batch WHERE category = 'Tank' AND EXTRACT(YEAR FROM mfg_date) = 2024) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 376,
+          "error": null
+        },
+        {
+          "id": "call_368222",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    category,\n    MIN(mfg_date),\n    MAX(mfg_date),\n    COUNT(*)\nFROM marts.dim_batch\nGROUP BY category\n"
+          },
+          "output": "{\"tool_use_id\":\"call_368222\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT category, MIN(mfg_date), MAX(mfg_date), COUNT(*) FROM marts.dim_batch GROUP BY category) AS q LIMIT 500\",\"row_count\":3,\"row_cap_hit\":false,\"columns\":[\"category\",\"min\",\"max\",\"count\"],\"rows\":[[\"pipe\",\"2022-10-01\",\"20",
+          "sql": "SELECT * FROM (SELECT category, MIN(mfg_date), MAX(mfg_date), COUNT(*) FROM marts.dim_batch GROUP BY category) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 260,
+          "error": null
+        },
+        {
+          "id": "call_376368",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    EXTRACT(YEAR FROM mfg_date) AS mfg_year,\n    category,\n    SUM(claims) AS total_claims,\n    SUM(units_shipped) AS total_shipped,\n    ROUND(SUM(claims)::numeric * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped\nFROM marts.dim_batch\nWHERE category = 'tank'\n  AND EXTRACT(YEAR FROM mfg_date) = 2024\nGROUP BY EXTRACT(YEAR FROM mfg_date), category\n"
+          },
+          "output": "{\"tool_use_id\":\"call_376368\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT EXTRACT(YEAR FROM mfg_date) AS mfg_year, category, SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_",
+          "sql": "SELECT * FROM (SELECT EXTRACT(YEAR FROM mfg_date) AS mfg_year, category, SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped FROM marts.dim_batch WHERE category = 'tank' AND EXTRACT(YEAR FROM mfg_date) = 2024 GROUP BY EXTRACT(YEAR FROM mfg_date), category) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 38,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "claims_per_1000_units"
+        ],
+        "rows": [
+          [
+            60.72713519594247
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 12573,
+        "output": 474,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 5797,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "c3663522-9bd7-4258-ae25-445e448b3cd6",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:30:46+00:00",
+      "response": {
+        "answer_text": "For tanks manufactured in calendar year 2024, there were 6,262 claims out of 103,117 units shipped, resulting in a warranty claim rate of 60.7271 claims per 1,000 units shipped.",
+        "sql": [
+          "SELECT * FROM (SELECT EXTRACT(YEAR FROM mfg_date) AS mfg_year, category, SUM(claims) AS total_claims, SUM(units_shipped) AS total_shipped, ROUND(CAST(SUM(claims) AS DECIMAL) * 1000 / NULLIF(SUM(units_shipped), 0), 4) AS claims_per_1000_shipped FROM marts.dim_batch WHERE category = 'tank' AND EXTRACT(YEAR FROM mfg_date) = 2024 GROUP BY EXTRACT(YEAR FROM mfg_date), category) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "mfg_year",
+            "category",
+            "total_claims",
+            "total_shipped",
+            "claims_per_1000_shipped"
+          ],
+          "rows": [
+            [
+              2024.0,
+              "tank",
+              6262.0,
+              103117.0,
+              60.7271
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "c3663522-9bd7-4258-ae25-445e448b3cd6"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL07": {
+      "id": "SL07",
+      "category": "simple_lookup",
+      "question": "What was the channel overstock rate, the share of distributor-SKU-days above 60 days of stock, over the 13 weeks from Monday 30 March to Sunday 28 June 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "overstock_rate": false
+        },
+        "golden": {
+          "overstock_rate": 0.31451620089826765
+        }
+      },
+      "answer_text": "Over the 13 weeks from 30 March to 28 June 2026, the channel overstock rate (share of distributor-SKU-days above 60 days of stock) was 24.41%, representing 138,405 overstock days out of 567,084 total measured days.",
+      "confidence_note": "6/7 figures traced to query results; untraced: 13.",
+      "sql": [
+        "SELECT * FROM (SELECT CAST(SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS DECIMAL) / CAST(COUNT(*) AS DECIMAL) AS overstock_rate, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days_count, COUNT(*) AS total_days_count FROM marts.fct_channel_inventory_daily WHERE date_day >= '2026-03-30' AND date_day <= '2026-06-28') AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_341838",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n    sum(case when days_of_stock > 60 then 1 else 0 end)::numeric / count(*)::numeric as overstock_rate,\n    sum(case when days_of_stock > 60 then 1 else 0 end) as overstock_days_count,\n    count(*) as total_days_count\nFROM marts.fct_channel_inventory_daily\nWHERE date_day >= '2026-03-30' AND date_day <= '2026-06-28';\n"
+          },
+          "output": "{\"tool_use_id\":\"call_341838\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT CAST(SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS DECIMAL) / CAST(COUNT(*) AS DECIMAL) AS overstock_rate, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days_count, COUNT(*) AS total_day",
+          "sql": "SELECT * FROM (SELECT CAST(SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS DECIMAL) / CAST(COUNT(*) AS DECIMAL) AS overstock_rate, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days_count, COUNT(*) AS total_days_count FROM marts.fct_channel_inventory_daily WHERE date_day >= '2026-03-30' AND date_day <= '2026-06-28') AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 401,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "overstock_rate"
+        ],
+        "rows": [
+          [
+            0.31451620089826765
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5761,
+        "output": 292,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 3172,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "47807c09-8fc6-44ec-88b4-4b2ef09a9b50",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:30:51+00:00",
+      "response": {
+        "answer_text": "Over the 13 weeks from 30 March to 28 June 2026, the channel overstock rate (share of distributor-SKU-days above 60 days of stock) was 24.41%, representing 138,405 overstock days out of 567,084 total measured days.",
+        "sql": [
+          "SELECT * FROM (SELECT CAST(SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS DECIMAL) / CAST(COUNT(*) AS DECIMAL) AS overstock_rate, SUM(CASE WHEN days_of_stock > 60 THEN 1 ELSE 0 END) AS overstock_days_count, COUNT(*) AS total_days_count FROM marts.fct_channel_inventory_daily WHERE date_day >= '2026-03-30' AND date_day <= '2026-06-28') AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "overstock_rate",
+            "overstock_days_count",
+            "total_days_count"
+          ],
+          "rows": [
+            [
+              0.2440643714158749,
+              138405,
+              567084
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/7 figures traced to query results; untraced: 13.",
+        "trace_id": "47807c09-8fc6-44ec-88b4-4b2ef09a9b50"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL08": {
+      "id": "SL08",
+      "category": "simple_lookup",
+      "question": "On average, how many days after the sale do distributors report their sell-out? Use the gap between sale date and reported date across all secondary sales records with a sale date in FY26.",
+      "expected_label": "ad_hoc_sql_verify",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "avg_reporting_lag_days": true
+        },
+        "golden": {
+          "avg_reporting_lag_days": 5.358127373214599
+        }
+      },
+      "answer_text": "Across all secondary sales records with a sale date in FY26, distributors report their sell-out an average of 5.36 days after the sale date (based on 148,006 records).",
+      "confidence_note": "2/2 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_reporting_lag_days, COUNT(*) AS total_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON s.sale_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_294283",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT avg(reporting_lag_days) AS avg_reporting_lag_days, count(*) AS total_records FROM marts.fct_secondary_sales s JOIN marts.dim_date d ON s.sale_date = d.date_day WHERE d.fiscal_year = 2026"
+          },
+          "output": "{\"tool_use_id\":\"call_294283\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_reporting_lag_days, COUNT(*) AS total_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON s.sale_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500\",\"row",
+          "sql": "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_reporting_lag_days, COUNT(*) AS total_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON s.sale_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 158,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "avg_reporting_lag_days"
+        ],
+        "rows": [
+          [
+            5.358127373214599
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5612,
+        "output": 198,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2781,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "254c89a6-c1e1-4f4a-9e51-d33fddeab398",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:30:55+00:00",
+      "response": {
+        "answer_text": "Across all secondary sales records with a sale date in FY26, distributors report their sell-out an average of 5.36 days after the sale date (based on 148,006 records).",
+        "sql": [
+          "SELECT * FROM (SELECT AVG(reporting_lag_days) AS avg_reporting_lag_days, COUNT(*) AS total_records FROM marts.fct_secondary_sales AS s JOIN marts.dim_date AS d ON s.sale_date = d.date_day WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "avg_reporting_lag_days",
+            "total_records"
+          ],
+          "rows": [
+            [
+              5.358127373214599,
+              148006
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "2/2 figures traced to query results.",
+        "trace_id": "254c89a6-c1e1-4f4a-9e51-d33fddeab398"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG01": {
+      "id": "FG01",
+      "category": "filtered_grouped",
+      "question": "Break down FY26 primary sales value by sales region.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "In FY26, primary sales value was led by South Bengal at 1,229,433,355.34 INR and Bihar & Jharkhand at 1,211,336,723.95 INR, followed by Odisha (822,928,105.36 INR), North East (713,184,149.36 INR), Assam (603,706,242.70 INR), and North Bengal & Sikkim (310,012,527.57 INR).",
+      "confidence_note": "6/6 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT region, SUM(primary_value_inr) AS total_primary_value_inr FROM marts.fct_primary_sales JOIN marts.dim_date ON fct_primary_sales.invoice_date = dim_date.date_day WHERE dim_date.fiscal_year = 2026 GROUP BY region ORDER BY total_primary_value_inr DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_347671",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT region, sum(primary_value_inr) AS total_primary_value_inr FROM marts.fct_primary_sales JOIN marts.dim_date ON fct_primary_sales.invoice_date = dim_date.date_day WHERE dim_date.fiscal_year = 2026 GROUP BY region ORDER BY total_primary_value_inr DESC;"
+          },
+          "output": "{\"tool_use_id\":\"call_347671\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT region, SUM(primary_value_inr) AS total_primary_value_inr FROM marts.fct_primary_sales JOIN marts.dim_date ON fct_primary_sales.invoice_date = dim_date.date_day WHERE dim_date.fiscal_year = 2026 GROUP BY region ORD",
+          "sql": "SELECT * FROM (SELECT region, SUM(primary_value_inr) AS total_primary_value_inr FROM marts.fct_primary_sales JOIN marts.dim_date ON fct_primary_sales.invoice_date = dim_date.date_day WHERE dim_date.fiscal_year = 2026 GROUP BY region ORDER BY total_primary_value_inr DESC) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 198,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            "Assam",
+            603706242.7
+          ],
+          [
+            "Bihar & Jharkhand",
+            1211336723.95
+          ],
+          [
+            "North Bengal & Sikkim",
+            310012527.57
+          ],
+          [
+            "North East",
+            713184149.36
+          ],
+          [
+            "Odisha",
+            822928105.36
+          ],
+          [
+            "South Bengal",
+            1229433355.34
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5670,
+        "output": 317,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 3234,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "10ea601f-4baf-4bd2-8fac-7702c08fe9b5",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:30:57+00:00",
+      "response": {
+        "answer_text": "In FY26, primary sales value was led by South Bengal at 1,229,433,355.34 INR and Bihar & Jharkhand at 1,211,336,723.95 INR, followed by Odisha (822,928,105.36 INR), North East (713,184,149.36 INR), Assam (603,706,242.70 INR), and North Bengal & Sikkim (310,012,527.57 INR).",
+        "sql": [
+          "SELECT * FROM (SELECT region, SUM(primary_value_inr) AS total_primary_value_inr FROM marts.fct_primary_sales JOIN marts.dim_date ON fct_primary_sales.invoice_date = dim_date.date_day WHERE dim_date.fiscal_year = 2026 GROUP BY region ORDER BY total_primary_value_inr DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "total_primary_value_inr"
+          ],
+          "rows": [
+            [
+              "South Bengal",
+              1229433355.34
+            ],
+            [
+              "Bihar & Jharkhand",
+              1211336723.95
+            ],
+            [
+              "Odisha",
+              822928105.36
+            ],
+            [
+              "North East",
+              713184149.36
+            ],
+            [
+              "Assam",
+              603706242.7
+            ],
+            [
+              "North Bengal & Sikkim",
+              310012527.57
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "total_primary_value_inr",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "6/6 figures traced to query results.",
+        "trace_id": "10ea601f-4baf-4bd2-8fac-7702c08fe9b5"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG02": {
+      "id": "FG02",
+      "category": "filtered_grouped",
+      "question": "What was secondary sales value by product category in FY26?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 4,
+        "expected": 4,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "In FY26, secondary sales values by product category were 3,059,024,344.86 INR for pipes, 1,063,001,838.57 INR for fittings, 1,006,228,094.97 INR for tanks, and 927,704,441.32 INR for sanitaryware.",
+      "confidence_note": "4/4 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT t.category, SUM(t.secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales AS t JOIN marts.dim_date AS d ON t.sale_date = d.date_day WHERE d.fiscal_year = 2026 GROUP BY t.category ORDER BY total_secondary_value_inr DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 4,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_219490",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT \n    t.category,\n    SUM(t.secondary_value_inr) AS total_secondary_value_inr\nFROM marts.fct_secondary_sales t\nJOIN marts.dim_date d ON t.sale_date = d.date_day\nWHERE d.fiscal_year = 2026\nGROUP BY t.category\nORDER BY total_secondary_value_inr DESC;"
+          },
+          "output": "{\"tool_use_id\":\"call_219490\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT t.category, SUM(t.secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales AS t JOIN marts.dim_date AS d ON t.sale_date = d.date_day WHERE d.fiscal_year = 2026 GROUP BY t.category ORDER BY t",
+          "sql": "SELECT * FROM (SELECT t.category, SUM(t.secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales AS t JOIN marts.dim_date AS d ON t.sale_date = d.date_day WHERE d.fiscal_year = 2026 GROUP BY t.category ORDER BY total_secondary_value_inr DESC) AS q LIMIT 500",
+          "row_count": 4,
+          "duration_ms": 154,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "category",
+          "secondary_sales_value"
+        ],
+        "rows": [
+          [
+            "fitting",
+            1063001838.57
+          ],
+          [
+            "pipe",
+            3059024344.86
+          ],
+          [
+            "sanitaryware",
+            927704441.32
+          ],
+          [
+            "tank",
+            1006228094.97
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5645,
+        "output": 287,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 45141,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "e6b9fdf6-c433-4c5e-aa5d-3952392e499c",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:31:01+00:00",
+      "response": {
+        "answer_text": "In FY26, secondary sales values by product category were 3,059,024,344.86 INR for pipes, 1,063,001,838.57 INR for fittings, 1,006,228,094.97 INR for tanks, and 927,704,441.32 INR for sanitaryware.",
+        "sql": [
+          "SELECT * FROM (SELECT t.category, SUM(t.secondary_value_inr) AS total_secondary_value_inr FROM marts.fct_secondary_sales AS t JOIN marts.dim_date AS d ON t.sale_date = d.date_day WHERE d.fiscal_year = 2026 GROUP BY t.category ORDER BY total_secondary_value_inr DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "category",
+            "total_secondary_value_inr"
+          ],
+          "rows": [
+            [
+              "pipe",
+              3059024344.86
+            ],
+            [
+              "fitting",
+              1063001838.57
+            ],
+            [
+              "tank",
+              1006228094.97
+            ],
+            [
+              "sanitaryware",
+              927704441.32
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "category",
+          "y": "total_secondary_value_inr",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "4/4 figures traced to query results.",
+        "trace_id": "e6b9fdf6-c433-4c5e-aa5d-3952392e499c"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG03": {
+      "id": "FG03",
+      "category": "filtered_grouped",
+      "question": "Which five distributors had the highest DSO on invoices raised in FY26?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 4,
+        "expected": 5,
+        "missing": [
+          {
+            "key": [
+              "D0129"
+            ],
+            "value": "dso_days"
+          }
+        ],
+        "extra_keys": [
+          [
+            "d0321"
+          ]
+        ],
+        "extra_keys_allowed": true
+      },
+      "answer_text": "The five distributors with the highest average Days Sales Outstanding (DSO) on invoices raised in FY26 are Mishra Agencies (81.70 days), Rina Pradhan Sales Corporation (79.00 days), Paul Traders (78.52 days), Roy & Sons (78.27 days), and Amit Sarkar & Sons (78.04 days).",
+      "confidence_note": "5/5 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT d.distributor_name, c.distributor_id, AVG(c.days_outstanding) AS avg_dso FROM marts.fct_invoice_collections AS c JOIN marts.dim_distributor AS d ON c.distributor_id = d.distributor_id JOIN marts.dim_date AS dt ON c.invoice_date = dt.date_day WHERE dt.fiscal_year = 2026 GROUP BY c.distributor_id, d.distributor_name ORDER BY avg_dso DESC LIMIT 5) AS q LIMIT 500"
+      ],
+      "data_rows": 5,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_298305",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT d.distributor_name, c.distributor_id, AVG(c.days_outstanding) AS avg_dso\nFROM marts.fct_invoice_collections c\nJOIN marts.dim_distributor d ON c.distributor_id = d.distributor_id\nJOIN marts.dim_date dt ON c.invoice_date = dt.date_day\nWHERE dt.fiscal_year = 2026\nGROUP BY c.distributor_id, d.distributor_name\nORDER BY avg_dso DESC\nLIMIT 5"
+          },
+          "output": "{\"tool_use_id\":\"call_298305\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT d.distributor_name, c.distributor_id, AVG(c.days_outstanding) AS avg_dso FROM marts.fct_invoice_collections AS c JOIN marts.dim_distributor AS d ON c.distributor_id = d.distributor_id JOIN marts.dim_date AS dt ON c",
+          "sql": "SELECT * FROM (SELECT d.distributor_name, c.distributor_id, AVG(c.days_outstanding) AS avg_dso FROM marts.fct_invoice_collections AS c JOIN marts.dim_distributor AS d ON c.distributor_id = d.distributor_id JOIN marts.dim_date AS dt ON c.invoice_date = dt.date_day WHERE dt.fiscal_year = 2026 GROUP BY c.distributor_id, d.distributor_name ORDER BY avg_dso DESC LIMIT 5) AS q LIMIT 500",
+          "row_count": 5,
+          "duration_ms": 2080,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "distributor_id",
+          "distributor_name",
+          "dso_days"
+        ],
+        "rows": [
+          [
+            "D0019",
+            "Mishra Agencies",
+            81.52914601101504
+          ],
+          [
+            "D0004",
+            "Rina Pradhan Sales Corporation",
+            79.2026269296205
+          ],
+          [
+            "D0133",
+            "Paul Traders",
+            78.37714093675413
+          ],
+          [
+            "D0199",
+            "Amit Sarkar & Sons",
+            78.18637277773085
+          ],
+          [
+            "D0129",
+            "Green Valley Marketing",
+            76.7177559641504
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5785,
+        "output": 300,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 4797,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "3aee60ae-7255-4c98-964a-54f29c6a5a65",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:31:46+00:00",
+      "response": {
+        "answer_text": "The five distributors with the highest average Days Sales Outstanding (DSO) on invoices raised in FY26 are Mishra Agencies (81.70 days), Rina Pradhan Sales Corporation (79.00 days), Paul Traders (78.52 days), Roy & Sons (78.27 days), and Amit Sarkar & Sons (78.04 days).",
+        "sql": [
+          "SELECT * FROM (SELECT d.distributor_name, c.distributor_id, AVG(c.days_outstanding) AS avg_dso FROM marts.fct_invoice_collections AS c JOIN marts.dim_distributor AS d ON c.distributor_id = d.distributor_id JOIN marts.dim_date AS dt ON c.invoice_date = dt.date_day WHERE dt.fiscal_year = 2026 GROUP BY c.distributor_id, d.distributor_name ORDER BY avg_dso DESC LIMIT 5) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "distributor_name",
+            "distributor_id",
+            "avg_dso"
+          ],
+          "rows": [
+            [
+              "Mishra Agencies",
+              "D0019",
+              81.70370370370371
+            ],
+            [
+              "Rina Pradhan Sales Corporation",
+              "D0004",
+              79.0
+            ],
+            [
+              "Paul Traders",
+              "D0133",
+              78.51851851851852
+            ],
+            [
+              "Roy & Sons",
+              "D0321",
+              78.27272727272727
+            ],
+            [
+              "Amit Sarkar & Sons",
+              "D0199",
+              78.03703703703704
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "distributor_name",
+          "y": "avg_dso",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "5/5 figures traced to query results.",
+        "trace_id": "3aee60ae-7255-4c98-964a-54f29c6a5a65"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG04": {
+      "id": "FG04",
+      "category": "filtered_grouped",
+      "question": "Compare warranty claims per 1,000 units shipped across our three plants, for tanks manufactured in FY25.",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 3,
+        "expected": 3,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For tanks manufactured in FY25, Durgapur Works recorded 63.70 claims per 1,000 units shipped (2,4238 units shipped, 1,544 claims), Guwahati Works recorded 63.58 claims per 1,000 units shipped (27,131 units shipped, 1,725 claims), and Howrah Works recorded 59.87 claims per 1,000 units shipped (51,377 units shipped, 3,076 claims).",
+      "confidence_note": "11/11 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT b.plant_id, b.plant_name, SUM(b.units_shipped) AS total_units_shipped, SUM(b.claims) AS total_claims, ROUND(CAST(SUM(b.claims) AS DECIMAL) * 1000 / NULLIF(SUM(b.units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON b.mfg_date = d.date_day WHERE d.fiscal_year = 2025 AND b.category ILIKE '%tank%' GROUP BY b.plant_id, b.plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500"
+      ],
+      "data_rows": 3,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_369530",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    b.plant_id,\n    b.plant_name,\n    SUM(b.units_shipped) AS total_units_shipped,\n    SUM(b.claims) AS total_claims,\n    ROUND(SUM(b.claims)::numeric * 1000 / NULLIF(SUM(b.units_shipped), 0), 2) AS claims_per_1000\nFROM marts.dim_batch b\nJOIN marts.dim_date d ON b.mfg_date = d.date_day\nWHERE d.fiscal_year = 2025\n  AND b.category ILIKE '%tank%'\nGROUP BY b.plant_id, b.plant_name\nORDER BY claims_per_1000 DESC;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_369530\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT b.plant_id, b.plant_name, SUM(b.units_shipped) AS total_units_shipped, SUM(b.claims) AS total_claims, ROUND(CAST(SUM(b.claims) AS DECIMAL) * 1000 / NULLIF(SUM(b.units_shipped), 0), 2) AS claims_per_1000 FROM marts.",
+          "sql": "SELECT * FROM (SELECT b.plant_id, b.plant_name, SUM(b.units_shipped) AS total_units_shipped, SUM(b.claims) AS total_claims, ROUND(CAST(SUM(b.claims) AS DECIMAL) * 1000 / NULLIF(SUM(b.units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON b.mfg_date = d.date_day WHERE d.fiscal_year = 2025 AND b.category ILIKE '%tank%' GROUP BY b.plant_id, b.plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 57,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "plant_id",
+          "plant_name",
+          "claims_per_1000_units"
+        ],
+        "rows": [
+          [
+            "DGP",
+            "Gangasagar Polymers Durgapur Works",
+            63.701625546662264
+          ],
+          [
+            "GHY",
+            "Gangasagar Polymers Guwahati Works",
+            63.58040617743541
+          ],
+          [
+            "HWH",
+            "Gangasagar Polymers Howrah Works",
+            59.87114856842556
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5880,
+        "output": 402,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 3031,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "c9b212e2-f102-49da-a374-31b947c67e10",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:31:51+00:00",
+      "response": {
+        "answer_text": "For tanks manufactured in FY25, Durgapur Works recorded 63.70 claims per 1,000 units shipped (2,4238 units shipped, 1,544 claims), Guwahati Works recorded 63.58 claims per 1,000 units shipped (27,131 units shipped, 1,725 claims), and Howrah Works recorded 59.87 claims per 1,000 units shipped (51,377 units shipped, 3,076 claims).",
+        "sql": [
+          "SELECT * FROM (SELECT b.plant_id, b.plant_name, SUM(b.units_shipped) AS total_units_shipped, SUM(b.claims) AS total_claims, ROUND(CAST(SUM(b.claims) AS DECIMAL) * 1000 / NULLIF(SUM(b.units_shipped), 0), 2) AS claims_per_1000 FROM marts.dim_batch AS b JOIN marts.dim_date AS d ON b.mfg_date = d.date_day WHERE d.fiscal_year = 2025 AND b.category ILIKE '%tank%' GROUP BY b.plant_id, b.plant_name ORDER BY claims_per_1000 DESC) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "plant_id",
+            "plant_name",
+            "total_units_shipped",
+            "total_claims",
+            "claims_per_1000"
+          ],
+          "rows": [
+            [
+              "DGP",
+              "Gangasagar Polymers Durgapur Works",
+              24238.0,
+              1544.0,
+              63.7
+            ],
+            [
+              "GHY",
+              "Gangasagar Polymers Guwahati Works",
+              27131.0,
+              1725.0,
+              63.58
+            ],
+            [
+              "HWH",
+              "Gangasagar Polymers Howrah Works",
+              51377.0,
+              3076.0,
+              59.87
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "plant_name",
+          "y": "claims_per_1000",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "11/11 figures traced to query results.",
+        "trace_id": "c9b212e2-f102-49da-a374-31b947c67e10"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG05": {
+      "id": "FG05",
+      "category": "filtered_grouped",
+      "question": "How does collections efficiency on FY26 invoices differ by distributor tier?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 3,
+        "missing": [
+          {
+            "key": [
+              "1"
+            ],
+            "value": "collections_efficiency"
+          },
+          {
+            "key": [
+              "2"
+            ],
+            "value": "collections_efficiency"
+          },
+          {
+            "key": [
+              "3"
+            ],
+            "value": "collections_efficiency"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For FY26 invoices, collection efficiency is 100% (1.0) across all distributor tiers (Tier 1, Tier 2, and Tier 3), with total paid amounts matching total invoice amounts. However, average days outstanding increases from 33.39 days for Tier 1 to 48.33 days for Tier 2 and 63.36 days for Tier 3, while average days past due remains consistent around 3.82 to 3.88 days across all tiers.",
+      "confidence_note": "7/7 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT tier, COUNT(invoice_id) AS invoice_count, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount, SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS collection_efficiency, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31' GROUP BY tier ORDER BY tier) AS q LIMIT 500"
+      ],
+      "data_rows": 3,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_406674",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "\nSELECT \n    tier,\n    COUNT(invoice_id) AS invoice_count,\n    SUM(invoice_amount_inr) AS total_invoice_amount,\n    SUM(paid_amount_inr) AS total_paid_amount,\n    SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS collection_efficiency,\n    AVG(days_outstanding) AS avg_days_outstanding,\n    AVG(days_past_due) AS avg_days_past_due\nFROM marts.fct_invoice_collections\nWHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31'\nGROUP BY tier\nORDER BY tier;\n"
+          },
+          "output": "{\"tool_use_id\":\"call_406674\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT tier, COUNT(invoice_id) AS invoice_count, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount, SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS collection_efficien",
+          "sql": "SELECT * FROM (SELECT tier, COUNT(invoice_id) AS invoice_count, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount, SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS collection_efficiency, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31' GROUP BY tier ORDER BY tier) AS q LIMIT 500",
+          "row_count": 3,
+          "duration_ms": 69,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "tier",
+          "collections_efficiency"
+        ],
+        "rows": [
+          [
+            "1",
+            0.3280136167070961
+          ],
+          [
+            "2",
+            0.333663356345303
+          ],
+          [
+            "3",
+            0.303709801396653
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5986,
+        "output": 384,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2891,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "6eb802dc-b498-4fd0-ba93-72a1cf54ce9e",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:31:54+00:00",
+      "response": {
+        "answer_text": "For FY26 invoices, collection efficiency is 100% (1.0) across all distributor tiers (Tier 1, Tier 2, and Tier 3), with total paid amounts matching total invoice amounts. However, average days outstanding increases from 33.39 days for Tier 1 to 48.33 days for Tier 2 and 63.36 days for Tier 3, while average days past due remains consistent around 3.82 to 3.88 days across all tiers.",
+        "sql": [
+          "SELECT * FROM (SELECT tier, COUNT(invoice_id) AS invoice_count, SUM(invoice_amount_inr) AS total_invoice_amount, SUM(paid_amount_inr) AS total_paid_amount, SUM(paid_amount_inr) / NULLIF(SUM(invoice_amount_inr), 0) AS collection_efficiency, AVG(days_outstanding) AS avg_days_outstanding, AVG(days_past_due) AS avg_days_past_due FROM marts.fct_invoice_collections WHERE invoice_date >= '2025-04-01' AND invoice_date <= '2026-03-31' GROUP BY tier ORDER BY tier) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "tier",
+            "invoice_count",
+            "total_invoice_amount",
+            "total_paid_amount",
+            "collection_efficiency",
+            "avg_days_outstanding",
+            "avg_days_past_due"
+          ],
+          "rows": [
+            [
+              "1",
+              2699,
+              3317151337.78,
+              3317151337.78,
+              1.0,
+              33.39384957391626,
+              3.8781030011115227
+            ],
+            [
+              "2",
+              4787,
+              1087846060.16,
+              1087846060.16,
+              1.0,
+              48.332776269062045,
+              3.841445581783998
+            ],
+            [
+              "3",
+              4753,
+              485603706.34,
+              485603706.34,
+              1.0,
+              63.355775299810645,
+              3.8241110877340625
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "tier",
+          "y": "avg_days_outstanding",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "7/7 figures traced to query results.",
+        "trace_id": "6eb802dc-b498-4fd0-ba93-72a1cf54ce9e"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG06": {
+      "id": "FG06",
+      "category": "filtered_grouped",
+      "question": "For tanks installed during calendar 2025, how does the installer claim rate per 1,000 installs compare between certified and non-certified installers?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "matched": 0,
+        "expected": 2,
+        "missing": [
+          {
+            "key": [
+              false
+            ],
+            "value": "installer_claim_rate"
+          },
+          {
+            "key": [
+              true
+            ],
+            "value": "installer_claim_rate"
+          }
+        ],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For tanks installed during calendar 2025, certified installers had a claim rate of 39.83 per 1,000 installs (12,667,068 units installed and 48,455 claims), while non-certified installers had a claim rate of 39.35 per 1,000 installs (9,818,235 units installed and 36,429 claims).",
+      "confidence_note": "8/8 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT i.is_certified, SUM(i.units_installed) AS total_units_installed, SUM(i.claims) AS total_claims, ROUND(SUM(i.cumulative_claims) / NULLIF(SUM(i.units_installed), 0) * 1000, 2) AS claim_rate_per_1000 FROM marts.mart_installer_claim_cohorts AS i JOIN marts.dim_date AS d ON i.install_month = d.month_start WHERE d.iso_year = 2025 GROUP BY i.is_certified) AS q LIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_364140",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n    i.is_certified,\n    SUM(i.units_installed) AS total_units_installed,\n    SUM(i.claims) AS total_claims,\n    ROUND(SUM(i.cumulative_claims) / NULLIF(SUM(i.units_installed), 0) * 1000, 2) AS claim_rate_per_1000\nFROM marts.mart_installer_claim_cohorts i\nJOIN marts.dim_date d ON i.install_month = d.month_start\nWHERE d.iso_year = 2025\nGROUP BY i.is_certified;"
+          },
+          "output": "{\"tool_use_id\":\"call_364140\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT i.is_certified, SUM(i.units_installed) AS total_units_installed, SUM(i.claims) AS total_claims, ROUND(SUM(i.cumulative_claims) / NULLIF(SUM(i.units_installed), 0) * 1000, 2) AS claim_rate_per_1000 FROM marts.mart_i",
+          "sql": "SELECT * FROM (SELECT i.is_certified, SUM(i.units_installed) AS total_units_installed, SUM(i.claims) AS total_claims, ROUND(SUM(i.cumulative_claims) / NULLIF(SUM(i.units_installed), 0) * 1000, 2) AS claim_rate_per_1000 FROM marts.mart_installer_claim_cohorts AS i JOIN marts.dim_date AS d ON i.install_month = d.month_start WHERE d.iso_year = 2025 GROUP BY i.is_certified) AS q LIMIT 500",
+          "row_count": 2,
+          "duration_ms": 375,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "is_certified",
+          "installer_claim_rate"
+        ],
+        "rows": [
+          [
+            false,
+            57.809330628803245
+          ],
+          [
+            true,
+            59.82199857298434
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5782,
+        "output": 345,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 3250,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "e5d59066-013b-4af1-99c3-76d4cd262c1e",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:31:57+00:00",
+      "response": {
+        "answer_text": "For tanks installed during calendar 2025, certified installers had a claim rate of 39.83 per 1,000 installs (12,667,068 units installed and 48,455 claims), while non-certified installers had a claim rate of 39.35 per 1,000 installs (9,818,235 units installed and 36,429 claims).",
+        "sql": [
+          "SELECT * FROM (SELECT i.is_certified, SUM(i.units_installed) AS total_units_installed, SUM(i.claims) AS total_claims, ROUND(SUM(i.cumulative_claims) / NULLIF(SUM(i.units_installed), 0) * 1000, 2) AS claim_rate_per_1000 FROM marts.mart_installer_claim_cohorts AS i JOIN marts.dim_date AS d ON i.install_month = d.month_start WHERE d.iso_year = 2025 GROUP BY i.is_certified) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "is_certified",
+            "total_units_installed",
+            "total_claims",
+            "claim_rate_per_1000"
+          ],
+          "rows": [
+            [
+              false,
+              9818235.0,
+              36429.0,
+              39.35
+            ],
+            [
+              true,
+              12667068.0,
+              48455.0,
+              39.83
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "is_certified",
+          "y": "claim_rate_per_1000",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "8/8 figures traced to query results.",
+        "trace_id": "e5d59066-013b-4af1-99c3-76d4cd262c1e"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG07": {
+      "id": "FG07",
+      "category": "filtered_grouped",
+      "question": "What was the average distributor health score in each region for the week starting Monday 14 September 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "For the week starting Monday 14 September 2026, the average distributor health score by region was 49.75 in Assam, 49.77 in Bihar & Jharkhand, 49.85 in North Bengal & Sikkim, 49.80 in North East, 49.73 in Odisha, and 49.72 in South Bengal.",
+      "confidence_note": "7/7 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score FROM marts.mart_distributor_health_weekly WHERE week_start = '2026-09-14' GROUP BY region ORDER BY region) AS q LIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_252730",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT region, avg(health_score) AS avg_health_score FROM marts.mart_distributor_health_weekly WHERE week_start = '2026-09-14' GROUP BY region ORDER BY region"
+          },
+          "output": "{\"tool_use_id\":\"call_252730\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score FROM marts.mart_distributor_health_weekly WHERE week_start = '2026-09-14' GROUP BY region ORDER BY region) AS q LIMIT 500\",\"row_count\":6,\"row_cap_hit\":false,\"columns\":[",
+          "sql": "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score FROM marts.mart_distributor_health_weekly WHERE week_start = '2026-09-14' GROUP BY region ORDER BY region) AS q LIMIT 500",
+          "row_count": 6,
+          "duration_ms": 36,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "distributor_health_score"
+        ],
+        "rows": [
+          [
+            "Assam",
+            49.751020408163264
+          ],
+          [
+            "Bihar & Jharkhand",
+            49.77
+          ],
+          [
+            "North Bengal & Sikkim",
+            49.851724137931036
+          ],
+          [
+            "North East",
+            49.79833333333333
+          ],
+          [
+            "Odisha",
+            49.729268292682924
+          ],
+          [
+            "South Bengal",
+            49.72
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5632,
+        "output": 229,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 2578,
+      "served_model": "gemini-3.5-flash-lite",
+      "trace_id": "c6ef90b3-1726-4f2a-a028-2007d157925a",
+      "error": null,
+      "provider": "gemini",
+      "mode": "raw",
+      "asked_at": "2026-09-30T03:32:00+00:00",
+      "response": {
+        "answer_text": "For the week starting Monday 14 September 2026, the average distributor health score by region was 49.75 in Assam, 49.77 in Bihar & Jharkhand, 49.85 in North Bengal & Sikkim, 49.80 in North East, 49.73 in Odisha, and 49.72 in South Bengal.",
+        "sql": [
+          "SELECT * FROM (SELECT region, AVG(health_score) AS avg_health_score FROM marts.mart_distributor_health_weekly WHERE week_start = '2026-09-14' GROUP BY region ORDER BY region) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "region",
+            "avg_health_score"
+          ],
+          "rows": [
+            [
+              "Assam",
+              49.751020408163264
+            ],
+            [
+              "Bihar & Jharkhand",
+              49.77
+            ],
+            [
+              "North Bengal & Sikkim",
+              49.851724137931036
+            ],
+            [
+              "North East",
+              49.79833333333333
+            ],
+            [
+              "Odisha",
+              49.729268292682924
+            ],
+            [
+              "South Bengal",
+              49.72
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "region",
+          "y": "avg_health_score",
+          "series": null
+        },
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "7/7 figures traced to query results.",
+        "trace_id": "c6ef90b3-1726-4f2a-a028-2007d157925a"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    }
+  },
+  "meta": {
+    "provider": "gemini",
+    "mode": "raw",
+    "model": "gemini-3.5-flash-lite",
+    "effort": "provider default",
+    "as_of": "2026-09-23",
+    "pinned_as_of": "2026-09-23",
+    "region": "ALL",
+    "git_commit": "9f89f5e71d2dc986ed270ccc3764d9238a2a2def",
+    "timestamp": "2026-09-30T03:29:43+00:00",
+    "budget_usd": 5.0,
+    "question_count": 40,
+    "golden_count": 32,
+    "selected": [
+      "SL01",
+      "SL02",
+      "SL03",
+      "SL04",
+      "SL05",
+      "SL06",
+      "SL07",
+      "SL08",
+      "FG01",
+      "FG02",
+      "FG03",
+      "FG04",
+      "FG05",
+      "FG06",
+      "FG07",
+      "FG08",
+      "TC01",
+      "TC02",
+      "TC03",
+      "TC04",
+      "TC05",
+      "TC06",
+      "TC07",
+      "TC08",
+      "MH01",
+      "MH02",
+      "MH03",
+      "MH04",
+      "MH05",
+      "MH06",
+      "MH07",
+      "MH08",
+      "TR01",
+      "TR02",
+      "TR03",
+      "TR04",
+      "TR05",
+      "TR06",
+      "TR07",
+      "TR08"
+    ],
+    "settings": {
+      "temperature": 0.0,
+      "reasoning_effort": "provider default",
+      "thinking": "provider default (minimal)"
+    },
+    "agent_timeout_s": 300
+  }
+}

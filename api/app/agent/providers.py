@@ -339,11 +339,13 @@ def from_env(anthropic_client=None) -> Provider | None:
         base, model = env("OLLAMA_BASE_URL"), env("OLLAMA_MODEL")
         if not base or not model:
             return None
-        record = {"thinking": env("OLLAMA_THINKING")} if env("OLLAMA_THINKING") else {}
-        extra = {"think": env("OLLAMA_THINKING", "").lower() not in ("off", "false", "0")} if env("OLLAMA_THINKING") else {}
+        # Ollama's /v1 ignores `think: false` but honours reasoning_effort "none" (verified live, D35).
+        thinking_off = env("OLLAMA_THINKING", "").lower() in ("off", "false", "0", "none")
+        reasoning = env("OLLAMA_REASONING_EFFORT") or ("none" if thinking_off else None)
+        record = {"thinking": f"off (reasoning_effort={reasoning})" if reasoning == "none"
+                  else (reasoning or "server default")}
         return OpenAICompatProvider("ollama", base.rstrip("/") + "/v1", model, env("OLLAMA_API_TOKEN") or None,
-                                    temperature=temperature, reasoning_effort=env("OLLAMA_REASONING_EFFORT") or None,
-                                    extra=extra, record=record,
+                                    temperature=temperature, reasoning_effort=reasoning, record=record,
                                     call_timeout=float(env("OLLAMA_CALL_TIMEOUT_S", "300")))
     raise ValueError(f"Unknown CHANNELPULSE_PROVIDER {name!r}: use gemini, ollama or anthropic.")
 
@@ -362,8 +364,9 @@ def ollama_show(base_url: str, model: str, token: str | None = None, http: httpx
         raise ProviderError(f"ollama: /api/show failed ({type(e).__name__}).", "infrastructure") from None
     details, model_info = info.get("details") or {}, info.get("model_info") or {}
     trained = next((v for k, v in model_info.items() if k.endswith(".context_length")), None)
-    num_ctx = next((int(line.split()[-1]) for line in (info.get("parameters") or "").splitlines()
-                    if line.split()[:1] == ["num_ctx"]), None)
+    parameters = dict(line.split(None, 1) for line in (info.get("parameters") or "").splitlines() if line.strip())
+    parameters = {k: v.strip() for k, v in parameters.items()}
+    num_ctx = int(parameters["num_ctx"]) if parameters.get("num_ctx", "").isdigit() else None
     return {
         "quantization": details.get("quantization_level"),
         "context_length": num_ctx or trained,  # num_ctx is what the served tag runs with; else the model's trained length
@@ -371,4 +374,6 @@ def ollama_show(base_url: str, model: str, token: str | None = None, http: httpx
         "family": details.get("family"),
         "parameter_size": details.get("parameter_size"),
         "format": details.get("format"),
+        "server_parameters": parameters,  # e.g. temperature, num_ctx, draft_num_predict (MTP)
+        "server_thinking_default": (info.get("thinking") or {}).get("default"),
     }

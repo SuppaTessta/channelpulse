@@ -162,6 +162,7 @@ def test_ollama_show_reports_what_the_server_says():
     ok = httpx2.Client(transport=httpx2.MockTransport(lambda r: httpx2.Response(200, json=body)))
     facts = ollama_show("https://secret.example", "m", http=ok)
     assert (facts["quantization"], facts["context_length"], facts["context_length_trained"]) == ("Q4_K_M", 65536, 131072)
+    assert facts["server_parameters"] == {"temperature": "0.6", "num_ctx": "65536"}
     down = httpx2.Client(transport=httpx2.MockTransport(lambda r: httpx2.Response(530, text="<html>")))
     with pytest.raises(ProviderError) as caught:
         ollama_show("https://secret.example", "m", http=down)

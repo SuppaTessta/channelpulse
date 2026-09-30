@@ -277,3 +277,15 @@ def test_a_429_carries_the_quota_it_hit():
         provider(Server(httpx2.Response(429, json=body))).complete("s", [{"role": "user", "content": "q"}], TOOLS,
                                                                     final_only=False, timeout=5)
     assert (caught.value.quota_id, caught.value.retry_after) == ("GenerateRequestsPerDayPerProjectPerModel-FreeTier", 23)
+
+
+def test_ollama_thinking_off_sends_reasoning_effort_none(monkeypatch):
+    # Verified live on 2026-09-30: Ollama's /v1 ignores `think: false` but honours reasoning_effort "none".
+    monkeypatch.setattr(config, "PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_BASE_URL", BASE)
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3.8-27b-64k")
+    monkeypatch.setenv("OLLAMA_THINKING", "off")
+    monkeypatch.delenv("OLLAMA_REASONING_EFFORT", raising=False)
+    built = providers.from_env()
+    assert built._reasoning == "none" and "think" not in built._extra
+    assert built.settings()["thinking"] == "off (reasoning_effort=none)"

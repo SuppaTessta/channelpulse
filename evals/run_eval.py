@@ -356,6 +356,7 @@ def build_recording(meta: dict, status: str, results: list[dict]) -> dict:
             "id": r["id"], "category": r["category"], "question": r["question"], "response": r["response"],
             "eval": {"correct": r["correct"], "label_correct": r["label_correct"]},
             "served_model": r["served_model"], "latency_ms": r["latency_ms"], "cost_usd": r["cost_usd"],
+            "trace": _trace(meta, r),
         }
         for r in results
         if r.get("response")
@@ -364,6 +365,17 @@ def build_recording(meta: dict, status: str, results: list[dict]) -> dict:
         "provider": meta.get("provider", "anthropic"),
         "model": meta["model"], "effort": meta["effort"], "recorded_at": meta["timestamp"], "as_of": meta["as_of"],
         "region": meta["region"], "status": status, "git_commit": meta["git_commit"], "answers": answers,
+    }
+
+
+def _trace(meta: dict, r: dict) -> dict:
+    """The answer's ops.agent_traces-shaped row, for the traces view in replay (decisions D40)."""
+    return {
+        "trace_id": r["trace_id"], "created_at": r.get("asked_at") or meta["timestamp"],
+        "provider": r.get("provider") or meta.get("provider", "anthropic"), "model": meta["model"],
+        "served_model": r["served_model"], "tool_calls": r["tool_calls"],
+        **{f"{kind}_tokens": r["tokens"][kind] for kind in ("input", "output", "cache_read", "cache_write")},
+        "latency_ms": r["latency_ms"], "est_cost_usd": r["cost_usd"],
     }
 
 

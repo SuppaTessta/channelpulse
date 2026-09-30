@@ -55,7 +55,9 @@ def test_the_recording_keeps_each_answer_as_served_with_its_eval_verdict():
             "as_of": "2026-09-23", "region": "ALL", "git_commit": "abc"}
     results = [
         {"id": "T1", "category": "trap", "question": "?", "response": RESPONSE, "correct": True,
-         "label_correct": True, "served_model": "claude-opus-5-5", "latency_ms": 5, "cost_usd": 0.01},
+         "label_correct": True, "served_model": "claude-opus-5-5", "latency_ms": 5, "cost_usd": 0.01,
+         "trace_id": "tr-1", "asked_at": "2026-09-28T10:01:00+00:00", "tool_calls": [],
+         "tokens": {"input": 10, "output": 2, "cache_read": 0, "cache_write": 0}},
         {"id": "Q1", "category": "simple_lookup", "question": "?", "response": None, "correct": False,
          "label_correct": False, "served_model": None, "latency_ms": 5, "cost_usd": 0.0},
     ]
@@ -64,6 +66,9 @@ def test_the_recording_keeps_each_answer_as_served_with_its_eval_verdict():
         "claude-opus-5-5", "2026-09-28T10:00:00+00:00", "ALL", "complete")
     assert [a["id"] for a in rec["answers"]] == ["T1"]  # an agent error has no answer to replay
     assert rec["answers"][0]["response"] == RESPONSE and rec["answers"][0]["eval"] == {"correct": True, "label_correct": True}
+    trace = rec["answers"][0]["trace"]  # the traces view's row in replay (D40)
+    assert (trace["trace_id"], trace["created_at"], trace["input_tokens"], trace["model"]) == (
+        "tr-1", "2026-09-28T10:01:00+00:00", 10, "claude-opus-5-5")
 
 
 def test_end_of_input_counts_as_no(monkeypatch):

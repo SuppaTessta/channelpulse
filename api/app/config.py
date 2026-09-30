@@ -36,6 +36,9 @@ DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "5.00"))
 # Paid model calls are opt-in: /api/ask answers live only when this is "1" AND credentials resolve. Otherwise the
 # Ask page replays answers recorded by an eval run (decisions D29).
 ASK_LIVE = env("ASK_LIVE") == "1"
+# The traces view serves live ops.agent_traces rows (visitors' questions) only to a request carrying this token in
+# X-Admin-Token. Unset, they're never served; the eval's recorded traces are served either way (decisions D40).
+ADMIN_TOKEN = env("ADMIN_TOKEN") or None
 
 CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", *(o.strip() for o in env("CORS_ORIGINS", "").split(",") if o.strip())]
 

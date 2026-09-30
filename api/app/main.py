@@ -6,11 +6,11 @@ from typing import Annotated, Any, Literal
 
 import anthropic
 import psycopg
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app import config, replay, semantic
+from app import config, replay, semantic, traces
 from app.agent.loop import AgentError, run_agent
 from app.agent.providers import Provider, ProviderError, from_env
 from app.agent.trace import Trace, write_trace
@@ -246,6 +246,56 @@ def ask(body: AskRequest, region: Region, provider: LLM) -> dict:
             write_trace(trace)
         except psycopg.Error:
             log.exception("could not write trace %s", trace.trace_id)
+
+
+class TraceList(BaseModel):
+    total: int
+    traces: list[dict[str, Any]]
+    facets: dict[str, dict[str, int]]
+    totals: dict[str, Any]
+    live: Literal["included", "admin_only", "unavailable"]
+    withheld: bool  # recordings exist under another region claim
+
+
+def _all_traces(region: str, admin_token: str | None) -> tuple[list[dict], str]:
+    rows, live = traces.recorded(region), "admin_only"
+    if traces.is_admin(admin_token):
+        try:
+            rows += traces.live()
+            live = "included"
+        except psycopg.Error:
+            log.exception("could not read ops.agent_traces")
+            live = "unavailable"
+    return rows, live
+
+
+@app.get("/api/traces", response_model=TraceList)
+def list_traces(
+    region: Region,
+    source: str | None = None,
+    label: str | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+    category: str | None = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=traces.PAGE_MAX)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    x_admin_token: Annotated[str | None, Header()] = None,
+) -> dict:
+    """The admin traces view: recorded eval traces, plus live ones for the admin token; filtered and paged."""
+    rows, live = _all_traces(region, x_admin_token)
+    filters = {"source": source, "label": label, "provider": provider, "model": model, "category": category}
+    withheld = not rows and any(r["region"] != region for r in replay.load_all())
+    return traces.listing(rows, filters, q, limit, offset) | {"live": live, "withheld": withheld}
+
+
+@app.get("/api/traces/{trace_id}")
+def get_trace(trace_id: str, region: Region, x_admin_token: Annotated[str | None, Header()] = None) -> dict:
+    rows, _ = _all_traces(region, x_admin_token)
+    match = next((r for r in rows if r["trace_id"] == trace_id), None)
+    if match is None:
+        raise HTTPException(404, "No trace with that id is visible to this request.")
+    return match
 
 
 def _governed(handler, tool_input: dict, region: str) -> dict:

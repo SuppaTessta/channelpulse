@@ -13,13 +13,18 @@ RECORDINGS = Path(__file__).with_name("recordings")
 _SUMMARY = ("provider", "model", "effort", "recorded_at", "as_of", "region", "status", "git_commit")
 
 
-def load() -> dict | None:
-    """The newest recording from the configured provider, else the newest one; None before any eval run."""
+def load_all() -> list[dict]:
     recordings = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(RECORDINGS.glob("*.json"))]
-    if not recordings:
-        return None
     for r in recordings:
         r.setdefault("provider", "anthropic")  # recordings from before the provider layer
+    return recordings
+
+
+def load() -> dict | None:
+    """The newest recording from the configured provider, else the newest one; None before any eval run."""
+    recordings = load_all()
+    if not recordings:
+        return None
     own = [r for r in recordings if r["provider"] == config.PROVIDER]
     return max(own or recordings, key=lambda r: r["recorded_at"])
 

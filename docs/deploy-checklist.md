@@ -29,7 +29,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - `SUPABASE_DB_URL`: the Session pooler string from step 1, with the admin user;
   - `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`: the two passwords from step 1.
 
-  Do **not** add `ANTHROPIC_API_KEY`: no workflow may ever hold a model credential (a test enforces it).
+  Do **not** add any model key (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) or an Ollama URL: no workflow may ever hold a model credential (a test enforces it).
 - [ ] Run the refresh once by hand: Actions → daily → Run workflow. It builds the warehouse through yesterday (IST) in a throwaway Postgres, then publishes `marts` to Supabase and creates the two roles with your passwords. The "Freshness check" step must pass, showing the published date equal to yesterday.
 - [ ] Note that GitHub turns off scheduled workflows in public repos after 60 days without activity. A commit or a manual run resets the clock.
 
@@ -39,7 +39,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - `AGENT_DATABASE_URL`: `postgresql://channelpulse_agent.<ref>:<AGENT_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
   - `DATABASE_URL`: the same agent string. It's used only by `/health`, so it never needs admin rights.
   - `OPS_DATABASE_URL`: `postgresql://channelpulse_ops.<ref>:<OPS_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
-  - `ANTHROPIC_API_KEY`: leave it empty for replay only.
+  - `GEMINI_API_KEY`: leave it empty for replay only.
   - `CORS_ORIGINS`: leave it empty for now, and fill it in after step 4.
 - [ ] Keep `ASK_LIVE=0`, as the blueprint sets it: this is replay mode.
 - [ ] Check that `https://<render-url>/health` returns `{"status":"ok","db":"ok"}`.
@@ -66,8 +66,8 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 
 ## 6. Live mode (optional, later, costs money)
 Live mode only turns on when you set both variables below.
-- [ ] Before enabling, set a monthly spend limit in the Anthropic Console as a second fence.
-- [ ] On Render, set `ANTHROPIC_API_KEY`, then `ASK_LIVE=1`.
+- [ ] Pick the provider. The default is Gemini's free tier: set `GEMINI_API_KEY` (and `GEMINI_MODEL` if it isn't `gemini-3.5-flash-lite`). The free tier may use prompts to improve Google's products; that's acceptable here only because every row is synthetic. For Claude, set `CHANNELPULSE_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, and set a monthly spend limit in the Anthropic Console as a second fence.
+- [ ] On Render, set that key, then `ASK_LIVE=1`.
 - [ ] Two limits in `render.yaml` then apply to every live question:
   - a per-IP rate limit, `ASK_RATE_PER_MIN=4`, with the client IP taken from `X-Forwarded-For` (`TRUST_PROXY=1`);
   - a daily spend cap, `DAILY_SPEND_CAP_USD=2.00`, computed from each question's traced cost. Past it, `/api/ask` answers 503 until the next UTC day.

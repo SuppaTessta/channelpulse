@@ -4,7 +4,7 @@ ChannelPulse is a portfolio project with four parts:
 - a synthetic but realistic Indian building-products manufacturer;
 - a dbt-modelled Postgres warehouse;
 - a KPI dashboard;
-- a Claude-powered "ask your data" analyst.
+- an "ask your data" analyst behind a swappable model provider (Gemini, a self-hosted open-weight model via Ollama, or Claude).
 
 The analyst answers through a governed semantic layer, cites the SQL behind every answer, refuses what it can't answer, and is scored by a published evaluation harness. The point is trust engineering, not a chatbot: the project is deliberately built to look nothing like a thin "LLM writes SQL against raw tables" wrapper. It holds the same standard as the rest of the portfolio: it ships in Docker, has tests, runs in CI, and has no notebooks as deliverables.
 
@@ -26,16 +26,16 @@ See [docs/architecture.md](docs/architecture.md) for the full diagram and trust 
 generator/ (rules-based simulator) -> raw -> dbt staging -> intermediate -> marts (RLS)
                                                           semantic_models/ -> MetricFlow (compile-only, in the API)
 detectors/ (pre-registered scans) -> marts.mart_anomaly_flags
-api/ (FastAPI): governed query_metric | guarded run_readonly_sql | get_anomalies | hand-rolled Claude loop
+api/ (FastAPI): governed query_metric | guarded run_readonly_sql | get_anomalies | hand-rolled tool-use loop over any provider
 web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · Ask ChannelPulse
 ```
 
 | Layer | What it is |
 |---|---|
 | Data | 36 months, 2023-10-01 to 2026-09-23, 1.84M raw rows. It's a simulator, not a CSV: four anomalies emerge from its rules. |
-| Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 123 tests (schema plus business logic). |
-| Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 50 metrics, including the 12 below. MetricFlow compiles the SQL at query time. |
-| Agent | Claude (`claude-opus-5-5` at medium effort by default, `CHANNELPULSE_MODEL` to change; adaptive thinking, server-side refusal fallback) in a hand-rolled tool-use loop with five tools. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
+| Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 125 tests (schema plus business logic). |
+| Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 50 metrics, including the 12 below, with calendar and Indian fiscal (April–March) time grains. MetricFlow compiles the SQL at query time. |
+| Agent | A hand-rolled tool-use loop with five tools behind a thin provider interface (D31): Gemini by default (`gemini-3.5-flash-lite`, free tier), Ollama for a self-hosted open-weight model, or Anthropic's Claude, switched by `CHANNELPULSE_PROVIDER`. The Anthropic adapter is unit-tested but was **not evaluated live**; the scorecard below is Gemini and Qwen. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
 | Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, a daily spend cap, and a trace of every question. |
 
 ## Quickstart
@@ -57,7 +57,7 @@ make acceptance        # black-box check that the planted anomalies are in the d
 make down
 ```
 
-All Python runs from the repo-root `.venv`. Nothing needs an Anthropic key. Without one (or without `ASK_LIVE=1`), the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists.
+All Python runs from the repo-root `.venv`. Nothing needs a model key. Without a configured provider (or without `ASK_LIVE=1`), the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists.
 
 Timings are from a clean clone on the Windows build machine (decisions E2); the sequence above was run end to end there, finishing with `make smoke`.
 
@@ -149,18 +149,49 @@ Golden answers come from hand-written SQL against the marts, never from the agen
 - label correctness;
 - latency and cost per query.
 
-**Scorecard: not yet run.** This build machine has no Anthropic credentials. All 32 golden answers validate against the live marts, and the 21 governed goldens also match the semantic layer's own answers (`evals/results/latest.json`, `status: not_run`). No agent numbers are shown here because none exist yet. To produce the scorecard, put `ANTHROPIC_API_KEY` in `.env`, then:
-```bash
-make eval MODEL=claude-opus-5-5 BUDGET=10
-```
-Before any model call it prints an estimated cost and waits for a yes (`YES=1` skips the question; a non-interactive run without it never spends). For a full 40-question run the pre-run estimate is $8.96 on `claude-opus-5-5` and $4.76 on `claude-sonnet-5`. That's the harness's token profile priced at list rates with a 25% margin, not a measurement. Once a model has been measured, its mean cost per question replaces the profile. A complete run also records every answer for the Ask page's replay mode (`api/app/recordings/<model>.json`).
-CI's `warehouse` job runs the same eval, but CI never receives a model credential (a test enforces it), so there it only validates the golden answers. Paid calls happen only when you run the eval yourself.
+**Two providers, two modes.** The same 40 questions ran on two free providers, each in two modes (D31, D32):
+- **Governed** is the agent as built: the semantic layer, the anomaly detectors and the SQL fallback.
+- **Raw** is a plain text-to-SQL baseline on the same model. It gets only `run_readonly_sql` and the mart schema, with the same prompt rules, refusal rules, SQL validator and row-level security.
+
+The gap between the two modes on one model is what the semantic layer is worth.
+
+| Provider | Model | Served as |
+|---|---|---|
+| Gemini API, free tier | `gemini-3.5-flash-lite`, thinking at its default (minimal), temperature 0 | Google's OpenAI-compatible endpoint (D33) |
+| Ollama on a Kaggle GPU session (2x T4) | `qwen3.8-27b-64k`: Qwen3.8 27B, `Q4_K_M`, 64K context, thinking off, temperature 0 | a Cloudflare quick tunnel; the server's facts are read from `/api/show` and recorded (D35) |
+
+Every row below comes from a committed run file in [`evals/results/runs/`](evals/results/runs); `make scorecard` regenerates the block. Free tiers cost $0, so cost is shown as tokens per question. Infrastructure retries (a dead tunnel, a 503) are counted, never scored. Rows labelled with a D-entry are earlier runs kept on record: the governed layer changed between them.
+- **D36** added the fiscal-year grain.
+- **D37** fixed filters on two-hop dimensions.
+
+The current governed rows run after both.
+
+<!-- scorecard:start -->
+<!-- generated by `make scorecard` from evals/results/runs; don't edit by hand -->
+| Provider / model | Mode | Run | Execution accuracy | Refusal correctness | Confidently wrong | Latency median / p95 | Tokens / question (in / out) | Infra retries | Date |
+|---|---|---|---|---|---|---|---|---|---|
+| gemini / `gemini-3.5-flash-lite` | raw | current | 71.9% | 95.0% | 11 | 7.5 s / 52.9 s | 11,865 / 481 | 0 | 2026-09-30 |
+| ollama / `qwen3.8-27b-64k` | raw | current | 56.2% | 97.5% | 11 | 25.5 s / 182.8 s | 14,482 / 622 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | governed | after-D36-pre-D37 | 84.4% | 97.5% | 6 | 7.1 s / 36.1 s | 43,921 / 310 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | governed | before-D36 | 87.5% | 100.0% | 4 | 9.0 s / 44.5 s | 40,670 / 304 | 1 | 2026-09-29 |
+
+Execution accuracy by category:
+
+| Run | filtered_grouped | multi_hop_why | simple_lookup | time_comparison | trap |
+|---|---|---|---|---|---|
+| gemini raw (current) | 62.5% | 87.5% | 75.0% | 62.5% | 75.0% |
+| ollama raw (current) | 62.5% | 50.0% | 62.5% | 50.0% | 87.5% |
+| gemini governed (after-D36-pre-D37) | 87.5% | 75.0% | 87.5% | 87.5% | 87.5% |
+| gemini governed (before-D36) | 100.0% | 87.5% | 100.0% | 62.5% | 100.0% |
+<!-- scorecard:end -->
+
+To run it yourself: `make eval PROVIDER=gemini MODE=governed` (or `raw`; `PROVIDER=ollama`, `ONLY=SL01,TC01`, `FRESH=1`). Runs are paced to 80% of the key's quota, save after every question, and resume where they stopped when a daily quota or a server runs out (exit 4). The Anthropic provider asks for confirmation before spending (`BUDGET=`, `YES=1`). CI runs the eval without any model credential (a test enforces it), so there it only validates the golden answers.
 
 ## Anomaly detection
 The data contains planted anomalies, and the pre-registered detectors look for them blind. The full story, including the detectors' false positives and the one detector that fired late, is in the [case study](docs/case-study.md). It contains spoilers, so read the dashboard first if you want to find them yourself.
 
 ## Cost
-- **Per Ask question:** several model calls on `claude-opus-5-5` ($4 / $20 per million input/output tokens; cache reads $0.20). A cached prompt prefix of tools, rules and metric glossary is billed at the cache-read rate after the first call. Not measured yet: the eval will measure it, and until then only the pre-run estimate above exists.
+- **Per Ask question:** $0 on the free tiers used for the scorecard; the table gives the measured tokens per question. On Claude, the only paid provider, `make eval` prints an estimate and asks before spending; no Claude run has been made.
 - **Guardrails on spend:** a per-IP rate limit (6/minute) and a daily spend cap ($5 default, $2 in `render.yaml`), computed from the traced cost.
 - **Infrastructure:** free tiers. Render (API), Vercel (web), Supabase (marts only, about 400 MB), and GitHub Actions (CI plus the daily refresh).
 
@@ -178,7 +209,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 ## Deployment
 - **Topology** (decisions D25): the web app on Vercel from `web/`; the API on Render from [`render.yaml`](render.yaml); Supabase holding only the `marts` schema, reached through its Session pooler.
 - **The daily job** ([`daily.yml`](.github/workflows/daily.yml)) regenerates the simulation through yesterday in a throwaway CI Postgres, rebuilds and tests it, runs the detectors, and publishes `marts`. This keeps the demo current and the Supabase project awake.
-- **Replay by default:** the public demo never calls a model unless you set both `ANTHROPIC_API_KEY` and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
+- **Replay by default:** the public demo never calls a model unless you set both a provider key (e.g. `GEMINI_API_KEY`) and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
 - **Not deployed yet.** The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
   - The repository needs three secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`.
   - A model key never goes into GitHub: a test fails if any workflow references one.

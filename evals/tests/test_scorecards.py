@@ -34,3 +34,13 @@ def test_the_table_shows_every_reported_measure(tmp_path):
                    "Tokens / question", "Infra retries"):
         assert column in header
     assert "71.9%" in row and "raw" in row and "9.0 s / 44.5 s" in row and "40,670 / 304" in row and "2026-09-30" in row
+
+
+def test_the_readme_block_between_the_markers_is_replaced_and_nothing_else(tmp_path):
+    run_file(tmp_path, "gemini__raw__m-1.json", mode="raw", accuracy=0.719)
+    readme = tmp_path / "README.md"
+    readme.write_text("intro\n<!-- scorecard:start -->\nold table\n<!-- scorecard:end -->\noutro\n", encoding="utf-8")
+    scorecards.update_readme(readme, scorecards.load(tmp_path))
+    text = readme.read_text(encoding="utf-8")
+    assert text.startswith("intro\n<!-- scorecard:start -->\n") and text.endswith("<!-- scorecard:end -->\noutro\n")
+    assert "old table" not in text and "71.9%" in text

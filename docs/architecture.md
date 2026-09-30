@@ -17,8 +17,8 @@ flowchart LR
     end
 
     subgraph dbt["warehouse/ (dbt 1.12)"]
-        models[39 models + 123 tests]
-        sem[semantic_models/<br/>13 semantic models, 50 metrics]
+        models[39 models + 125 tests]
+        sem[semantic_models/<br/>13 semantic models, 50 metrics,<br/>calendar and fiscal grains]
     end
 
     det[detectors/<br/>pre-registered scans]
@@ -26,19 +26,20 @@ flowchart LR
     subgraph api["api/ (FastAPI)"]
         mf[MetricFlow engine<br/>compile-only]
         val[sqlglot validator]
-        loop[hand-rolled Claude<br/>tool-use loop]
+        loop[hand-rolled<br/>tool-use loop]
+        prov[provider adapters<br/>Gemini · Ollama · Anthropic]
         tools[list_metrics · query_metric ·<br/>run_readonly_sql · get_anomalies ·<br/>explain_metric]
     end
 
     web[web/ Next.js 15<br/>4 dashboard pages]
-    claude([Claude API<br/>claude-opus-5])
+    llm([model provider<br/>Gemini free tier · Qwen on Ollama<br/>Claude: tested, not evaluated live])
 
     sim -- COPY --> raw
     raw --> stg --> int --> marts
     models -. builds .-> marts
     sem -. semantic_manifest.json .-> mf
     marts --> det -- mart_anomaly_flags --> marts
-    loop <--> claude
+    loop --> prov <--> llm
     loop --> tools
     tools --> mf
     tools --> val

@@ -58,7 +58,7 @@ identity-check:  ## before any public push: no term from .identity-patterns anyw
 	$(PY) scripts/identity_check.py
 
 scorecard:  ## comparison table of every complete eval run (evals/results/runs), for the README
-	$(PY) evals/scorecards.py
+	$(PY) evals/scorecards.py --readme
 
 down:
 	docker compose down

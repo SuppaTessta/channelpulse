@@ -301,6 +301,14 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Not changed:** no mart data, metric formula, detector or ground-truth parameter. Fiscal grains are for grouping; filters on them aren't supported, and date ranges do that job.
 - **Reporting:** Gemini's governed run from before this change stays on record as the "before D36" result. A governed re-run after it is reported separately, and so are Qwen's governed runs, which use the fiscal grain from the start. Raw mode never uses the semantic layer, so it is unaffected.
 
+**D37. Filters on two-hop dimensions were broken; fixed (Part B, 2026-09-30).**
+- **Found in Gemini's governed re-run.** SL06 and FG04 filtered `claims_per_1000_units` by `batch__product__category` ("tanks"). Both calls errored, and the model fell back to its own SQL, with a different definition, and got the numbers wrong.
+- **Root cause,** in `api/app/semantic.py`, the code that renders filters: it passed a multi-hop name straight into MetricFlow's filter syntax, `{{ Dimension('batch__product__category') }}`. MetricFlow can't parse that: the extra hop must be an entity path, as in `{{ Dimension('product__category', entity_path=['batch']) }}`.
+- **It predates D36:** the same filter fails on the pre-D36 manifest. It had simply not been triggered in the earlier run.
+- **Scope:** every offered two-hop dimension, 41 metric-and-dimension pairs, failed as a filter. Group-bys were never affected; they go through a different path.
+- **Fix:** multi-hop names are rendered with `entity_path`. A new test compiles all 41 pairs as filters: all 41 fail with the fix disabled and pass with it.
+- **Effect on results:** Gemini's two governed runs (before and after D36) and Qwen's governed run all ran with this bug, and are reported as run. A governed re-run after D37 would be a separate, labelled result.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

@@ -334,3 +334,20 @@ def test_fiscal_year_claims_by_plant_match_the_eval_golden_answer():
     rows = {(r["batch__plant_id"], r["metric_time__fiscal_year"]): r["warranty_claims"]
             for r in _fiscal("warranty_claims", ["metric_time__fiscal_year", "batch__plant_id"], base_crack)}
     assert [rows[(p, fy)] for p in ("DGP", "GHY", "HWH") for fy in ("FY25", "FY26")] == [538, 755, 592, 709, 1113, 1341]
+
+
+def test_a_filter_on_a_two_hop_dimension_compiles_and_filters():
+    # D37: MetricFlow rejects Dimension('batch__product__category'); the extra hop has to be an entity_path. Found in
+    # Gemini's governed run, where claims per 1,000 units filtered to tanks errored and the model fell back to SQL.
+    tanks = [{"dimension": "batch__product__category", "op": "=", "value": "tank"}]
+    sql = compile_sql("claims_per_1000_units", ["batch__plant_id"], tanks)
+    assert "'tank'" in sql and "category" in sql
+
+
+TWO_HOP = [(m, d) for m, entry in ENTRIES.items() for d in entry["dimensions"]
+           if d.count("__") > 1 and not d.startswith("metric_time__")]
+
+
+@pytest.mark.parametrize(("metric", "dimension"), TWO_HOP)
+def test_every_offered_two_hop_dimension_works_as_a_filter(metric, dimension):
+    assert compile_sql(metric, [], [{"dimension": dimension, "op": "!=", "value": "x"}]).count("'x'") == 1

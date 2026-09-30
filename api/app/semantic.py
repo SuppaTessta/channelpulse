@@ -276,6 +276,10 @@ def _where(condition: dict, allowed: frozenset[str], metric_name: str) -> str:
         rendered = _literal(value, is_time)
     if is_time:
         reference = f"{{{{ TimeDimension('metric_time', '{name.removeprefix('metric_time__')}') }}}}"
+    elif name.count("__") > 1:  # e.g. batch__product__category: MetricFlow wants the extra hops as an entity_path (D37)
+        *path, entity, dimension = name.split("__")
+        hops = ", ".join(f"'{hop}'" for hop in path)
+        reference = f"{{{{ Dimension('{entity}__{dimension}', entity_path=[{hops}]) }}}}"
     elif "__" in name:
         reference = f"{{{{ Dimension('{name}') }}}}"
     else:

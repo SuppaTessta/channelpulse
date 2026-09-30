@@ -44,7 +44,7 @@ DETECTORS = {"lot_scan": "resin-lot", "installer_scan": "installer", "stuffing":
 class Fact:
     id: str
     label: str
-    kind: str  # money, count, days, percent, text
+    kind: str  # money, count, days, percent, flags (detector: count), text
     run: Callable[[], readonly_db.QueryResult]
     pick: Callable[[readonly_db.QueryResult], object]
     metric: str | None = None  # the governed metric, when there is one
@@ -75,6 +75,8 @@ def display(kind: str, value) -> str:
         return f"{float(value):.1f} days"
     if kind == "count":
         return f"{int(value):,}"
+    if kind == "flags":
+        return ", ".join(f"{n} {DETECTORS.get(k, k)}" for k, n in value.items()) or "none"
     return str(value)
 
 
@@ -122,7 +124,7 @@ def facts(start: dt.date, region: str) -> dict[str, Fact]:
              m("warranty_claims", start, end, group_by=["claim__failure_mode"]), _first(0), "warranty_claims"),
         Fact("top_failure_claims", "Claims with that failure mode", "count",
              m("warranty_claims", start, end, group_by=["claim__failure_mode"]), _first(1), "warranty_claims"),
-        Fact("new_flags", "New detector flags", "text", lambda: readonly_db.run(FLAGS_SQL, week, region),
+        Fact("new_flags", "New detector flags", "flags", lambda: readonly_db.run(FLAGS_SQL, week, region),
              lambda r: {d: n for d, n in r.rows}),
     ]
     return {f.id: f for f in items}
@@ -133,7 +135,6 @@ def facts(start: dt.date, region: str) -> dict[str, Fact]:
 
 def template(fs: dict[str, Fact], provisional: bool) -> list[dict]:
     d = {k: display(f.kind, f.value) for k, f in fs.items()}
-    flags = fs["new_flags"].value or {}
     channel = [
         _s(f"Sell-in to distributors was {d['primary']}, against {d['primary_prev']} the week before.",
            "primary", "primary_prev"),
@@ -151,8 +152,7 @@ def template(fs: dict[str, Fact], provisional: bool) -> list[dict]:
         *([_s(f"The most common failure mode was {d['top_failure_mode'].replace('_', ' ')}, with "
               f"{d['top_failure_claims']} claims.", "top_failure_mode", "top_failure_claims")]
           if fs["top_failure_mode"].value else []),
-        _s("New detector flags this week: "
-           + ", ".join(f"{n} {DETECTORS.get(k, k)}" for k, n in flags.items()) + "." if flags
+        _s(f"New detector flags this week: {d['new_flags']}." if fs["new_flags"].value
            else "No detector raised a new flag this week.", "new_flags"),
     ]
     return [{"title": "Channel", "sentences": channel}, {"title": "Quality", "sentences": quality}]

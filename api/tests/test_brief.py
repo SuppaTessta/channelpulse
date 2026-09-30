@@ -37,7 +37,7 @@ def fake_facts(monkeypatch):
 
 KINDS = {"primary": "money", "primary_prev": "money", "secondary": "money", "secondary_prev": "money",
          "days_of_stock": "days", "stockout": "percent", "at_risk": "count", "claims": "count", "claims_prev": "count",
-         "claim_cost": "money", "top_failure_mode": "text", "top_failure_claims": "count", "new_flags": "text"}
+         "claim_cost": "money", "top_failure_mode": "text", "top_failure_claims": "count", "new_flags": "flags"}
 
 
 def provider(sections=None, error=None):
@@ -51,7 +51,8 @@ def provider(sections=None, error=None):
 
 @pytest.mark.parametrize(("kind", "value", "shown"), [
     ("money", 82_200_000, "₹8.22 crore"), ("money", 582_000, "₹5.82 lakh"), ("money", 9_500, "₹9,500"),
-    ("percent", 0.036, "3.6%"), ("days", 43.65, "43.6 days"), ("count", 1234, "1,234"), ("money", None, "n/a")])
+    ("percent", 0.036, "3.6%"), ("days", 43.65, "43.6 days"), ("count", 1234, "1,234"), ("money", None, "n/a"),
+    ("flags", {"lot_scan": 1, "stuffing": 12}, "1 resin-lot, 12 stuffing"), ("flags", {}, "none")])
 def test_display(kind, value, shown):
     assert brief.display(kind, value) == shown
 

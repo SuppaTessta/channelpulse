@@ -10,8 +10,12 @@ import re
 import statistics
 
 REFUSED = "refused"
+NEEDS_CLARIFICATION = "needs_clarification"
 ERROR = "error"
 TRAP = "trap"
+CLARIFY = "ambiguous_clarify"
+# Set on a refusal made before any model call (app/guardrails/refusal_routing.py, D39).
+ROUTED_NOTE = "Refused before any model call"
 
 _MIDNIGHT = re.compile(r"(\d{4}-\d{2}-\d{2})[t ]00:00:00(?:\.0+)?(?:z|[+-]00:?00)?")
 _PUNCTUATION = re.compile(r"[\s_\-‐-―/]+")
@@ -170,16 +174,21 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
     """Correctness, refusal, label and confidently-wrong verdicts for one answered (or failed) question.
 
     Raw mode (decisions D32) has only run_readonly_sql, so a rubric's evidence_tools requirement is dropped (the
-    answer is judged on what it says) and every answer is expected to be ad hoc, traps refused."""
+    answer is judged on what it says) and every answer is expected to be ad hoc, traps refused and ambiguous
+    questions clarified. Asking for clarification is never confidently wrong: it states no figures."""
     spec = question["compare"]
     expected_label = question["expected_label"]
     if mode == "raw":
         spec = {k: v for k, v in spec.items() if k != "evidence_tools"}
-        expected_label = REFUSED if question["category"] == TRAP else "ad_hoc_sql_verify"
+        expected_label = {TRAP: REFUSED, CLARIFY: NEEDS_CLARIFICATION}.get(question["category"], "ad_hoc_sql_verify")
     actual_label = response["label"] if response else ERROR
-    refused = actual_label == REFUSED
+    refused, clarified = actual_label == REFUSED, actual_label == NEEDS_CLARIFICATION
     if spec["type"] == "refusal":
         match = {"ok": refused}
+    elif spec["type"] == "clarify":
+        match = {"ok": clarified}
+    elif clarified:
+        match = {"ok": False, "reason": "asked for clarification"}
     elif response is None or refused:
         match = {"ok": False, "reason": "no answer" if response is None else "refused"}
     elif spec["type"] == "scalar":
@@ -194,7 +203,8 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
         "refusal_correct": refused == (question["category"] == TRAP),
         "label_correct": actual_label == expected_label,
         # answered, but wrongly: the count to review by hand
-        "confidently_wrong": response is not None and not refused and not match["ok"],
+        "confidently_wrong": response is not None and not refused and not clarified and not match["ok"],
+        "clarified": clarified,
         "match": match,
     }
 
@@ -211,10 +221,12 @@ def _share(flags: list[bool]) -> float | None:
     return round(sum(flags) / len(flags), 4) if flags else None
 
 
-def scorecard(results: list[dict]) -> dict:
-    """Aggregate per-question results; questions skipped by the budget are counted but not scored."""
+def scorecard(results: list[dict], threshold: float | None = None) -> dict:
+    """Aggregate per-question results; questions skipped by the budget are counted but not scored. Execution
+    accuracy covers the answerable questions: neither traps nor ambiguous ones, which have their own measures."""
     ran = [r for r in results if not r.get("skipped")]
-    answerable = [r for r in ran if r["category"] != TRAP]
+    answerable = [r for r in ran if r["category"] not in (TRAP, CLARIFY)]
+    accuracy = _share([r["correct"] for r in answerable])
     latencies = [r["latency_ms"] for r in ran if r["latency_ms"] is not None]
     cost = sum(r["cost_usd"] for r in ran)
     categories = dict.fromkeys(r["category"] for r in results)
@@ -223,12 +235,17 @@ def scorecard(results: list[dict]) -> dict:
         "scored": len(ran),
         "skipped": len(results) - len(ran),
         "errors": sum(r["actual_label"] == ERROR for r in ran),
-        "execution_accuracy": _share([r["correct"] for r in answerable]),
+        "execution_accuracy": accuracy,
+        "accuracy_threshold": threshold,
+        "meets_threshold": None if threshold is None or accuracy is None else accuracy >= threshold,
         "accuracy_by_category": {c: _share([r["correct"] for r in ran if r["category"] == c]) for c in categories},
         "refusal_correctness": _share([r["refusal_correct"] for r in ran]),
         "refused_exactly_the_traps": bool(ran) and all(r["refusal_correct"] for r in ran),
         "missed_traps": [r["id"] for r in ran if r["category"] == TRAP and not r["refused"]],
-        "false_refusals": [r["id"] for r in answerable if r["refused"]],
+        "false_refusals": [r["id"] for r in ran if r["refused"] and r["category"] != TRAP],
+        "refused_before_model": [r["id"] for r in ran if (r.get("confidence_note") or "").startswith(ROUTED_NOTE)],
+        "clarification_correctness": _share([r["correct"] for r in ran if r["category"] == CLARIFY]),
+        "needless_clarifications": [r["id"] for r in ran if r.get("clarified") and r["category"] != CLARIFY],
         "label_accuracy": _share([r["label_correct"] for r in ran]),
         "confidently_wrong": [r["id"] for r in ran if r["confidently_wrong"]],
         "avg_latency_ms": round(sum(latencies) / len(latencies)) if latencies else None,
@@ -260,12 +277,19 @@ def markdown(card: dict, meta: dict) -> str:
         "",
         "| Measure | Result |",
         "|---|---|",
-        f"| Execution accuracy (non-trap) | {_percent(card['execution_accuracy'])} |",
+        f"| Execution accuracy (answerable) | {_percent(card['execution_accuracy'])} |",
+        *([(f"| Accuracy threshold {_percent(card['accuracy_threshold'])} | "
+            f"{'met' if card['meets_threshold'] else 'NOT met'} |")] if card.get("accuracy_threshold") else []),
         *(f"| &nbsp;&nbsp;{c} | {_percent(v)} |" for c, v in card["accuracy_by_category"].items()),
         (
             f"| Refusal correctness | {_percent(card['refusal_correctness'])} "
             f"(refused exactly the traps: {'yes' if card['refused_exactly_the_traps'] else 'no'}) |"
         ),
+        (
+            f"| Clarification asked on ambiguous questions | {_percent(card.get('clarification_correctness'))} "
+            f"(needless elsewhere: {len(card.get('needless_clarifications', []))}) |"
+        ),
+        f"| Refused before any model call (router) | {len(card.get('refused_before_model', []))} |",
         f"| Label correctness | {_percent(card['label_accuracy'])} |",
         (
             f"| Confidently wrong (review by hand) | {len(card['confidently_wrong'])}"

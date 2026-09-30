@@ -8,7 +8,7 @@ from evals import scorecards
 def run_file(tmp_path, name, *, provider="gemini", mode="governed", status="complete", accuracy=0.875):
     card = {"execution_accuracy": accuracy, "refusal_correctness": 1.0, "confidently_wrong": ["TC01"],
             "median_latency_ms": 9016, "p95_latency_ms": 44469, "tokens_per_question": {"input": 40670, "output": 304},
-            "infra_retries": 1, "rate_limit_waits": 0, "scored": 40,
+            "infra_retries": 1, "rate_limit_waits": 0, "scored": 40, "questions": 40,
             "accuracy_by_category": {"simple_lookup": 1.0, "trap": 1.0}}
     body = {"status": status, "meta": {"provider": provider, "mode": mode, "model": "m-1", "timestamp": "2026-09-30T01:00:00+00:00",
                                        "settings": {"temperature": 0.0, "thinking": "off"}}}

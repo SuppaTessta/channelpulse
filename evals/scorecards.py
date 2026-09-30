@@ -27,7 +27,7 @@ def load(folder: Path = RUNS) -> list[dict]:
         rows.append({
             "provider": meta["provider"], "mode": meta["mode"], "model": meta["model"],
             "label": parts[3] if len(parts) > 3 else "current", "date": meta["timestamp"][:10],
-            "settings": meta.get("settings", {}), "accuracy": card["execution_accuracy"],
+            "settings": meta.get("settings", {}), "questions": card["questions"], "accuracy": card["execution_accuracy"],
             "refusal": card["refusal_correctness"], "confidently_wrong": len(card["confidently_wrong"]),
             "median_ms": card["median_latency_ms"], "p95_ms": card["p95_latency_ms"],
             "tokens": card["tokens_per_question"], "infra": card.get("infra_retries", 0),
@@ -45,12 +45,12 @@ def _secs(ms: int | None) -> str:
 
 
 def markdown(rows: list[dict]) -> str:
-    header = ("| Provider / model | Mode | Run | Execution accuracy | Refusal correctness | Confidently wrong | "
+    header = ("| Provider / model | Mode | Run | Questions | Execution accuracy | Refusal correctness | Confidently wrong | "
               "Latency median / p95 | Tokens / question (in / out) | Infra retries | Date |")
-    lines = [header, "|---|---|---|---|---|---|---|---|---|---|"]
+    lines = [header, "|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         lines.append(
-            f"| {r['provider']} / `{r['model']}` | {r['mode']} | {r['label']} | {_pct(r['accuracy'])} | "
+            f"| {r['provider']} / `{r['model']}` | {r['mode']} | {r['label']} | {r['questions']} | {_pct(r['accuracy'])} | "
             f"{_pct(r['refusal'])} | {r['confidently_wrong']} | {_secs(r['median_ms'])} / {_secs(r['p95_ms'])} | "
             f"{r['tokens']['input']:,} / {r['tokens']['output']:,} | {r['infra']} | {r['date']} |"
         )

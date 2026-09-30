@@ -16,7 +16,7 @@ The approach follows the design skills: *ui-ux-pro-max* for the data-dense dashb
 - **Color:**
   - Neutral base: cool zinc.
   - **One accent:** a deep river teal, echoing Gangasagar, where the river meets the sea. It's used for primary actions, focus and the governed-metric state.
-  - Status colours are semantic, not decorative: governed (accent), ad-hoc (amber), refused (neutral with a rose edge), plus warning and danger.
+  - Status colours are semantic, not decorative: governed (accent), ad-hoc (amber), refused (neutral with a rose edge), needs clarification (neutral with a grey edge), plus warning and danger.
   - Chart palettes come from the dataviz skill: a validated categorical palette and a single-hue sequential scale for the heatmap. Colour is never the only carrier of meaning.
 - **Shape:** one radius scale. Controls 6px, panels 10px, badges full pill, applied everywhere. Borders beat shadows. Cards appear only where elevation carries hierarchy, such as the Ask answer and the batch drill-down.
 - **Motion:** 150–200 ms state transitions on filter changes, disclosures and tooltips. No scroll reveals and no loops. `prefers-reduced-motion` turns everything instant.
@@ -28,7 +28,7 @@ The approach follows the design skills: *ui-ux-pro-max* for the data-dense dashb
 
 ## Trust patterns (the brand story)
 - Every number on every page can show **where it came from**: a "Definition · SQL" disclosure opens the governed metric's definition and the exact compiled SQL, straight from `/api/metrics/query`.
-- The Ask panel's answer has five parts: the answer, a chart built from `chart_spec`, a data table, a **label badge** (Governed metric / Ad-hoc SQL, verify / Refused), the confidence note, and a collapsible SQL block. Refusals are shown plainly and politely, not hidden.
+- The Ask panel's answer has five parts: the answer, a chart built from `chart_spec`, a data table, a **label badge** (Governed metric / Ad-hoc SQL, verify / Refused / Needs clarification), the confidence note, and a collapsible SQL block. Refusals are shown plainly and politely, not hidden; a clarifying question is shown the same way, as the analyst's question back to the user, with no figures.
 - Provisional data (inside the reporting horizon) is visibly marked on time-series charts.
 
 ## Copy rules

@@ -54,10 +54,15 @@ RUNS = ROOT / "evals" / "results" / "runs"
 GEMINI_QUOTA_DEFAULTS = {"GEMINI_RPM": 15, "GEMINI_TPM": 250_000, "GEMINI_RPD": 500}
 # Whole-question time budgets: one request at a time on a 27B model over a tunnel is slow (D32).
 AGENT_TIMEOUTS = {"gemini": 300, "ollama": 1800, "anthropic": 120}
-CATEGORIES = ("simple_lookup", "filtered_grouped", "time_comparison", "multi_hop_why", "trap")
-PER_CATEGORY = 8
-LABELS = ("governed_metric", "ad_hoc_sql_verify", "refused")
-COMPARE_BY_CATEGORY = {"trap": {"refusal"}, "multi_hop_why": {"rubric"}}
+CATEGORIES = ("simple_lookup", "filtered_grouped", "time_comparison", "multi_hop_why", "trap", scoring.CLARIFY)
+MIN_PER_CATEGORY = 12
+MIN_QUESTIONS = 100
+LABELS = ("governed_metric", "ad_hoc_sql_verify", scoring.REFUSED, scoring.NEEDS_CLARIFICATION)
+# The only label each of these categories may expect; the others expect an answer.
+LABEL_BY_CATEGORY = {"trap": scoring.REFUSED, scoring.CLARIFY: scoring.NEEDS_CLARIFICATION}
+COMPARE_BY_CATEGORY = {"trap": {"refusal"}, "multi_hop_why": {"rubric"}, scoring.CLARIFY: {"clarify"}}
+# The full (model) suite reports execution accuracy against this (decisions D39); make eval THRESHOLD= overrides it.
+ACCURACY_THRESHOLD = 0.85
 MAX_GOLDEN_ROWS = 20
 GOLDEN_TIMEOUT = "120s"
 REGION = "ALL"
@@ -84,16 +89,26 @@ def load_questions() -> tuple[str, list[dict]]:
     ids = Counter(q["id"] for q in questions)
     problems += [f"duplicate id {i}" for i, n in ids.items() if n > 1]
     per_category = Counter(q["category"] for q in questions)
-    if per_category != dict.fromkeys(CATEGORIES, PER_CATEGORY):
-        problems.append(f"need {PER_CATEGORY} questions in each of {CATEGORIES}, got {dict(per_category)}")
+    if set(per_category) != set(CATEGORIES) or min(per_category.values()) < MIN_PER_CATEGORY:
+        problems.append(f"need at least {MIN_PER_CATEGORY} questions in each of {CATEGORIES}, got {dict(per_category)}")
+    if len(questions) < MIN_QUESTIONS:
+        problems.append(f"need at least {MIN_QUESTIONS} questions, got {len(questions)}")
     for q in questions:
-        trap, kind = q["category"] == "trap", q["compare"]["type"]
-        if q["expected_label"] not in LABELS or (q["expected_label"] == "refused") != trap:
-            problems.append(f"{q['id']}: expected_label {q['expected_label']!r} doesn't fit category {q['category']}")
-        if kind not in COMPARE_BY_CATEGORY.get(q["category"], {"scalar", "keyed"}):
-            problems.append(f"{q['id']}: compare type {kind!r} doesn't fit category {q['category']}")
-        if trap == bool(q.get("golden_sql")):
-            problems.append(f"{q['id']}: {'traps have no' if trap else 'needs a'} golden_sql")
+        category, kind, label = q["category"], q["compare"]["type"], q["expected_label"]
+        fixed = LABEL_BY_CATEGORY.get(category)
+        if label not in LABELS or label != (fixed or label) or (not fixed and label in LABEL_BY_CATEGORY.values()):
+            problems.append(f"{q['id']}: expected_label {label!r} doesn't fit category {category}")
+        if kind not in COMPARE_BY_CATEGORY.get(category, {"scalar", "keyed"}):
+            problems.append(f"{q['id']}: compare type {kind!r} doesn't fit category {category}")
+        if (not fixed) != bool(q.get("golden_sql")):
+            problems.append(f"{q['id']}: {'needs a' if not fixed else 'has no'} golden_sql")
+        if category == scoring.CLARIFY and sum(bool(r.get("golden_sql")) for r in q.get("readings", [])) < 2:
+            problems.append(f"{q['id']}: an ambiguous question needs at least 2 readings, each with golden_sql")
+        # The free tier's semantic-layer check: every governed figure the set expects must be reachable by a
+        # query_metric call that reproduces the hand-written golden (evals/tests/test_free_tier.py).
+        governed = label == "governed_metric" and kind in ("scalar", "keyed")
+        if governed != bool(q.get("governed_call")):
+            problems.append(f"{q['id']}: {'needs a' if governed else 'has no'} governed_call")
     if sum(q["expected_label"] == "ad_hoc_sql_verify" for q in questions) < 2:
         problems.append("need at least 2 ad_hoc_sql_verify questions")
     if problems:
@@ -112,7 +127,7 @@ def compute_goldens(questions: list[dict]) -> tuple[str, dict[str, dict]]:
             if q["category"] == "trap":
                 continue
             try:
-                goldens[q["id"]] = _golden(conn, q)
+                goldens[q["id"]] = _readings(conn, q) if q["category"] == scoring.CLARIFY else _golden(conn, q)
             except (psycopg.Error, GoldenError) as e:
                 errors.append(f"{q['id']}: {type(e).__name__}: {' '.join(str(e).split())}")
     if errors:
@@ -121,17 +136,33 @@ def compute_goldens(questions: list[dict]) -> tuple[str, dict[str, dict]]:
 
 
 def _golden(conn: psycopg.Connection, q: dict) -> dict:
+    table = _execute(conn, q["golden_sql"])
+    _check_shape(q["compare"], table)
+    return table
+
+
+def _readings(conn: psycopg.Connection, q: dict) -> dict:
+    """Each reading's answer. A question only counts as ambiguous if its readings disagree."""
+    readings = {r["reading"]: _execute(conn, r["golden_sql"]) for r in q["readings"]}
+    for reading, table in readings.items():
+        if not 1 <= len(table["rows"]) <= MAX_GOLDEN_ROWS:
+            raise GoldenError(f"reading {reading!r} returned {len(table['rows'])} rows; need 1 to {MAX_GOLDEN_ROWS}")
+    answers = [json.dumps(table["rows"], default=str) for table in readings.values()]
+    if len(set(answers)) < len(answers):
+        raise GoldenError("two readings give the same answer, so the question isn't ambiguous")
+    return {"readings": readings}
+
+
+def _execute(conn: psycopg.Connection, sql: str) -> dict:
     # The agent's own SQL gate: one SELECT over allowlisted marts only. It also caps the rows it returns.
-    check = validate(q["golden_sql"], config.MART_TABLES, MAX_GOLDEN_ROWS + 1)
+    check = validate(sql, config.MART_TABLES, MAX_GOLDEN_ROWS + 1)
     if not check.ok:
         raise GoldenError(f"golden_sql rejected by the SQL validator: {', '.join(check.reasons)}")
     cursor = conn.execute(check.sql)
-    table = {
+    return {
         "columns": [column.name for column in cursor.description],
         "rows": [[json_safe(value) for value in row] for row in cursor.fetchall()],
     }
-    _check_shape(q["compare"], table)
-    return table
 
 
 def _check_shape(spec: dict, table: dict) -> None:
@@ -357,6 +388,9 @@ def write(payload: dict) -> None:
 def golden_summary(goldens: dict[str, dict]) -> str:
     lines = []
     for qid, table in goldens.items():
+        if "readings" in table:
+            lines.append(f"  {qid}  {len(table['readings'])} readings, each with a different answer")
+            continue
         rows = scoring.records(table)
         shown = "; ".join(", ".join(f"{k}={_short(v)}" for k, v in row.items()) for row in rows[:3])
         more = " ..." if len(rows) > 3 else ""
@@ -383,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--budget-usd", type=float, default=5.00, help="stop once this much is spent (default 5.00)")
     parser.add_argument("--yes", action="store_true", help="spend without asking (after printing the estimate)")
     parser.add_argument("--require-llm", action="store_true", help="exit 2 instead of 0 when no credentials resolve")
+    parser.add_argument("--threshold", type=float, default=ACCURACY_THRESHOLD,
+                        help=f"execution accuracy a complete run must reach, else exit 5 (default {ACCURACY_THRESHOLD})")
     args = parser.parse_args(argv)
 
     try:
@@ -477,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nPAUSED after {answered} of {len(selected)} questions: {e}\nProgress saved to "
               f"{path.relative_to(ROOT)}; rerun the same command to resume.")
         return 4
-    card = scoring.scorecard(results)
+    card = scoring.scorecard(results, args.threshold)
     status = "partial" if card["skipped"] else "complete"
     payload = {"status": status, **meta, "scorecard": card, "results": [_without_response(r) for r in results]}
     progress |= {"status": status, "scorecard": card}
@@ -493,6 +529,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Recorded {len(results)} answers for replay: {recording.relative_to(ROOT)}.")
     else:
         print("Not recorded for replay: only a complete governed run over the whole question set is recorded.")
+    if status == "complete" and card["meets_threshold"] is False:
+        print(f"Execution accuracy is below the {args.threshold:.0%} threshold.", file=sys.stderr)
+        return 5
     return 0
 
 

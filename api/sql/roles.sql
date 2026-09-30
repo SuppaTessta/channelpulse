@@ -36,7 +36,7 @@ create table if not exists ops.agent_traces (
     model              text not null,           -- requested model
     served_model       text,                    -- model that produced the final message (differs after a refusal fallback)
     label              text not null
-        check (label in ('governed_metric', 'ad_hoc_sql_verify', 'refused', 'error')),
+        check (label in ('governed_metric', 'ad_hoc_sql_verify', 'refused', 'needs_clarification', 'error')),
     tool_calls         jsonb not null default '[]',  -- per call: id, name, input, output, sql, row_count, duration_ms, error
     final_sql          text[] not null default '{}',
     row_count          integer,
@@ -52,6 +52,10 @@ create table if not exists ops.agent_traces (
 create index if not exists agent_traces_created_at_idx on ops.agent_traces (created_at);  -- daily spend cap
 -- Added with the provider layer (decisions D31); rows from before it were all Anthropic.
 alter table ops.agent_traces add column if not exists provider text not null default 'anthropic';
+-- needs_clarification added with the ambiguous-question category (decisions D39).
+alter table ops.agent_traces drop constraint if exists agent_traces_label_check;
+alter table ops.agent_traces add constraint agent_traces_label_check
+    check (label in ('governed_metric', 'ad_hoc_sql_verify', 'refused', 'needs_clarification', 'error'));
 
 -- PUBLIC's defaults would otherwise reach both roles: temp tables in this database and USAGE on schema public.
 do $$ begin execute format('revoke temporary on database %I from public', current_database()); end $$;

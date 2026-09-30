@@ -42,6 +42,11 @@ def run(sql: str, params: dict | None, region: str) -> QueryResult:
             with conn.cursor() as cur:
                 cur.execute(f"set local statement_timeout = {int(config.STATEMENT_TIMEOUT_MS)}")
                 cur.execute("set local search_path = marts")
+                # The RLS filter and MetricFlow's date_trunc() predicates make the planner estimate a fact table at a
+                # handful of rows, so it nests a loop over the time spine: a fiscal-grain query took 10 s instead of
+                # 0.15 s (D39). Index scans still serve filters; only joins change, to hash or merge joins, which suit
+                # these fact-to-dimension joins at mart sizes.
+                cur.execute("set local enable_nestloop = off")
                 cur.execute("select set_config('app.region', %s, true)", (region,))  # transaction-local RLS claim
                 # prepare=True sends the query over the extended protocol, which refuses a second statement.
                 cur.execute(sql, params, prepare=True)

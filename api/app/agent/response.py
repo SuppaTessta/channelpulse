@@ -8,6 +8,7 @@ from app import config
 from app.tools.handlers import AD_HOC, GOVERNED
 
 REFUSED = "refused"
+NEEDS_CLARIFICATION = "needs_clarification"
 NO_EVIDENCE_ANSWER = "I couldn't back an answer with query results from the marts, so I won't state one."
 
 
@@ -26,6 +27,10 @@ def assemble(final: dict, calls: dict[str, ToolCall], trace_id: str) -> dict:
     if final["refused"]:
         answer = final["answer_text"] or final["refusal_reason"] or "I can't answer that from the governed data."
         return refusal(answer, "Refused by the model; no figures reported.", trace_id)
+    if final.get("clarifying_question"):
+        # Ambiguous: the question back to the user, and no figures, even if the model ran queries to find the readings.
+        return {**refusal(final["clarifying_question"], "The question could mean more than one thing, so it asks "
+                          "which one you meant instead of guessing.", trace_id), "label": NEEDS_CLARIFICATION}
     cited = dict.fromkeys(final["evidence_tool_use_ids"])  # keeps the model's order: primary first
     evidence = [calls[i] for i in cited if i in calls and calls[i].result is not None]
     if not evidence:

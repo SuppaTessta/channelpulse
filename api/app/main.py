@@ -86,7 +86,7 @@ class AskResponse(BaseModel):
     sql: list[str]
     data: Table | None
     chart_spec: ChartSpec | None
-    label: Literal["governed_metric", "ad_hoc_sql_verify", "refused"]
+    label: Literal["governed_metric", "ad_hoc_sql_verify", "refused", "needs_clarification"]
     confidence_note: str
     trace_id: str
 

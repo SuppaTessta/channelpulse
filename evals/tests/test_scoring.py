@@ -239,7 +239,7 @@ def test_scorecard_scores_traps_by_refusal_and_leaves_skipped_questions_out():
     assert (card["avg_latency_ms"], card["p95_latency_ms"], card["total_cost_usd"]) == (250, 400, 0.04)
     assert card["total_tokens"]["cache_read"] == 400
     rendered = scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})
-    assert "Execution accuracy (non-trap) | 50.0%" in rendered
+    assert "Execution accuracy (answerable) | 50.0%" in rendered
 
 
 # --- the harness, offline: a scripted Claude and a fake tool ----------------------------------------------------
@@ -295,7 +295,7 @@ def test_ask_all_scores_every_cited_result_refuses_traps_and_stops_at_the_budget
 def test_the_golden_set_is_well_formed():
     _, questions = run_eval.load_questions()
     patterns = [p for q in questions for p in q["compare"].get("must_not_mention", [])]
-    assert len(questions) == 40 and all(re.compile(p) for p in patterns)
+    assert len(questions) >= run_eval.MIN_QUESTIONS and all(re.compile(p) for p in patterns)
 
 
 # --- raw mode (decisions D32) and the per-provider scorecard -----------------------------------------------------
@@ -323,3 +323,41 @@ def test_the_scorecard_reports_median_tokens_per_question_and_infrastructure_sep
     assert (card["infra_retries"], card["rate_limit_waits"]) == (2, 1)
     rendered = scoring.markdown(card, {"provider": "gemini", "mode": "governed", "model": "m", "effort": "e", "as_of": "d"})
     assert "gemini" in rendered and "governed" in rendered and "Infrastructure retries" in rendered
+
+
+# --- ambiguous questions, the router and the threshold (decisions D39) -------------------------------------------
+
+CLARIFY = {"type": "clarify"}
+
+
+def test_an_ambiguous_question_is_correct_only_when_the_agent_asks():
+    q = question(scoring.CLARIFY, "needs_clarification", CLARIFY)
+    asked = scoring.score_question(q, None, answer("needs_clarification"), [], [])
+    guessed = scoring.score_question(q, None, answer("governed_metric"), [], [])
+    assert asked["correct"] and asked["label_correct"] and not asked["confidently_wrong"]
+    assert not guessed["correct"] and guessed["confidently_wrong"]
+
+
+def test_a_needless_clarification_is_wrong_but_not_confidently_wrong():
+    verdict = scoring.score_question(question(), table(["v"], [1.0]), answer("needs_clarification"), [], [])
+    assert (verdict["correct"], verdict["confidently_wrong"], verdict["clarified"]) == (False, False, True)
+
+
+def test_raw_mode_expects_a_clarification_on_ambiguous_questions():
+    q = question(scoring.CLARIFY, "needs_clarification", CLARIFY)
+    assert scoring.score_question(q, None, answer("needs_clarification"), [], [], "raw")["label_correct"]
+
+
+def test_scorecard_keeps_ambiguous_questions_out_of_accuracy_and_checks_the_threshold():
+    results = [
+        result("A", "simple_lookup", True),
+        result("B", "simple_lookup", False),
+        {**result("C", scoring.CLARIFY, True), "clarified": True},
+        {**result("D", "simple_lookup", False), "clarified": True, "confidently_wrong": False},
+        {**result("E", "trap", True, refused=True), "confidence_note": "Refused before any model call (write); ..."},
+    ]
+    card = scoring.scorecard(results, threshold=0.5)
+    assert (card["execution_accuracy"], card["meets_threshold"], card["clarification_correctness"]) == (0.3333, False, 1.0)
+    assert (card["needless_clarifications"], card["refused_before_model"]) == (["D"], ["E"])
+    assert scoring.scorecard(results)["meets_threshold"] is None
+    assert "Accuracy threshold 50.0% | NOT met" in scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})

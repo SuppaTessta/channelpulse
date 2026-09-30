@@ -13,6 +13,7 @@ from app.agent.prompt import FINAL_SCHEMA, system_prompt
 from app.agent.providers import FALLBACK_BETA, FINAL_TOOL, Provider, ToolUse
 from app.agent.response import ToolCall, assemble, refusal
 from app.agent.trace import Trace
+from app.guardrails import refusal_routing
 from app.tools.definitions import TOOLS
 from app.tools.handlers import ToolError, for_model, run_tool
 
@@ -37,6 +38,9 @@ class AgentError(Exception):
 def run_agent(provider: Provider, question: str, region: str, trace: Trace, *, tools: list[dict] = TOOLS,
               system: str | None = None) -> dict:
     """Answer one question; fills `trace` as it goes, so a failure still leaves a useful record."""
+    if reason := refusal_routing.route(question):  # no answer could be right, so no model call (D39)
+        note = f"Refused before any model call ({reason.replace('_', ' ')}); no figures reported."
+        return _finish(trace, refusal(refusal_routing.message(reason), note, _id(trace)))
     started = time.monotonic()
     system = system if system is not None else system_prompt()
     transcript: list[dict] = [
@@ -108,7 +112,10 @@ def _final_answer(text: str) -> dict | None:
         answer = json.loads(_FENCE.sub("", text.strip()))
     except (TypeError, ValueError):
         return None
-    if not isinstance(answer, dict) or not set(FINAL_SCHEMA["required"]) <= answer.keys():
+    if not isinstance(answer, dict):
+        return None
+    answer = {"clarifying_question": None, **answer}  # optional for a model that leaves it out
+    if not set(FINAL_SCHEMA["required"]) <= answer.keys():
         return None
     ids, hint = answer["evidence_tool_use_ids"], answer["chart_hint"]
     if not isinstance(ids, list) or not isinstance(hint, dict) or not isinstance(answer["answer_text"], str):
@@ -116,6 +123,7 @@ def _final_answer(text: str) -> dict | None:
     return {
         **answer,
         "refused": answer["refused"] is True,
+        "clarifying_question": q if isinstance(q := answer["clarifying_question"], str) and q.strip() else None,
         "evidence_tool_use_ids": [str(i) for i in ids],
         "chart_hint": {"type": hint.get("type") or "none", **{k: hint.get(k) for k in ("x", "y", "series")}},
     }

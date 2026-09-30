@@ -38,6 +38,8 @@ GLOSSARY = frozenset({
     "warranty_registration_rate", "collections_efficiency", "installer_claim_rate",
 })
 TIME_GRAINS = ("day", "week", "month", "quarter", "year")
+# Custom grains on the time spine (D36): offered for every metric, since each is coarser than any metric's own.
+FISCAL_GRAINS = ("fiscal_quarter", "fiscal_year")
 _SQL_OPS = {"=": "=", "!=": "<>", ">": ">", ">=": ">=", "<": "<", "<=": "<=", "in": "IN", "not_in": "NOT IN"}
 FILTER_OPS = tuple(_SQL_OPS)
 MAX_VALUE_CHARS = 200
@@ -235,14 +237,14 @@ def _group_bys(metric: dict) -> tuple[list[str], str]:
         if isinstance(item, Entity):
             continue
         if item.type is DimensionType.TIME:
-            if item.dunder_name.startswith("metric_time__"):
+            if item.dunder_name.startswith("metric_time__") and item.dunder_name.removeprefix("metric_time__") in TIME_GRAINS:
                 grain = item.dunder_name.removeprefix("metric_time__")
             continue
         key = (item.semantic_model_reference, item.name)
         best = shortest.get(key)
         if best is None or (item.dunder_name.count("__"), item.dunder_name) < (best.count("__"), best):
             shortest[key] = item.dunder_name
-    grains = TIME_GRAINS[TIME_GRAINS.index(grain):]
+    grains = (*TIME_GRAINS[TIME_GRAINS.index(grain):], *FISCAL_GRAINS)
     return sorted({*_entities(metric), *shortest.values(), *(f"metric_time__{g}" for g in grains)}), grain
 
 

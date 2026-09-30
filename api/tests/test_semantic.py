@@ -84,7 +84,8 @@ def test_the_offered_dimensions_are_the_useful_ones():
     assert "inventory_day" not in ENTRIES["channel_days_of_stock"]["dimensions"]
     assert "batch__product__category" in ENTRIES["claims_per_1000_units"]["dimensions"]  # its only path to category
     assert [d for d in ENTRIES["installer_claim_rate"]["dimensions"] if d.startswith("metric_time__")] == [
-        "metric_time__month", "metric_time__quarter", "metric_time__year"]
+        "metric_time__fiscal_quarter", "metric_time__fiscal_year", "metric_time__month", "metric_time__quarter",
+        "metric_time__year"]  # its own grain up, plus the fiscal grains (D36)
 
 
 def test_formulas_and_time_dimensions_are_summarised():
@@ -299,3 +300,37 @@ GROUP BY
   , distributors_src_10000.region
 ORDER BY metric_time__month, distributor__region
 LIMIT 500"""
+
+
+# --- the Indian fiscal year as a time grain (decisions D36) -------------------------------------------------------
+
+
+def test_the_fiscal_grains_are_offered_next_to_the_calendar_ones():
+    dims = set(ENTRIES["primary_sales_value"]["dimensions"])
+    assert {"metric_time__fiscal_year", "metric_time__fiscal_quarter", "metric_time__year"} <= dims
+
+
+def _fiscal(metric, group_by, filters=()):
+    built = readonly_db.run("select to_regclass('marts.fct_primary_sales') is not null as built", None, "ALL")
+    if not built.rows[0][0]:
+        pytest.skip("the marts aren't built yet (dbt build)")
+    query = semantic.compile_query(metric, list(filters), group_by, None, "ALL")
+    result = readonly_db.run(query["sql"], query["params"], "ALL")
+    return [dict(zip(result.columns, row, strict=True)) for row in result.rows]
+
+
+@pytest.mark.db
+def test_fiscal_year_sales_match_the_eval_golden_answer():
+    # TC01's golden SQL: invoice dates April 2024 to March 2025 (FY25) and April 2025 to March 2026 (FY26).
+    rows = {r["metric_time__fiscal_year"]: float(r["primary_sales_value"])
+            for r in _fiscal("primary_sales_value", ["metric_time__fiscal_year"])}
+    assert rows["FY25"] == pytest.approx(4_563_765_266.46) and rows["FY26"] == pytest.approx(4_890_601_104.28)
+
+
+@pytest.mark.db
+def test_fiscal_year_claims_by_plant_match_the_eval_golden_answer():
+    # TC05's golden SQL: base-crack claims by claim date, per plant, FY25 and FY26.
+    base_crack = [{"dimension": "claim__failure_mode", "op": "=", "value": "base_crack"}]
+    rows = {(r["batch__plant_id"], r["metric_time__fiscal_year"]): r["warranty_claims"]
+            for r in _fiscal("warranty_claims", ["metric_time__fiscal_year", "batch__plant_id"], base_crack)}
+    assert [rows[(p, fy)] for p in ("DGP", "GHY", "HWH") for fy in ("FY25", "FY26")] == [538, 755, 592, 709, 1113, 1341]

@@ -269,6 +269,38 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **On the real marts:** all four detectors appear in the first 50 unfiltered rows, and the planted lot is row 3. Filtered to `lot_scan` and `base_crack`, it is the only row.
 - **What didn't change:** no detector rule, flag, metric or ground-truth parameter. This changes which rows reach the model, not what the detectors found. The smoke results were produced before the change and are reported as such; the scored runs come after it.
 
+**D35. Qwen on Kaggle: what the server reports, and how thinking is really switched off (Part B, 2026-09-30).**
+- **The model is served** by Ollama on a Kaggle GPU session (2x T4), behind a Cloudflare quick tunnel. The tunnel has no authentication, so there is no API key. Its URL changes every session and lives only in `.env`: it is never committed, logged or printed.
+- **From the server's own `/api/show`, recorded with every run:**
+  - tag `qwen3.8-27b-64k`, family `qwen35`, 27.3B parameters;
+  - `Q4_K_M` quantization;
+  - `num_ctx 65536`, where the model was trained for 262,144;
+  - server-side temperature 0;
+  - speculative decoding (MTP) with `draft_num_predict 2`;
+  - thinking levels `false` / `low` / `medium` / `xhigh`, default `medium`.
+- **Thinking off, as the owner decided.** Verified live: Ollama's OpenAI-compatible `/v1` **ignores `think: false`**, since the reply still carried a `reasoning` field, but honours `reasoning_effort: "none"`. With that, the `reasoning` field is gone and completion tokens drop from 180 to 99. So `OLLAMA_THINKING=off` sends `reasoning_effort: "none"`, and the run records `thinking: off (reasoning_effort=none)`. The eval uses temperature 0.
+- **Tool calling verified** through `/v1`: a proper `query_metric` call with valid JSON arguments and a `call_...` id.
+- **Smoke run** (5 questions, governed, before D36): 5 of 5 correct, including the trap refusal and correct labels. Median latency 43 s, p95 83 s, 34.8k input tokens per question, 0 infrastructure retries.
+- **An earlier failure was infrastructure, not the model.** `.env` held a previous session's tunnel URL. First its hostname didn't resolve, then Cloudflare answered 530 (origin unreachable). Neither was scored.
+
+**D36. The Indian fiscal year is a time grain in the semantic layer (Part B, owner-approved 2026-09-30).**
+- **Why:**
+  - Three of the four governed failures in Gemini's first scored run (TC01, TC05, TC07) asked about fiscal years.
+  - The semantic layer offered only calendar grains, so the model grouped by `metric_time__year` (January to December) and either called calendar years fiscal ones or added quarters up itself.
+  - This is a gap in the governed layer, not a model quirk: a business that reports April to March needs its fiscal year to be governed.
+- **Change:**
+  - `dim_date`, the MetricFlow time spine, declares two custom granularities: `fiscal_quarter` (from `fiscal_quarter_label`, e.g. FY27 Q1) and `fiscal_year` (from `fiscal_year_label`, e.g. FY26 = April 2025 to March 2026). Both columns get `not_null` tests.
+  - Every metric can be grouped by `metric_time__fiscal_year` or `metric_time__fiscal_quarter`.
+  - `query_metric`'s description says which grain is calendar and which is fiscal.
+  - The shipped `semantic_manifest.json` is regenerated.
+- **Verified against the eval's independent golden SQL:**
+  - primary sales by `metric_time__fiscal_year` give FY25 Rs 4,563,765,266.46 and FY26 Rs 4,890,601,104.28 (TC01);
+  - base-crack claims by plant give DGP 538 / 755, GHY 592 / 709 and HWH 1,113 / 1,341 (TC05).
+
+  Every offered dimension still compiles for all 50 metrics.
+- **Not changed:** no mart data, metric formula, detector or ground-truth parameter. Fiscal grains are for grouping; filters on them aren't supported, and date ranges do that job.
+- **Reporting:** Gemini's governed run from before this change stays on record as the "before D36" result. A governed re-run after it is reported separately, and so are Qwen's governed runs, which use the fiscal grain from the start. Raw mode never uses the semantic layer, so it is unaffected.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

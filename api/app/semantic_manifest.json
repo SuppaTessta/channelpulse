@@ -2036,7 +2036,16 @@
     "time_spine_table_configurations": [],
     "time_spines": [
       {
-        "custom_granularities": [],
+        "custom_granularities": [
+          {
+            "column_name": "fiscal_quarter_label",
+            "name": "fiscal_quarter"
+          },
+          {
+            "column_name": "fiscal_year_label",
+            "name": "fiscal_year"
+          }
+        ],
         "node_relation": {
           "alias": "dim_date",
           "database": null,

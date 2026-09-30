@@ -103,6 +103,19 @@ const FIXTURES: { title: string; question: string; response: AskResponse }[] = [
       trace_id: "00000000-fixture-0000-0000-000000000004",
     },
   },
+  {
+    title: "Needs clarification, the question asked back",
+    question: "FIXTURE: How are sales doing?",
+    response: {
+      answer_text: "FIXTURE TEXT. Do you mean primary sales (sell-in to distributors) or secondary sales (sell-out to retailers), and over which period?",
+      sql: [],
+      data: null,
+      chart_spec: null,
+      label: "needs_clarification",
+      confidence_note: "The question has more than one governed reading, so no figures were reported.",
+      trace_id: "00000000-fixture-0000-0000-000000000005",
+    },
+  },
 ];
 
 export default function AskFixturePage() {

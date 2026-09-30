@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import { useNavigation } from "./providers";
-import { cx } from "./ui";
+import { cx, SEGMENT, SEGMENT_ON, SEGMENTS } from "./ui";
 
 /** A segmented control over native radio inputs (arrow keys work), bound to one URL parameter. */
 export function SegmentedParam({
@@ -23,15 +23,16 @@ export function SegmentedParam({
   return (
     <fieldset className="flex items-center gap-2">
       <legend className="float-left mr-2 text-xs text-muted">{label}</legend>
-      <div className="flex items-center gap-0.5 rounded-control bg-hover p-0.5">
+      <div className={SEGMENTS}>
         {options.map((o) => {
           const checked = o.value === value;
           return (
             <label
               key={o.label}
               className={cx(
-                "flex h-9 cursor-pointer items-center rounded-[5px] px-3 text-[13px] font-medium transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)] md:h-8",
-                checked ? "bg-surface text-ink shadow-[0_0_0_1px_var(--border-strong)]" : "text-muted hover:text-ink",
+                SEGMENT,
+                "cursor-pointer px-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus)]",
+                checked && SEGMENT_ON,
               )}
             >
               <input

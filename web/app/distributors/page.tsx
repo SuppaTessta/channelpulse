@@ -94,12 +94,13 @@ async function DistributorList({ period, region, catalog, sp }: { period: Period
 
 function ListSkeleton() {
   return (
-    <div aria-busy="true" className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 md:p-5">
+    <div aria-busy="true" className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 md:p-5">
       <span className="sr-only">Loading distributors</span>
       <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-9 w-64" />
       </div>
+      <Skeleton className="h-[74px] w-full" />
       {Array.from({ length: 10 }, (_, i) => (
         <Skeleton key={i} className="h-7 w-full" />
       ))}

@@ -5,7 +5,9 @@ import { API_URL, type Region } from "./config";
 import { monthEnd, toISODate } from "./dates";
 import { column, records, type Table } from "./table";
 import type { AskStatus, Replay } from "./ask";
-import { isAskStatus, isGoverned, isMetricList, isReplay } from "./validate";
+import type { Brief, BriefWeeks } from "./brief";
+import type { TraceDetail, TraceList } from "./traces";
+import { isAskStatus, isBrief, isBriefWeeks, isGoverned, isMetricList, isReplay, isTraceDetail, isTraceList } from "./validate";
 
 export type Scalar = string | number | boolean;
 export type Filter = { dimension: string; op: "=" | "!=" | ">" | ">=" | "<" | "<=" | "in" | "not_in"; value: Scalar | Scalar[] };
@@ -39,6 +41,8 @@ const TIMEOUT_MS = 20_000;
 const SERVER_API_URL = (process.env.CHANNELPULSE_API_URL || API_URL).replace(/\/+$/, "");
 
 type Check<T> = (value: unknown) => value is T;
+/** fetch options, plus a longer time limit for the few endpoints that run many queries per call (the brief). */
+type Init = RequestInit & { next?: { revalidate: number }; timeoutMs?: number; headers?: Record<string, string> };
 
 // A page runs about 25 governed queries. Fired all at once they contend in Postgres and the heavy ones (weekly
 // stock snapshots) pass the API's 5 s statement timeout, so at most this many calls run at a time per server process.
@@ -80,7 +84,7 @@ const CACHE_MS = 60_000;
 const MAX_CACHED = 500;
 const recent = new Map<string, { at: number; value: Promise<Result<unknown>> }>();
 
-function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
+function call<T>(endpoint: string, init: Init, region: Region, check: Check<T>): Promise<Result<T>> {
   const key = `${region} ${init.method ?? "GET"} ${endpoint} ${init.body ?? ""}`;
   const hit = recent.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.value as Promise<Result<T>>;
@@ -91,7 +95,7 @@ function call<T>(endpoint: string, init: RequestInit & { next?: { revalidate: nu
   return value;
 }
 
-function callOnce<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
+function callOnce<T>(endpoint: string, init: Init, region: Region, check: Check<T>): Promise<Result<T>> {
   return withSlot(async () => {
     const first = await send<T>(endpoint, init, region, check);
     // A statement timeout under contention is usually transient: one retry, then the error is shown as it is.
@@ -100,12 +104,12 @@ function callOnce<T>(endpoint: string, init: RequestInit & { next?: { revalidate
   });
 }
 
-async function send<T>(endpoint: string, init: RequestInit & { next?: { revalidate: number } }, region: Region, check: Check<T>): Promise<Result<T>> {
+async function send<T>(endpoint: string, { timeoutMs = TIMEOUT_MS, headers, ...init }: Init, region: Region, check: Check<T>): Promise<Result<T>> {
   try {
     const res = await fetch(`${SERVER_API_URL}${endpoint}`, {
       ...init,
-      headers: { "Content-Type": "application/json", "X-Demo-Region": region },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { "Content-Type": "application/json", "X-Demo-Region": region, ...headers },
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return { ok: false, error: { kind: "http", status: res.status, detail: await errorDetail(res), endpoint } };
     const body: unknown = await res.json().catch(() => undefined);
@@ -120,7 +124,7 @@ async function send<T>(endpoint: string, init: RequestInit & { next?: { revalida
       ok: false,
       error: {
         kind: timedOut ? "timeout" : "unreachable",
-        detail: timedOut ? `No response within ${TIMEOUT_MS / 1000} seconds.` : `Couldn't connect to ${SERVER_API_URL}${cause ? ` (${cause})` : ""}.`,
+        detail: timedOut ? `No response within ${timeoutMs / 1000} seconds.` : `Couldn't connect to ${SERVER_API_URL}${cause ? ` (${cause})` : ""}.`,
         endpoint,
       },
     };
@@ -241,3 +245,26 @@ export const getAskStatus = cache(() => call<AskStatus>("/api/ask/status", { met
 
 /** GET /api/ask/replay: the recorded answers, withheld by the API unless the region claim matches the recording's. */
 export const getReplay = cache((region: Region) => call<Replay>("/api/ask/replay", { method: "GET", cache: "no-store" }, region, isReplay));
+
+// Live traces need X-Admin-Token. It is read here, on the Next server, from a server-only variable: never
+// NEXT_PUBLIC, so it is not in any browser bundle, and no client component calls these functions.
+const ADMIN_TOKEN = process.env.CHANNELPULSE_ADMIN_TOKEN?.trim();
+const adminHeaders = (): Record<string, string> => (ADMIN_TOKEN ? { "X-Admin-Token": ADMIN_TOKEN } : {});
+
+/** GET /api/traces: the filtered page of traces, facet counts and totals. `params` is the filter query string. */
+export const getTraces = cache((params: string, region: Region) =>
+  call<TraceList>(`/api/traces${params ? `?${params}` : ""}`, { method: "GET", cache: "no-store", headers: adminHeaders() }, region, isTraceList),
+);
+
+/** GET /api/traces/{id}: one trace with its tool calls. */
+export const getTrace = cache((id: string, region: Region) =>
+  call<TraceDetail>(`/api/traces/${encodeURIComponent(id)}`, { method: "GET", cache: "no-store", headers: adminHeaders() }, region, isTraceDetail),
+);
+
+/** GET /api/brief/weeks: the weeks a brief exists for, newest first. */
+export const getBriefWeeks = cache((region: Region) => call<BriefWeeks>("/api/brief/weeks", { method: "GET", cache: "no-store" }, region, isBriefWeeks));
+
+/** GET /api/brief: one week's brief. The API re-runs every cited query first, so this call can take a while. */
+export const getBrief = cache((week: string, region: Region) =>
+  call<Brief>(`/api/brief?week=${encodeURIComponent(week)}`, { method: "GET", cache: "no-store", timeoutMs: 60_000 }, region, isBrief),
+);

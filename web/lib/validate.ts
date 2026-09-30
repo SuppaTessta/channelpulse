@@ -3,6 +3,8 @@
 // different commits).
 import type { AskResponse, AskStatus, Replay } from "./ask";
 import type { Governed, Metric } from "./api";
+import type { Brief, BriefWeeks } from "./brief";
+import type { TraceDetail, TraceList } from "./traces";
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -86,5 +88,78 @@ export function isReplay(v: unknown): v is Replay {
     v.answers.every(
       (a) => isObj(a) && isStr(a.id) && isStr(a.category) && isStr(a.question) && isAskResponse(a.response) && isObj(a.eval) && typeof a.eval.correct === "boolean",
     )
+  );
+}
+
+// Traces and the Weekly Brief: the fields each page reads are checked; anything else the API adds passes through.
+const isNumOrNull = (v: unknown) => v == null || typeof v === "number";
+const isFacet = (v: unknown) =>
+  v === undefined ||
+  (isObj(v) && Object.values(v).every((n) => typeof n === "number")) ||
+  (Array.isArray(v) && v.every((x) => isObj(x) && typeof x.count === "number"));
+
+function isTraceRow(v: unknown): boolean {
+  return (
+    isObj(v) &&
+    isStr(v.trace_id) &&
+    isStr(v.created_at) &&
+    isStr(v.source) &&
+    Array.isArray(v.final_sql) &&
+    v.final_sql.every(isStr) &&
+    (v.label == null || LABELS.has(v.label as string)) &&
+    (v.tools == null || (Array.isArray(v.tools) && v.tools.every(isStr))) &&
+    isNumOrNull(v.latency_ms) &&
+    isNumOrNull(v.est_cost_usd) &&
+    isNumOrNull(v.row_count)
+  );
+}
+
+export function isTraceList(v: unknown): v is TraceList {
+  const t = isObj(v) ? v.totals : null;
+  const f = isObj(v) ? v.facets : null;
+  return (
+    isObj(v) &&
+    typeof v.total === "number" &&
+    Array.isArray(v.traces) &&
+    v.traces.every(isTraceRow) &&
+    isObj(f) &&
+    Object.values(f).every(isFacet) &&
+    isObj(t) &&
+    typeof t.traces === "number" &&
+    isFacet(t.by_label) &&
+    (v.live === "included" || v.live === "admin_only" || v.live === "unavailable") &&
+    typeof v.withheld === "boolean"
+  );
+}
+
+export function isTraceDetail(v: unknown): v is TraceDetail {
+  return isTraceRow(v) && isObj(v) && Array.isArray(v.tool_calls) && v.tool_calls.every((c) => isObj(c) && isStr(c.name));
+}
+
+export function isBriefWeeks(v: unknown): v is BriefWeeks {
+  return isObj(v) && Array.isArray(v.weeks) && v.weeks.every(isStr);
+}
+
+export function isBrief(v: unknown): v is Brief {
+  const check = isObj(v) ? v.check : null;
+  const narration = isObj(v) ? v.narration : null;
+  return (
+    isObj(v) &&
+    isObj(v.week) &&
+    isStr(v.week.start) &&
+    isStr(v.week.end) &&
+    (v.status === "verified" || v.status === "blocked") &&
+    Array.isArray(v.sections) &&
+    v.sections.every(
+      (s) => isObj(s) && isStr(s.title) && Array.isArray(s.sentences) && s.sentences.every((x) => isObj(x) && isStr(x.text) && Array.isArray(x.facts) && x.facts.every(isStr)),
+    ) &&
+    isObj(v.facts) &&
+    Object.values(v.facts).every((f) => isObj(f) && isStr(f.label) && isStr(f.display)) &&
+    isObj(check) &&
+    typeof check.queries_rechecked === "number" &&
+    Array.isArray(check.problems) &&
+    isObj(narration) &&
+    (narration.by === "model" || narration.by === "template") &&
+    (narration.blocked == null || Array.isArray(narration.blocked))
   );
 }

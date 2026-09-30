@@ -1,11 +1,11 @@
 // Replay mode (decisions D29): when the API doesn't answer live, the Ask page shows answers recorded by a full eval
 // run, exactly as /api/ask returned them, with when, which model and how the eval scored each one. Nothing here
 // calls a model. The selected question is a URL parameter (?q=), like every other filter on the dashboard.
-import { CheckCircle, ClockCounterClockwise, EyeSlash, GridFour, Key, PresentationChart, Storefront, XCircle } from "@phosphor-icons/react/dist/ssr";
+import { CheckCircle, ClockCounterClockwise, EyeSlash, GridFour, PresentationChart, Storefront, XCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { AskStatus, Recording, Replay, ReplayAnswer } from "@/lib/ask";
 import { regionName, type Region } from "@/lib/config";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtNumber } from "@/lib/format";
 import { EmptyState } from "../states";
 import { buttonClass, cx, ICON } from "../ui";
 import { Answer } from "./answer";
@@ -46,11 +46,35 @@ export function OtherPages({ query, className }: { query: string; className?: st
   );
 }
 
-function ModeNotice({ status, recording }: { status: AskStatus; recording: Recording | null }) {
+/** The recording's own scorecard: how the eval judged the answers shown below, counted from them. */
+function Scorecard({ answers }: { answers: ReplayAnswer[] }) {
+  const correct = answers.filter((a) => a.eval.correct).length;
+  const traps = answers.filter((a) => a.category === "trap");
+  const figures: [string, string][] = [
+    ["Scored correct", `${fmtNumber(correct)} of ${fmtNumber(answers.length)}`],
+    ["Traps handled", `${fmtNumber(traps.filter((a) => a.eval.correct).length)} of ${fmtNumber(traps.length)}`],
+    ["Governed answers", fmtNumber(answers.filter((a) => a.response.label === "governed_metric").length)],
+  ];
   return (
-    <section aria-labelledby="mode-title" className="flex items-start gap-3 rounded-panel border border-line bg-surface p-4 md:p-5">
-      <Key size={22} {...ICON} className="mt-0.5 shrink-0 text-adhoc" aria-hidden />
-      <div className="max-w-[72ch]">
+    <dl className="grid shrink-0 grid-cols-3 gap-px overflow-clip rounded-control border border-line bg-line">
+      {figures.map(([label, value]) => (
+        <div key={label} className="flex min-w-0 flex-col gap-0.5 bg-surface px-3.5 py-2.5">
+          <dt className="text-[11.5px]/4 text-muted">{label}</dt>
+          <dd className="text-lg/6 font-semibold tracking-[-0.02em] text-ink">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ModeNotice({ status, recording, answers }: { status: AskStatus; recording: Recording | null; answers?: ReplayAnswer[] }) {
+  return (
+    <section aria-labelledby="mode-title" className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 md:p-5 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex max-w-[76ch] items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-adhoc-soft text-adhoc">
+          <ClockCounterClockwise size={20} {...ICON} aria-hidden />
+        </span>
+        <div>
         <h2 id="mode-title" className="text-[15px]/6 font-semibold text-ink">
           {recording
             ? "Replay mode: recorded answers, not live ones"
@@ -64,7 +88,9 @@ function ModeNotice({ status, recording }: { status: AskStatus; recording: Recor
             ? `The answers below were recorded by the evaluation run on ${day(recording.recorded_at)} with ${recording.model} (${recording.effort} effort), on data as of ${fmtDate(recording.as_of)}. Each is shown exactly as the API returned it, with the eval's verdict.`
             : "Replay mode shows answers recorded by a full evaluation run, and none has been recorded yet."}
         </p>
+        </div>
       </div>
+      {answers?.length ? <Scorecard answers={answers} /> : null}
     </section>
   );
 }
@@ -79,6 +105,14 @@ function Verdict({ answer, long = false }: { answer: ReplayAnswer; long?: boolea
     : ok
       ? "Scored correct"
       : "Scored wrong";
+  if (!long) {
+    return (
+      <span className={cx("mt-0.5 shrink-0", ok ? "text-good" : "text-danger")}>
+        <Icon size={15} {...ICON} weight={ok ? "light" : "regular"} aria-hidden />
+        <span className="sr-only">{text}</span>
+      </span>
+    );
+  }
   return (
     <span className={cx("inline-flex items-center gap-1.5 text-xs", ok ? "text-good" : "text-danger")}>
       <Icon size={14} {...ICON} className="shrink-0" aria-hidden />
@@ -89,14 +123,24 @@ function Verdict({ answer, long = false }: { answer: ReplayAnswer; long?: boolea
 
 function QuestionList({ answers, active, hrefFor }: { answers: ReplayAnswer[]; active: string; hrefFor: (id: string) => string }) {
   return (
-    <nav aria-label="Recorded questions" className="flex flex-col gap-5 rounded-panel border border-line bg-surface p-4 md:p-5">
+    // From 1024px the list scrolls on its own beside the pinned answer, its category names pinned as it goes.
+    <nav
+      aria-label="Recorded questions"
+      className="flex flex-col rounded-panel border border-line bg-surface lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto lg:overscroll-contain"
+    >
       {CATEGORIES.map(([key, label]) => {
         const items = answers.filter((a) => a.category === key);
         if (!items.length) return null;
+        const correct = items.filter((a) => a.eval.correct).length;
         return (
-          <div key={key}>
-            <h3 className="text-xs font-semibold text-subtle">{label}</h3>
-            <ul className="mt-2 flex flex-col gap-0.5">
+          <div key={key} className="border-b border-line pb-2 last:border-0">
+            <h3 className="sticky top-0 z-[1] flex items-baseline justify-between gap-2 bg-surface/95 px-4 pt-3 pb-1.5 text-xs font-semibold text-ink backdrop-blur-sm">
+              {label}
+              <span className="font-normal text-subtle">
+                {correct} of {items.length} correct
+              </span>
+            </h3>
+            <ul className="flex flex-col gap-px px-2">
               {items.map((a) => (
                 <li key={a.id}>
                   <Link
@@ -104,12 +148,12 @@ function QuestionList({ answers, active, hrefFor }: { answers: ReplayAnswer[]; a
                     scroll={false}
                     aria-current={a.id === active ? "page" : undefined}
                     className={cx(
-                      "flex flex-col gap-0.5 rounded-control px-2.5 py-2 text-sm transition-colors duration-150 hover:bg-hover",
-                      a.id === active ? "bg-hover text-ink" : "text-muted",
+                      "flex items-start gap-2.5 rounded-control px-2 py-2 text-[13px]/5 transition-colors duration-150 hover:bg-hover",
+                      a.id === active ? "bg-accent-soft text-ink" : "text-muted",
                     )}
                   >
-                    <span className={a.id === active ? "font-medium" : undefined}>{a.question}</span>
                     <Verdict answer={a} />
+                    <span className={a.id === active ? "font-medium" : undefined}>{a.question}</span>
                   </Link>
                 </li>
               ))}
@@ -136,7 +180,7 @@ export function ReplayPanel({
   query: string;
 }) {
   const { recording, answers } = replay;
-  const notice = <ModeNotice status={status} recording={recording} />;
+  const notice = <ModeNotice status={status} recording={recording} answers={replay.withheld ? undefined : answers} />;
 
   if (!recording) {
     return (

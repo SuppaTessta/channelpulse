@@ -33,6 +33,8 @@ export function DefinitionButton({
   queries,
   note,
   trigger,
+  source = false,
+  label,
   className,
 }: {
   title: string;
@@ -40,11 +42,15 @@ export function DefinitionButton({
   queries: DefQuery[];
   note?: ReactNode;
   trigger?: ReactNode;
+  /** Name the governed metrics beside the button, so the source reads without opening it (a panel's provenance row). */
+  source?: boolean;
+  /** An accessible name for a short trigger ("SQL"), so each figure's button says which figure it opens. */
+  label?: string;
   className?: string;
 }) {
-  return (
+  const dialog = (
     <Dialog.Root>
-      <Dialog.Trigger className={cx(buttonClass("ghost", "sm"), className)}>
+      <Dialog.Trigger aria-label={label} className={cx(buttonClass("ghost", "sm"), className)}>
         {trigger ?? (
           <>
             <Database size={16} {...ICON} aria-hidden />
@@ -105,5 +111,18 @@ export function DefinitionButton({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+  if (!source || !metrics.length) return dialog;
+  return (
+    <>
+      <p className="mr-auto flex min-w-0 items-center gap-1.5 pl-2 text-xs text-subtle">
+        <SealCheck size={14} {...ICON} className="shrink-0 text-accent" aria-hidden />
+        <span className="sr-only">Governed metrics:</span>
+        <span className="truncate font-mono text-[11.5px]" title={metrics.map((m) => m.name).join(", ")}>
+          {metrics.map((m) => m.name).join(", ")}
+        </span>
+      </p>
+      {dialog}
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { ChatCircleDots, CheckCircle, HandPalm, SealCheck, SealWarning } from "@phosphor-icons/react/dist/ssr";
+import { CaretRight, ChatCircleDots, CheckCircle, HandPalm, SealCheck, SealWarning } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import { buildAskChart, LABEL_TEXT, type AskResponse } from "@/lib/ask";
 import { toISODate } from "@/lib/dates";
@@ -55,9 +55,9 @@ function columnFormatter(column: string, values: unknown[]): (v: unknown) => str
   };
 }
 
-function TraceId({ id }: { id: string }) {
+function TraceId({ id, className }: { id: string; className?: string }) {
   return (
-    <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+    <p className={cx("flex flex-wrap items-center gap-x-2 text-xs text-muted", className)}>
       Trace <code className="font-mono text-subtle [overflow-wrap:anywhere]">{id}</code>
       <CopyButton text={id} label="Copy trace id" />
     </p>
@@ -67,21 +67,36 @@ function TraceId({ id }: { id: string }) {
 /** Shared frame for an answer: an outer tray and an inner plate, because the answer is the one elevated thing here. */
 function Frame({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="rounded-[14px] bg-hover p-1 ring-1 ring-line">
-      <div className={cx("flex flex-col gap-4 rounded-panel bg-raised p-4 shadow-raised md:p-5", className)}>{children}</div>
+    <div className="rounded-[14px] bg-sunken p-1 ring-1 ring-line">
+      <div className={cx("flex flex-col gap-5 rounded-panel bg-raised p-4 shadow-raised md:p-6", className)}>{children}</div>
     </div>
   );
 }
 
 export function AnswerHeader({ question, meta, badge }: { question: string; meta: string; badge?: ReactNode }) {
   return (
-    <header className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
+    <header className="flex flex-col gap-2.5">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         {badge}
         <span className="text-xs text-muted">{meta}</span>
       </div>
-      <h3 className="text-[15px]/6 font-semibold text-ink">{question}</h3>
+      <h3 className="text-[17px]/6 font-semibold tracking-[-0.01em] text-pretty text-ink">{question}</h3>
     </header>
+  );
+}
+
+/**
+ * The answers that state no figures (refused, needs clarification): plain, on a neutral surface, with a left edge
+ * that names the outcome's family. Declining and asking back are normal outcomes, not errors.
+ */
+function NoFigures({ response, question, meta, edge, children }: { response: AskResponse; question: string; meta: string; edge: string; children: ReactNode }) {
+  return (
+    <article className={cx("flex flex-col gap-3 rounded-panel border border-l-[3px] border-line bg-refused-soft p-4 md:p-6", edge)}>
+      <AnswerHeader question={question} meta={meta} badge={<LabelBadge label={response.label} />} />
+      <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
+      {children}
+      <TraceId id={response.trace_id} className="border-t border-line pt-3" />
+    </article>
   );
 }
 
@@ -89,25 +104,21 @@ export function AnswerHeader({ question, meta, badge }: { question: string; meta
 export function Answer({ response, question, meta }: { response: AskResponse; question: string; meta: string }) {
   if (response.label === "refused") {
     return (
-      <article className="flex flex-col gap-3 rounded-panel border border-l-4 border-line border-l-refused-edge bg-refused-soft p-4 md:p-5">
-        <AnswerHeader question={question} meta={meta} badge={<LabelBadge label="refused" />} />
-        <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
+      <NoFigures response={response} question={question} meta={meta} edge="border-l-refused-edge">
         <p className="max-w-[70ch] text-sm text-muted">{response.confidence_note}</p>
         <p className="max-w-[70ch] text-sm text-muted">
           Declining is a normal outcome: the analyst only states figures it can trace to governed data in the marts.
         </p>
-        <TraceId id={response.trace_id} />
-      </article>
+      </NoFigures>
     );
   }
   if (response.label === "needs_clarification") {
     return (
-      <article className="flex flex-col gap-3 rounded-panel border border-l-4 border-line border-l-control bg-surface p-4 md:p-5">
-        <AnswerHeader question={question} meta={meta} badge={<LabelBadge label="needs_clarification" />} />
-        <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
-        <p className="max-w-[70ch] text-sm text-muted">{response.confidence_note} Ask again with the reading you mean.</p>
-        <TraceId id={response.trace_id} />
-      </article>
+      <NoFigures response={response} question={question} meta={meta} edge="border-l-control">
+        <p className="max-w-[70ch] text-sm text-muted">
+          {response.confidence_note} Ask again with the reading you mean.
+        </p>
+      </NoFigures>
     );
   }
   const chart = buildAskChart(response);
@@ -117,7 +128,8 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
       <AnswerHeader question={question} meta={meta} badge={<LabelBadge label={response.label} />} />
       <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
       {response.label === "ad_hoc_sql_verify" ? (
-        <p className="max-w-[70ch] rounded-control bg-adhoc-soft px-3 py-2 text-sm text-ink">
+        <p className="flex max-w-[70ch] items-start gap-2 rounded-control bg-adhoc-soft px-3 py-2.5 text-sm text-ink">
+          <SealWarning size={18} {...ICON} className="mt-px shrink-0 text-adhoc" aria-hidden />
           No governed metric covered this question, so the analyst wrote read-only SQL against the marts. Check the query below before relying on it.
         </p>
       ) : null}
@@ -144,25 +156,28 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
           />
         </div>
       ) : null}
-      <p className="flex items-start gap-2 text-sm text-ink">
-        <CheckCircle size={18} {...ICON} className="mt-px shrink-0 text-accent" aria-hidden />
-        <span>
-          <span className="font-medium">Confidence note.</span> {response.confidence_note}
-        </span>
-      </p>
-      {response.sql.length ? (
-        <details className="group flex flex-col gap-2">
-          <summary className="w-fit rounded-control text-sm font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-control">
-            {response.sql.length === 1 ? "Show the SQL" : `Show the ${response.sql.length} SQL queries`}
-          </summary>
-          <div className="mt-2 flex flex-col gap-3">
-            {response.sql.map((s, i) => (
-              <SqlBlock key={i} sql={s} />
-            ))}
-          </div>
-        </details>
-      ) : null}
-      <TraceId id={response.trace_id} />
+      <div className="-mx-4 -mb-4 flex flex-col gap-3 rounded-b-panel border-t border-line bg-surface px-4 py-4 md:-mx-6 md:-mb-6 md:px-6">
+        <p className="flex items-start gap-2 text-sm text-ink">
+          <CheckCircle size={18} {...ICON} className="mt-px shrink-0 text-accent" aria-hidden />
+          <span>
+            <span className="font-medium">Confidence note.</span> {response.confidence_note}
+          </span>
+        </p>
+        {response.sql.length ? (
+          <details className="group flex flex-col gap-2">
+            <summary className="flex w-fit list-none items-center gap-1.5 rounded-control text-sm font-medium text-ink hover:text-accent [&::-webkit-details-marker]:hidden">
+              <CaretRight size={14} {...ICON} weight="bold" className="transition-transform duration-150 ease-out group-open:rotate-90" aria-hidden />
+              {response.sql.length === 1 ? "Show the SQL" : `Show the ${response.sql.length} SQL queries`}
+            </summary>
+            <div className="mt-2 flex flex-col gap-3">
+              {response.sql.map((s, i) => (
+                <SqlBlock key={i} sql={s} />
+              ))}
+            </div>
+          </details>
+        ) : null}
+        <TraceId id={response.trace_id} />
+      </div>
     </Frame>
   );
 }
@@ -175,9 +190,9 @@ export function PendingAnswer({ question, meta, onCancel }: { question: string; 
         Working on it. The analyst checks the governed metrics first, runs its queries, then writes the answer. This can take a minute or two.
       </p>
       <div aria-hidden className="flex flex-col gap-2">
-        <div className="h-4 w-11/12 rounded-control bg-hover" />
-        <div className="h-4 w-3/4 rounded-control bg-hover" />
-        <div className="mt-2 h-40 w-full rounded-control bg-hover" />
+        <div className="h-4 w-11/12 rounded-control bg-sunken" />
+        <div className="h-4 w-3/4 rounded-control bg-sunken" />
+        <div className="mt-2 h-40 w-full rounded-control bg-sunken" />
       </div>
       {onCancel}
     </Frame>

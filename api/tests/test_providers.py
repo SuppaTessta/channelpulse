@@ -289,3 +289,15 @@ def test_ollama_thinking_off_sends_reasoning_effort_none(monkeypatch):
     built = providers.from_env()
     assert built._reasoning == "none" and "think" not in built._extra
     assert built.settings()["thinking"] == "off (reasoning_effort=none)"
+
+
+def test_a_5xx_keeps_a_short_clean_reason_and_a_context_overflow_is_the_questions_failure():
+    # A prompt larger than the served context is the same every time: pausing the run would loop forever.
+    overflow = httpx2.Response(500, json={"error": {"message": "input length (70123 tokens) exceeds the context length (65536)"}})
+    with pytest.raises(ProviderError) as caught:
+        provider(Server(overflow)).complete("s", [{"role": "user", "content": "q"}], TOOLS, final_only=False, timeout=5)
+    assert caught.value.kind == "rejected" and "exceeds the context length" in str(caught.value)
+    crash = httpx2.Response(500, json={"error": {"message": "model runner has unexpectedly stopped"}})
+    with pytest.raises(ProviderError) as caught:
+        provider(Server(crash)).complete("s", [{"role": "user", "content": "q"}], TOOLS, final_only=False, timeout=5)
+    assert caught.value.kind == "infrastructure" and "unexpectedly stopped" in str(caught.value)

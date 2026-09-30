@@ -1,7 +1,7 @@
 {
   "throttle_state": {
     "requests_by_day": {
-      "2026-09-29": 66
+      "2026-09-29": 79
     }
   },
   "results": {
@@ -5142,6 +5142,388 @@
         "trace_id": "23951c1c-5a2c-40df-b4a7-def904fcca82"
       },
       "requests": 5,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC08": {
+      "id": "TC08",
+      "category": "time_comparison",
+      "question": "Was quarter-end loading heavier at the Q4 FY26 scheme window than at the Q4 FY25 one? Give the average scheme concentration ratio for each.",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "fy25_q4": true,
+          "fy26_q4": true
+        },
+        "golden": {
+          "fy25_q4": 1.267658208955224,
+          "fy26_q4": 1.3399008746355685
+        }
+      },
+      "answer_text": "Yes — quarter-end loading was heavier in the Q4 FY26 scheme window than in Q4 FY25. Using the governed scheme_concentration_ratio metric (1.0 is normal, ~2+ is quarter-end loading), the average was 1.34 in FY26Q4 versus 1.27 in FY25Q4.",
+      "confidence_note": "2/3 figures traced to query results; untraced: 1.0.",
+      "sql": [
+        "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , concentration_ratio AS scheme_concentration_ratio\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n) subq_2\nWHERE distributor_scheme_window__fiscal_quarter_label IN ('FY26Q4', 'FY25Q4')\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY scheme_concentration_ratio DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500"
+      ],
+      "data_rows": 2,
+      "tools_used": [
+        "query_metric",
+        "run_readonly_sql",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_ppp3caqp",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "scheme_concentration_ratio",
+            "filters": [
+              {
+                "dimension": "distributor_scheme_window__fiscal_quarter_label",
+                "op": "in",
+                "value": [
+                  "Q4 FY26",
+                  "Q4 FY25"
+                ]
+              }
+            ],
+            "group_by": [
+              "distributor_scheme_window__fiscal_quarter_label"
+            ],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\":\"call_ppp3caqp\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  distributor_scheme_window__fiscal_quarter_label\\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\\nFROM (\\n  SELECT\\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\\n    , concentra",
+          "sql": "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , concentration_ratio AS scheme_concentration_ratio\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n) subq_2\nWHERE distributor_scheme_window__fiscal_quarter_label IN ('Q4 FY26', 'Q4 FY25')\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY scheme_concentration_ratio DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500",
+          "row_count": 0,
+          "duration_ms": 67,
+          "error": null
+        },
+        {
+          "id": "call_9xw1v8se",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1"
+          },
+          "output": "{\"tool_use_id\":\"call_9xw1v8se\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1) AS q LIMIT 500\",\"row_count\":11,\"row_cap_hit\":false,\"columns\":[\"fiscal_quarter_label\"],\"rows\":[[\"FY24Q4\"],[\"FY25Q1\"],[\"FY25Q2\"],[\"FY25Q3\"]",
+          "sql": "SELECT * FROM (SELECT DISTINCT fiscal_quarter_label FROM marts.mart_scheme_quarterly ORDER BY 1) AS q LIMIT 500",
+          "row_count": 11,
+          "duration_ms": 982,
+          "error": null
+        },
+        {
+          "id": "call_h3mosfcs",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "scheme_concentration_ratio",
+            "filters": [
+              {
+                "dimension": "distributor_scheme_window__fiscal_quarter_label",
+                "op": "in",
+                "value": [
+                  "FY26Q4",
+                  "FY25Q4"
+                ]
+              }
+            ],
+            "group_by": [
+              "distributor_scheme_window__fiscal_quarter_label"
+            ],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\":\"call_h3mosfcs\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  distributor_scheme_window__fiscal_quarter_label\\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\\nFROM (\\n  SELECT\\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\\n    , concentra",
+          "sql": "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , concentration_ratio AS scheme_concentration_ratio\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n) subq_2\nWHERE distributor_scheme_window__fiscal_quarter_label IN ('FY26Q4', 'FY25Q4')\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY scheme_concentration_ratio DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500",
+          "row_count": 2,
+          "duration_ms": 57,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "fy25_q4",
+          "fy26_q4"
+        ],
+        "rows": [
+          [
+            1.267658208955224,
+            1.3399008746355685
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 54553,
+        "output": 472,
+        "cache_read": 53286,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 35453,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "d756faf6-07ce-4f4d-9bdb-2a12bd52d0c4",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:59:06+00:00",
+      "response": {
+        "answer_text": "Yes — quarter-end loading was heavier in the Q4 FY26 scheme window than in Q4 FY25. Using the governed scheme_concentration_ratio metric (1.0 is normal, ~2+ is quarter-end loading), the average was 1.34 in FY26Q4 versus 1.27 in FY25Q4.",
+        "sql": [
+          "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , AVG(scheme_concentration_ratio) AS scheme_concentration_ratio\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , concentration_ratio AS scheme_concentration_ratio\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n) subq_2\nWHERE distributor_scheme_window__fiscal_quarter_label IN ('FY26Q4', 'FY25Q4')\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY scheme_concentration_ratio DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "distributor_scheme_window__fiscal_quarter_label",
+            "scheme_concentration_ratio"
+          ],
+          "rows": [
+            [
+              "FY26Q4",
+              1.3399008746355685
+            ],
+            [
+              "FY25Q4",
+              1.267658208955224
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "distributor_scheme_window__fiscal_quarter_label",
+          "y": "scheme_concentration_ratio",
+          "series": null
+        },
+        "label": "governed_metric",
+        "confidence_note": "2/3 figures traced to query results; untraced: 1.0.",
+        "trace_id": "d756faf6-07ce-4f4d-9bdb-2a12bd52d0c4"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "MH01": {
+      "id": "MH01",
+      "category": "multi_hop_why",
+      "question": "Why did base-crack warranty claims rise at our Durgapur plant in 2025?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "missing_mentions": [],
+        "forbidden_claims": [],
+        "missing_tools": [],
+        "golden": {
+          "resin_lot_id": "RL-DGP-L2-250310",
+          "units_shipped": 3376.0,
+          "base_crack_claims": 291,
+          "base_crack_per_1000": 86.19668246445498
+        }
+      },
+      "answer_text": "Durgapur's (plant DGP) base-crack claims per 1,000 units spiked in March–April 2025 (76.1 and 61.0) versus roughly 12–26 in the other months, and the lot_scan anomaly detector traces this to a single resin lot, RL-DGP-L2-250310 (line 2), which was flagged on 2025-05-18 with 291 base-crack claims on 3,376 units — an effect size of 3.84 (p ≈ 9e-79) versus 10 peer lots. That lot's own base-crack rate was 92.2 (March) and 79.5 (April) per 1,000 units, so the 2025 rise is concentrated in one resin lot rather than a plant-wide problem.",
+      "confidence_note": "12/12 figures traced to query results.",
+      "sql": [
+        "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+        "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+        "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_4.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , batches_src_10000.resin_lot_id AS batch__resin_lot_id\n      , subq_4.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_4.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_4\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_4.batch = batches_src_10000.batch_id\n  ) subq_9\n  WHERE (\n    batch__plant_id = 'DGP'\n  ) AND (\n    batch__resin_lot_id = 'RL-DGP-L2-250310'\n  )\n  GROUP BY\n    metric_time__month\n) subq_13\nORDER BY metric_time__month\nLIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "get_anomalies",
+        "query_metric",
+        "query_metric",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_zgw2xpdw",
+          "name": "get_anomalies",
+          "input": {
+            "as_of_date": null,
+            "detector": "lot_scan",
+            "failure_mode": "base_crack"
+          },
+          "output": "{\"tool_use_id\":\"call_zgw2xpdw\",\"label\":\"governed_metric\",\"sql\":\"with params as (\\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\\n),\\nlatest as (\\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'categ",
+          "sql": "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "row_count": 1,
+          "duration_ms": 25,
+          "error": null
+        },
+        {
+          "id": "call_hgai9ezd",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "base_crack_claims_per_1000_units",
+            "filters": [
+              {
+                "dimension": "batch__plant_id",
+                "op": "=",
+                "value": "Durgapur"
+              }
+            ],
+            "group_by": [
+              "metric_time__month"
+            ],
+            "date_range": {
+              "end": "2025-12-31",
+              "start": "2025-01-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_hgai9ezd\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  metric_time__month\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    metric_time__month\\n    , SUM(cohort_base_crack_claims) AS claims\\n    , SUM(cohort_units_shipped) AS units\\n ",
+          "sql": "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_4.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_4.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_4.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_4\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_4.batch = batches_src_10000.batch_id\n  ) subq_9\n  WHERE batch__plant_id = 'Durgapur'\n  GROUP BY\n    metric_time__month\n) subq_13\nORDER BY metric_time__month\nLIMIT 500",
+          "row_count": 0,
+          "duration_ms": 65,
+          "error": null
+        },
+        {
+          "id": "call_ej5bzytu",
+          "name": "query_metric",
+          "input": {
+            "date_range": {
+              "end": "2025-12-31",
+              "start": "2025-01-01"
+            },
+            "filters": [
+              {
+                "dimension": "batch__plant_id",
+                "op": "=",
+                "value": "DGP"
+              }
+            ],
+            "group_by": [
+              "metric_time__month"
+            ],
+            "metric_name": "base_crack_claims_per_1000_units"
+          },
+          "output": "{\"tool_use_id\":\"call_ej5bzytu\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  metric_time__month\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    metric_time__month\\n    , SUM(cohort_base_crack_claims) AS claims\\n    , SUM(cohort_units_shipped) AS units\\n ",
+          "sql": "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+          "row_count": 12,
+          "duration_ms": 88,
+          "error": null
+        },
+        {
+          "id": "call_e8tjus1e",
+          "name": "query_metric",
+          "input": {
+            "date_range": {
+              "end": "2025-12-31",
+              "start": "2025-01-01"
+            },
+            "filters": [
+              {
+                "dimension": "batch__plant_id",
+                "op": "=",
+                "value": "DGP"
+              },
+              {
+                "dimension": "batch__resin_lot_id",
+                "op": "=",
+                "value": "RL-DGP-L2-250310"
+              }
+            ],
+            "group_by": [
+              "metric_time__month"
+            ],
+            "metric_name": "base_crack_claims_per_1000_units"
+          },
+          "output": "{\"tool_use_id\":\"call_e8tjus1e\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  metric_time__month\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    metric_time__month\\n    , SUM(cohort_base_crack_claims) AS claims\\n    , SUM(cohort_units_shipped) AS units\\n ",
+          "sql": "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_4.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , batches_src_10000.resin_lot_id AS batch__resin_lot_id\n      , subq_4.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_4.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_4\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_4.batch = batches_src_10000.batch_id\n  ) subq_9\n  WHERE (\n    batch__plant_id = 'DGP'\n  ) AND (\n    batch__resin_lot_id = 'RL-DGP-L2-250310'\n  )\n  GROUP BY\n    metric_time__month\n) subq_13\nORDER BY metric_time__month\nLIMIT 500",
+          "row_count": 2,
+          "duration_ms": 64,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "resin_lot_id",
+          "units_shipped",
+          "base_crack_claims",
+          "base_crack_per_1000"
+        ],
+        "rows": [
+          [
+            "RL-DGP-L2-250310",
+            3376.0,
+            291,
+            86.19668246445498
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 59358,
+        "output": 811,
+        "cache_read": 56041,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 65500,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "5e7312f8-92c6-4098-8fee-5c131124b52b",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:59:41+00:00",
+      "response": {
+        "answer_text": "Durgapur's (plant DGP) base-crack claims per 1,000 units spiked in March–April 2025 (76.1 and 61.0) versus roughly 12–26 in the other months, and the lot_scan anomaly detector traces this to a single resin lot, RL-DGP-L2-250310 (line 2), which was flagged on 2025-05-18 with 291 base-crack claims on 3,376 units — an effect size of 3.84 (p ≈ 9e-79) versus 10 peer lots. That lot's own base-crack rate was 92.2 (March) and 79.5 (April) per 1,000 units, so the 2025 rise is concentrated in one resin lot rather than a plant-wide problem.",
+        "sql": [
+          "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+          "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_4.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , batches_src_10000.resin_lot_id AS batch__resin_lot_id\n      , subq_4.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_4.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_4\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_4.batch = batches_src_10000.batch_id\n  ) subq_9\n  WHERE (\n    batch__plant_id = 'DGP'\n  ) AND (\n    batch__resin_lot_id = 'RL-DGP-L2-250310'\n  )\n  GROUP BY\n    metric_time__month\n) subq_13\nORDER BY metric_time__month\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "as_of",
+            "detector",
+            "entity_type",
+            "entity_id",
+            "failure_mode",
+            "region",
+            "snapshot_date",
+            "first_flag_date",
+            "effect_size",
+            "p_value",
+            "details"
+          ],
+          "rows": [
+            [
+              "2026-09-23",
+              "lot_scan",
+              "resin_lot",
+              "RL-DGP-L2-250310",
+              "base_crack",
+              null,
+              "2026-09-20",
+              "2025-05-18",
+              3.8386502094570054,
+              9.119874512631793e-79,
+              {
+                "units": 3376,
+                "claims": 291,
+                "line_no": 2,
+                "expected": 75.8079,
+                "plant_id": "DGP",
+                "peer_lots": 10,
+                "peer_claims": 549,
+                "peer_unit_days": 17901360,
+                "flagged_this_snapshot": true
+              }
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "governed_metric",
+        "confidence_note": "12/12 figures traced to query results.",
+        "trace_id": "5e7312f8-92c6-4098-8fee-5c131124b52b"
+      },
+      "requests": 4,
       "infra_retries": 0,
       "rate_limit_waits": 0
     }

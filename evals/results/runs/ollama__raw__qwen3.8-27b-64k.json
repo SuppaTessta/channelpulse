@@ -1,0 +1,386 @@
+{
+  "throttle_state": {
+    "requests_by_day": {
+      "2026-09-29": 7
+    }
+  },
+  "results": {
+    "SL01": {
+      "id": "SL01",
+      "category": "simple_lookup",
+      "question": "What was our total primary sales value (sell-in to distributors) in Q1 FY27, April to June 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "primary_sales_value": true
+        },
+        "golden": {
+          "primary_sales_value": 1482535220.12
+        }
+      },
+      "answer_text": "Total primary sales value (sell-in to distributors) in Q1 FY27 (1 Apr – 30 Jun 2026) was ₹1,482,535,220.12, across 3,050 invoices.",
+      "confidence_note": "3/3 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_value_inr, COUNT(DISTINCT invoice_id) AS invoice_count, MIN(invoice_date) AS min_date, MAX(invoice_date) AS max_date FROM marts.fct_primary_sales WHERE invoice_date >= CAST('2026-04-01' AS DATE) AND invoice_date < CAST('2026-07-01' AS DATE)) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_niw8q6ov",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT SUM(primary_value_inr) AS total_primary_value_inr,\n       COUNT(DISTINCT invoice_id) AS invoice_count,\n       MIN(invoice_date) AS min_date,\n       MAX(invoice_date) AS max_date\nFROM marts.fct_primary_sales\nWHERE invoice_date >= DATE '2026-04-01'\n  AND invoice_date < DATE '2026-07-01'"
+          },
+          "output": "{\"tool_use_id\":\"call_niw8q6ov\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_value_inr, COUNT(DISTINCT invoice_id) AS invoice_count, MIN(invoice_date) AS min_date, MAX(invoice_date) AS max_date FROM marts.fct_primary_sales WHERE invoice_date >= CAST",
+          "sql": "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_value_inr, COUNT(DISTINCT invoice_id) AS invoice_count, MIN(invoice_date) AS min_date, MAX(invoice_date) AS max_date FROM marts.fct_primary_sales WHERE invoice_date >= CAST('2026-04-01' AS DATE) AND invoice_date < CAST('2026-07-01' AS DATE)) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 76,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            1482535220.12
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5449,
+        "output": 289,
+        "cache_read": 2677,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 28719,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "21f97e67-98d1-4558-bce9-d99c239ce746",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:04:21+00:00",
+      "response": {
+        "answer_text": "Total primary sales value (sell-in to distributors) in Q1 FY27 (1 Apr – 30 Jun 2026) was ₹1,482,535,220.12, across 3,050 invoices.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(primary_value_inr) AS total_primary_value_inr, COUNT(DISTINCT invoice_id) AS invoice_count, MIN(invoice_date) AS min_date, MAX(invoice_date) AS max_date FROM marts.fct_primary_sales WHERE invoice_date >= CAST('2026-04-01' AS DATE) AND invoice_date < CAST('2026-07-01' AS DATE)) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_primary_value_inr",
+            "invoice_count",
+            "min_date",
+            "max_date"
+          ],
+          "rows": [
+            [
+              1482535220.12,
+              3050,
+              "2026-04-01",
+              "2026-06-30"
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "3/3 figures traced to query results.",
+        "trace_id": "21f97e67-98d1-4558-bce9-d99c239ce746"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL02": {
+      "id": "SL02",
+      "category": "simple_lookup",
+      "question": "How much did distributors sell out to retailers, in rupees at list price, in FY25 (April 2024 to March 2025)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "secondary_sales_value": true
+        },
+        "golden": {
+          "secondary_sales_value": 5654720948.99
+        }
+      },
+      "answer_text": "In FY25 (April 2024 to March 2025), distributors sold out to retailers for a total of ₹5,654,720,948.99 at list price, based on 137,646 secondary sales records.",
+      "confidence_note": "2/2 figures traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr, COUNT(*) AS record_count, MIN(sale_date) AS min_sale_date, MAX(sale_date) AS max_sale_date FROM marts.fct_secondary_sales WHERE sale_date >= CAST('2024-04-01' AS DATE) AND sale_date <= CAST('2025-03-31' AS DATE)) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_i0zllmv6",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT SUM(secondary_value_inr) AS total_secondary_value_inr,\n       COUNT(*) AS record_count,\n       MIN(sale_date) AS min_sale_date,\n       MAX(sale_date) AS max_sale_date\nFROM marts.fct_secondary_sales\nWHERE sale_date >= DATE '2024-04-01'\n  AND sale_date <= DATE '2025-03-31'"
+          },
+          "output": "{\"tool_use_id\":\"call_i0zllmv6\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr, COUNT(*) AS record_count, MIN(sale_date) AS min_sale_date, MAX(sale_date) AS max_sale_date FROM marts.fct_secondary_sales WHERE sale_date >= CAST('2024-04-01",
+          "sql": "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr, COUNT(*) AS record_count, MIN(sale_date) AS min_sale_date, MAX(sale_date) AS max_sale_date FROM marts.fct_secondary_sales WHERE sale_date >= CAST('2024-04-01' AS DATE) AND sale_date <= CAST('2025-03-31' AS DATE)) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 208,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "secondary_sales_value"
+        ],
+        "rows": [
+          [
+            5654720948.99
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 5463,
+        "output": 292,
+        "cache_read": 4729,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 18422,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "c5527e2e-0c53-4dd6-b5a6-0eb8a1675254",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:04:50+00:00",
+      "response": {
+        "answer_text": "In FY25 (April 2024 to March 2025), distributors sold out to retailers for a total of ₹5,654,720,948.99 at list price, based on 137,646 secondary sales records.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(secondary_value_inr) AS total_secondary_value_inr, COUNT(*) AS record_count, MIN(sale_date) AS min_sale_date, MAX(sale_date) AS max_sale_date FROM marts.fct_secondary_sales WHERE sale_date >= CAST('2024-04-01' AS DATE) AND sale_date <= CAST('2025-03-31' AS DATE)) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "total_secondary_value_inr",
+            "record_count",
+            "min_sale_date",
+            "max_sale_date"
+          ],
+          "rows": [
+            [
+              5654720948.99,
+              137646,
+              "2024-04-01",
+              "2025-03-31"
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "2/2 figures traced to query results.",
+        "trace_id": "c5527e2e-0c53-4dd6-b5a6-0eb8a1675254"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "SL03": {
+      "id": "SL03",
+      "category": "simple_lookup",
+      "question": "What was the company-wide DSO on invoices raised in FY26 (April 2025 to March 2026)?",
+      "expected_label": "governed_metric",
+      "actual_label": "ad_hoc_sql_verify",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": true,
+      "match": {
+        "ok": false,
+        "found": {
+          "dso_days": false
+        },
+        "golden": {
+          "dso_days": 39.78035017451129
+        }
+      },
+      "answer_text": "The company-wide DSO on invoices raised in FY26 (April 2025 to March 2026) was 50 days.",
+      "confidence_note": "1/1 figure traced to query results.",
+      "sql": [
+        "SELECT * FROM (SELECT SUM(days_outstanding) / COUNT(*) AS dso FROM marts.fct_invoice_collections AS f JOIN marts.dim_date AS d ON d.date_day = f.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "run_readonly_sql",
+        "run_readonly_sql"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_leqrmdwo",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  SUM(days_outstanding) / SUM(qty) AS dso\nFROM (\n  SELECT\n    f.days_outstanding,\n    f.qty\n  FROM marts.fct_invoice_collections f\n  JOIN marts.dim_date d ON d.date_day = f.invoice_date\n  WHERE d.fiscal_year = 2026\n) sub;"
+          },
+          "output": "{\"tool_use_id\": \"call_leqrmdwo\", \"error\": \"column f.qty does not exist\"}",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 57,
+          "error": "column f.qty does not exist"
+        },
+        {
+          "id": "call_wloew73s",
+          "name": "run_readonly_sql",
+          "input": {
+            "sql": "SELECT\n  SUM(days_outstanding) / COUNT(*) AS dso\nFROM marts.fct_invoice_collections f\nJOIN marts.dim_date d ON d.date_day = f.invoice_date\nWHERE d.fiscal_year = 2026;"
+          },
+          "output": "{\"tool_use_id\":\"call_wloew73s\",\"label\":\"ad_hoc_sql_verify\",\"sql\":\"SELECT * FROM (SELECT SUM(days_outstanding) / COUNT(*) AS dso FROM marts.fct_invoice_collections AS f JOIN marts.dim_date AS d ON d.date_day = f.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500\",\"row_count\":1,\"row_cap_hit\":fals",
+          "sql": "SELECT * FROM (SELECT SUM(days_outstanding) / COUNT(*) AS dso FROM marts.fct_invoice_collections AS f JOIN marts.dim_date AS d ON d.date_day = f.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500",
+          "row_count": 1,
+          "duration_ms": 45,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "dso_days"
+        ],
+        "rows": [
+          [
+            39.78035017451129
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 8164,
+        "output": 326,
+        "cache_read": 7496,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 20515,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "7785d2f6-0bde-4b04-be2b-b349c57ec2b3",
+      "error": null,
+      "provider": "ollama",
+      "mode": "raw",
+      "asked_at": "2026-09-30T04:05:08+00:00",
+      "response": {
+        "answer_text": "The company-wide DSO on invoices raised in FY26 (April 2025 to March 2026) was 50 days.",
+        "sql": [
+          "SELECT * FROM (SELECT SUM(days_outstanding) / COUNT(*) AS dso FROM marts.fct_invoice_collections AS f JOIN marts.dim_date AS d ON d.date_day = f.invoice_date WHERE d.fiscal_year = 2026) AS q LIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "dso"
+          ],
+          "rows": [
+            [
+              50
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "ad_hoc_sql_verify",
+        "confidence_note": "1/1 figure traced to query results.",
+        "trace_id": "7785d2f6-0bde-4b04-be2b-b349c57ec2b3"
+      },
+      "requests": 3,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    }
+  },
+  "meta": {
+    "provider": "ollama",
+    "mode": "raw",
+    "model": "qwen3.8-27b-64k",
+    "effort": "none",
+    "as_of": "2026-09-23",
+    "pinned_as_of": "2026-09-23",
+    "region": "ALL",
+    "git_commit": "5b81a43d5ce79e7289bdd9f1260a3b58a12c11d9-dirty",
+    "timestamp": "2026-09-30T04:04:19+00:00",
+    "budget_usd": 5.0,
+    "question_count": 40,
+    "golden_count": 32,
+    "selected": [
+      "SL01",
+      "SL02",
+      "SL03",
+      "SL04",
+      "SL05",
+      "SL06",
+      "SL07",
+      "SL08",
+      "FG01",
+      "FG02",
+      "FG03",
+      "FG04",
+      "FG05",
+      "FG06",
+      "FG07",
+      "FG08",
+      "TC01",
+      "TC02",
+      "TC03",
+      "TC04",
+      "TC05",
+      "TC06",
+      "TC07",
+      "TC08",
+      "MH01",
+      "MH02",
+      "MH03",
+      "MH04",
+      "MH05",
+      "MH06",
+      "MH07",
+      "MH08",
+      "TR01",
+      "TR02",
+      "TR03",
+      "TR04",
+      "TR05",
+      "TR06",
+      "TR07",
+      "TR08"
+    ],
+    "settings": {
+      "temperature": 0.0,
+      "reasoning_effort": "none",
+      "thinking": "off (reasoning_effort=none)",
+      "quantization": "Q4_K_M",
+      "context_length": 65536,
+      "context_length_trained": 262144,
+      "family": "qwen35",
+      "parameter_size": "27.3B",
+      "format": "gguf",
+      "server_parameters": {
+        "top_p": "0.95",
+        "draft_num_predict": "2",
+        "min_p": "0",
+        "num_ctx": "65536",
+        "presence_penalty": "0",
+        "repeat_penalty": "1",
+        "temperature": "0",
+        "top_k": "20"
+      },
+      "server_thinking_default": "medium"
+    },
+    "agent_timeout_s": 1800
+  }
+}

@@ -162,6 +162,7 @@ FINAL_INSTRUCTION = (
 )
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
 _CLOUDFLARE_DOWN = {520, 521, 522, 523, 524, 525, 526, 527, 530}
+_CONTEXT_OVERFLOW = re.compile(r"context (length|window)|too long|exceeds", re.IGNORECASE)
 
 
 class OpenAICompatProvider:
@@ -211,7 +212,11 @@ class OpenAICompatProvider:
         if res.status_code == 429:
             raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res), _quota_id(res))
         if res.status_code >= 500 or res.status_code in _CLOUDFLARE_DOWN:
-            raise ProviderError(f"{self.name}: server error {res.status_code}.", "infrastructure", res.status_code)
+            reason = _error_text(res) if "json" in res.headers.get("content-type", "") else ""
+            # A prompt beyond the served context fails the same way every time: that question's failure, not an outage.
+            kind = "rejected" if _CONTEXT_OVERFLOW.search(reason) else "infrastructure"
+            raise ProviderError(f"{self.name}: server error {res.status_code}{': ' + reason if reason else '.'}", kind,
+                                res.status_code)
         if res.status_code >= 400:
             raise ProviderError(f"{self.name}: request rejected ({res.status_code}): {_error_text(res)}", "rejected",
                                 res.status_code)

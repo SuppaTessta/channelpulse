@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app import config, replay, semantic, traces
+from app import brief, config, replay, semantic, traces
 from app.agent.loop import AgentError, run_agent
 from app.agent.providers import Provider, ProviderError, from_env
 from app.agent.trace import Trace, write_trace
@@ -296,6 +296,30 @@ def get_trace(trace_id: str, region: Region, x_admin_token: Annotated[str | None
     if match is None:
         raise HTTPException(404, "No trace with that id is visible to this request.")
     return match
+
+
+@app.get("/api/brief/weeks")
+def brief_weeks(region: Region) -> dict:
+    """The complete weeks a brief can be written for, newest first."""
+    try:
+        return {"weeks": brief.weeks(region)}
+    except QueryError as e:
+        raise HTTPException(502, f"Query failed: {e}") from e
+
+
+@app.get("/api/brief")
+def weekly_brief(region: Region, provider: LLM, week: date | None = None) -> dict:
+    """The Weekly Channel & Quality Brief for the week starting `week` (a Monday; default the latest complete week),
+    after the numbers check. A blocked brief comes back with status blocked and no sentences."""
+    try:
+        weeks = brief.weeks(region)
+        start = week.isoformat() if week else weeks[0]
+        if start not in weeks:
+            raise HTTPException(422, "week must be the Monday of a complete week in the data.")
+        as_of = date.fromisoformat(str(handlers.data_window(region)["as_of"])[:10])
+        return brief.build(date.fromisoformat(start), region, as_of, provider)
+    except (QueryError, semantic.InvalidQuery) as e:
+        raise HTTPException(502, f"Query failed: {e}") from e
 
 
 def _governed(handler, tool_input: dict, region: str) -> dict:

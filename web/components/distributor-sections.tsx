@@ -12,7 +12,7 @@ import { DataTable } from "./data-table";
 import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { EmptyState, ErrorState } from "./states";
-import { Badge, ICON } from "./ui";
+import { Badge, Figure, ICON } from "./ui";
 
 type Ctx = { period: Period; win: DataWindow; region: Region; catalog: Result<Record<string, Metric>>; filters: Filter[] };
 const metricOf = (catalog: Ctx["catalog"], name: string) => (catalog.ok ? catalog.value[name] : undefined) ?? fallbackMetric(name);
@@ -46,7 +46,7 @@ export async function HealthPanel({ ctx, flag, pastFlag, className }: { ctx: Ctx
     values: alignSeries(buckets, r.value[i], "metric_time__week", name, false),
     horizonBound: false,
   }));
-  const definition = <DefinitionButton title={title} metrics={names.map((n) => toDefMetric(metricOf(ctx.catalog, n)))} queries={r.value.map((q, i) => toDefQuery(q, `${series[i].label} by week`))} />;
+  const definition = <DefinitionButton source title={title} metrics={names.map((n) => toDefMetric(metricOf(ctx.catalog, n)))} queries={r.value.map((q, i) => toDefQuery(q, `${series[i].label} by week`))} />;
   const scored = series[0].values.findLastIndex((v) => v != null);
   if (scored < 0) {
     return (
@@ -141,7 +141,7 @@ export async function Receivables({ ctx }: { ctx: Ctx }) {
           return (
             <div key={name} className="bg-surface p-3">
               <p className="text-xs text-muted">{shortLabel(m.label)}</p>
-              <p className="text-xl font-semibold text-ink">{formatValue("inr", scalar(r.value[i].result.data, name))}</p>
+              <Figure text={formatValue("inr", scalar(r.value[i].result.data, name))} className="block text-xl font-semibold tracking-[-0.02em] text-ink" />
             </div>
           );
         })}
@@ -185,7 +185,7 @@ export async function SchemePanel({ ctx, className }: { ctx: Ctx; className?: st
   });
   const sorted = [...rows.values()].sort((a, b) => b.quarter.localeCompare(a.quarter) || a.category.localeCompare(b.category));
   const metrics = SCHEME.map((n) => metricOf(ctx.catalog, n));
-  const definition = <DefinitionButton title={title} metrics={metrics.map(toDefMetric)} queries={r.value.map((q, i) => toDefQuery(q, `${shortLabel(metrics[i].label)} by quarter and category`))} />;
+  const definition = <DefinitionButton source title={title} metrics={metrics.map(toDefMetric)} queries={r.value.map((q, i) => toDefQuery(q, `${shortLabel(metrics[i].label)} by quarter and category`))} />;
   const head = (i: number) => (
     <span className="inline-flex items-center gap-0.5">
       {shortLabel(metrics[i].label)}

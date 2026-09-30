@@ -16,7 +16,7 @@ import { TimeChart, type Bucket } from "./charts/time-chart";
 import { DataTable } from "./data-table";
 import { DefinitionButton } from "./definition";
 import { EmptyState, ErrorState } from "./states";
-import { Badge, buttonClass, cx, ICON } from "./ui";
+import { Badge, buttonClass, cx, Figure, ICON } from "./ui";
 
 export type QualityCtx = {
   region: Region;
@@ -113,6 +113,7 @@ export async function CohortHeatmap({ ctx, activeMonth, className }: { ctx: Qual
   const capped = r.value.some((q) => q.result.row_cap_hit);
   const definition = (
     <DefinitionButton
+      source
       title={title}
       metrics={[toDefMetric(metric), toDefMetric(metricOf(ctx.catalog, "cohort_units_shipped"))]}
       queries={[toDefQuery(months.value, "Manufacture months with shipped units"), ...r.value.map((q, i) => toDefQuery(q, `Cells made ${fmtMonth(chunks[i].start)} to ${fmtMonth(monthEnd(chunks[i].end))}`))]}
@@ -195,7 +196,7 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
           </h2>
           <p className="mt-0.5 max-w-[60ch] text-xs text-muted">
             The pre-registered scan compares each lot&apos;s claims with plant-line peers at equal time since shipment.
-            {latest ? ` Latest weekly snapshot ${fmtDate(latest)}.` : ""}
+            {latest ? ` Latest weekly snapshot ${fmtDate(latest)}, which flags ${fmtNumber(lots.filter((f) => isCurrentFlag(f, latest)).length)} of these ${fmtNumber(lots.length)} lots.` : ""}
           </p>
         </div>
         <DefinitionButton title="Detector flags" metrics={[]} queries={[anomaliesDefQuery(anomalies.value, "Detector flags")]} />
@@ -206,20 +207,32 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
         <ul className="flex flex-col divide-y divide-line">
           {lots.map((f) => {
             const current = isCurrentFlag(f, latest);
+            const claims = detail(f, "claims");
+            const expected = detail(f, "expected");
             return (
               <li key={`${f.entity_id}|${f.failure_mode}`}>
+                {/* The rate ratio is the scan's own measure, so it leads the row; claims and dates back it up. */}
                 <Link
                   href={hrefWith("/quality", sp, { lot: f.entity_id, batch: null, month: null })}
                   scroll={false}
                   aria-current={activeLot === f.entity_id ? "true" : undefined}
-                  className="-mx-2 flex flex-col gap-1 rounded-control px-2 py-2.5 hover:bg-hover aria-[current]:bg-accent-soft"
+                  className="-mx-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 rounded-control px-2 py-3 transition-colors duration-150 hover:bg-hover aria-[current]:bg-accent-soft"
                 >
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[13px] text-ink">{f.entity_id}</span>
+                  <span className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="font-mono text-[13px] font-medium text-ink">{f.entity_id}</span>
                     {f.failure_mode ? <Badge tone={current ? "danger" : "neutral"}>{f.failure_mode.replace(/_/g, " ")}</Badge> : null}
-                    {current ? null : <span className="text-xs text-subtle">not flagged in the latest snapshot</span>}
                   </span>
-                  <span className="text-xs text-muted">{lotFlagText(f)}</span>
+                  {f.effect_size != null ? (
+                    <span className="row-span-2 text-right">
+                      <Figure text={`${fmtNumber(f.effect_size, 2)}×`} className={cx("block text-xl/6 font-semibold tracking-[-0.02em]", current ? "text-danger" : "text-ink")} />
+                      <span className="text-[11px] text-subtle">peer rate</span>
+                    </span>
+                  ) : null}
+                  <span className="text-xs text-muted">
+                    {claims != null && expected != null ? `${fmtNumber(claims)} claims against ${fmtNumber(expected, 1)} expected. ` : ""}
+                    {f.first_flag_date ? `First flagged ${fmtDate(String(f.first_flag_date).slice(0, 10))}.` : ""}
+                    {current ? null : <span className="block text-subtle">Not flagged in the latest snapshot.</span>}
+                  </span>
                 </Link>
               </li>
             );
@@ -256,7 +269,7 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
 /** Elevated because it is a focused layer over the heatmap: an outer tray and an inner plate (radius 10 + 4). */
 function DrillShell({ title, eyebrow, closeHref, children, actions }: { title: string; eyebrow: string; closeHref: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section aria-labelledby="drill-title" className="rounded-[14px] bg-hover p-1 ring-1 ring-line">
+    <section aria-labelledby="drill-title" className="rounded-[14px] bg-sunken p-1 ring-1 ring-line">
       <div className="flex flex-col gap-4 rounded-panel bg-raised p-4 shadow-raised md:p-5">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">

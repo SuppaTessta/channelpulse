@@ -1,7 +1,7 @@
 {
   "throttle_state": {
     "requests_by_day": {
-      "2026-09-29": 74
+      "2026-09-29": 89
     }
   },
   "results": {
@@ -5384,6 +5384,869 @@
       "requests": 4,
       "infra_retries": 0,
       "rate_limit_waits": 0
+    },
+    "MH02": {
+      "id": "MH02",
+      "category": "multi_hop_why",
+      "question": "As of 23 September 2026, which distributor shows the clearest channel stress, with sell-out falling while sell-in holds up, and what is behind it?",
+      "expected_label": "governed_metric",
+      "actual_label": "error",
+      "correct": false,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": false,
+      "confidently_wrong": false,
+      "match": {
+        "ok": false,
+        "reason": "no answer"
+      },
+      "answer_text": null,
+      "confidence_note": null,
+      "sql": [],
+      "data_rows": 0,
+      "tools_used": [],
+      "tool_calls": [],
+      "golden": {
+        "columns": [
+          "distributor_id",
+          "distributor_name",
+          "region",
+          "health_score",
+          "dso_vs_median",
+          "sell_out_vs_last_year",
+          "sell_in_vs_last_year"
+        ],
+        "rows": [
+          [
+            "D0246",
+            "Mohanty Trading Co.",
+            "Bihar & Jharkhand",
+            27.2,
+            0.595,
+            0.6309167165967645,
+            1.1845238095238095
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 10828,
+      "served_model": null,
+      "trace_id": "cb7e6a5a-2737-481e-96e8-5b1258ab2399",
+      "error": "ProviderError: ollama: server error 500: XML syntax error on line 13: element <parameter> closed by </function>",
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T04:54:20+00:00",
+      "response": null,
+      "requests": 1,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "MH03": {
+      "id": "MH03",
+      "category": "multi_hop_why",
+      "question": "Which district has the most installer-attributed warranty claims, and why are claims there so high? Is a bad production batch to blame?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "missing_mentions": [],
+        "forbidden_claims": [],
+        "missing_tools": [],
+        "golden": {
+          "install_district": "Kamrup Metropolitan",
+          "installer_id": "INS0227",
+          "installer_name": "Sunita Mondal",
+          "installs": 1088.0,
+          "claims": 140.0,
+          "leave_one_out_ratio": 2.401403743315508
+        }
+      },
+      "answer_text": "Kamrup Metropolitan has the most installer-attributed warranty claims — 602 claims (installer_claims metric), well ahead of Kolkata (373) and Patna (330). The reason is an installer, not a bad batch: the installer_scan anomaly detector flags installer INS0227, who works in Kamrup Metropolitan, with 139 claims against an expected ~52 (effect size 2.65, p≈2.9e-23) across 1,085 installs spanning 2 plants and 73 resin lots — a broad pattern inconsistent with a single defective lot. The lot_scan detector's strongest flag is resin lot RL-DGP-L2-250310 (base cracks, 291 claims vs ~76 expected), but it is not tied to Kamrup Metropolitan, so a bad production batch is not the supported explanation for that district's high claims.",
+      "confidence_note": "10/10 figures traced to query results.",
+      "sql": [
+        "SELECT\n  install_district AS installer_cohort_month__install_district\n  , SUM(claims) AS installer_claims\nFROM \"marts\".\"mart_installer_claim_cohorts\" installer_claim_cohorts_src_10000\nGROUP BY\n  install_district\nORDER BY installer_claims DESC, installer_cohort_month__install_district\nLIMIT 500",
+        "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('installer_scan'::text is null or l.detector = 'installer_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+        "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector"
+      ],
+      "data_rows": 85,
+      "tools_used": [
+        "query_metric",
+        "get_anomalies",
+        "get_anomalies",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_2b7k8h0d",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "installer_claims",
+            "group_by": [
+              "installer_cohort_month__install_district"
+            ],
+            "filters": [],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\":\"call_2b7k8h0d\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  install_district AS installer_cohort_month__install_district\\n  , SUM(claims) AS installer_claims\\nFROM \\\"marts\\\".\\\"mart_installer_claim_cohorts\\\" installer_claim_cohorts_src_10000\\nGROUP BY\\n  install_district\\nORDER BY insta",
+          "sql": "SELECT\n  install_district AS installer_cohort_month__install_district\n  , SUM(claims) AS installer_claims\nFROM \"marts\".\"mart_installer_claim_cohorts\" installer_claim_cohorts_src_10000\nGROUP BY\n  install_district\nORDER BY installer_claims DESC, installer_cohort_month__install_district\nLIMIT 500",
+          "row_count": 85,
+          "duration_ms": 101,
+          "error": null
+        },
+        {
+          "id": "call_w1swrrae",
+          "name": "get_anomalies",
+          "input": {
+            "as_of_date": null,
+            "detector": "installer_scan",
+            "failure_mode": null
+          },
+          "output": "{\"tool_use_id\":\"call_w1swrrae\",\"label\":\"governed_metric\",\"sql\":\"with params as (\\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\\n),\\nlatest as (\\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'categ",
+          "sql": "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('installer_scan'::text is null or l.detector = 'installer_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "row_count": 1,
+          "duration_ms": 23,
+          "error": null
+        },
+        {
+          "id": "call_a3xqgwoi",
+          "name": "get_anomalies",
+          "input": {
+            "as_of_date": null,
+            "detector": "lot_scan",
+            "failure_mode": null
+          },
+          "output": "{\"tool_use_id\":\"call_a3xqgwoi\",\"label\":\"governed_metric\",\"sql\":\"with params as (\\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\\n),\\nlatest as (\\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'categ",
+          "sql": "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "row_count": 4,
+          "duration_ms": 34,
+          "error": null
+        },
+        {
+          "id": "call_8lmfn42e",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "installer_claim_rate",
+            "group_by": [
+              "installer_cohort_month__install_district"
+            ],
+            "filters": [],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\":\"call_8lmfn42e\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  installer_cohort_month__install_district\\n  , 1000 * claims / nullif(units, 0) AS installer_claim_rate\\nFROM (\\n  SELECT\\n    installer_cohort_month__install_district\\n    , SUM(__installer_claims) AS claims\\n    , SUM(__insta",
+          "sql": "SELECT\n  installer_cohort_month__install_district\n  , 1000 * claims / nullif(units, 0) AS installer_claim_rate\nFROM (\n  SELECT\n    installer_cohort_month__install_district\n    , SUM(__installer_claims) AS claims\n    , SUM(__installer_units_installed) AS units\n  FROM (\n    SELECT\n      install_district AS installer_cohort_month__install_district\n      , claims AS __installer_claims\n      , case when months_since_install = 0 then units_installed else 0 end AS __installer_units_installed\n    FROM \"marts\".\"mart_installer_claim_cohorts\" installer_claim_cohorts_src_10000\n  ) subq_3\n  GROUP BY\n    installer_cohort_month__install_district\n) subq_5\nORDER BY installer_claim_rate DESC, installer_cohort_month__install_district\nLIMIT 500",
+          "row_count": 85,
+          "duration_ms": 86,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "install_district",
+          "installer_id",
+          "installer_name",
+          "installs",
+          "claims",
+          "leave_one_out_ratio"
+        ],
+        "rows": [
+          [
+            "Kamrup Metropolitan",
+            "INS0227",
+            "Sunita Mondal",
+            1088.0,
+            140.0,
+            2.401403743315508
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 44886,
+        "output": 601,
+        "cache_read": 40682,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 53750,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "766efdaf-6c90-4eff-82a5-cb4dd883425f",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T04:54:31+00:00",
+      "response": {
+        "answer_text": "Kamrup Metropolitan has the most installer-attributed warranty claims — 602 claims (installer_claims metric), well ahead of Kolkata (373) and Patna (330). The reason is an installer, not a bad batch: the installer_scan anomaly detector flags installer INS0227, who works in Kamrup Metropolitan, with 139 claims against an expected ~52 (effect size 2.65, p≈2.9e-23) across 1,085 installs spanning 2 plants and 73 resin lots — a broad pattern inconsistent with a single defective lot. The lot_scan detector's strongest flag is resin lot RL-DGP-L2-250310 (base cracks, 291 claims vs ~76 expected), but it is not tied to Kamrup Metropolitan, so a bad production batch is not the supported explanation for that district's high claims.",
+        "sql": [
+          "SELECT\n  install_district AS installer_cohort_month__install_district\n  , SUM(claims) AS installer_claims\nFROM \"marts\".\"mart_installer_claim_cohorts\" installer_claim_cohorts_src_10000\nGROUP BY\n  install_district\nORDER BY installer_claims DESC, installer_cohort_month__install_district\nLIMIT 500",
+          "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('installer_scan'::text is null or l.detector = 'installer_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector"
+        ],
+        "data": {
+          "columns": [
+            "installer_cohort_month__install_district",
+            "installer_claims"
+          ],
+          "rows": [
+            [
+              "Kamrup Metropolitan",
+              602.0
+            ],
+            [
+              "Kolkata",
+              373.0
+            ],
+            [
+              "Patna",
+              330.0
+            ],
+            [
+              "Khordha",
+              324.0
+            ],
+            [
+              "East Singhbhum",
+              222.0
+            ],
+            [
+              "Papum Pare",
+              200.0
+            ],
+            [
+              "North 24 Parganas",
+              192.0
+            ],
+            [
+              "Hooghly",
+              167.0
+            ],
+            [
+              "East Khasi Hills",
+              163.0
+            ],
+            [
+              "South 24 Parganas",
+              161.0
+            ],
+            [
+              "Howrah",
+              159.0
+            ],
+            [
+              "Cuttack",
+              152.0
+            ],
+            [
+              "Muzaffarpur",
+              137.0
+            ],
+            [
+              "Ranchi",
+              132.0
+            ],
+            [
+              "Paschim Bardhaman",
+              130.0
+            ],
+            [
+              "West Tripura",
+              124.0
+            ],
+            [
+              "Ganjam",
+              110.0
+            ],
+            [
+              "Darjeeling",
+              106.0
+            ],
+            [
+              "Sundargarh",
+              105.0
+            ],
+            [
+              "Dhubri",
+              99.0
+            ],
+            [
+              "Imphal West",
+              90.0
+            ],
+            [
+              "Paschim Medinipur",
+              88.0
+            ],
+            [
+              "Murshidabad",
+              86.0
+            ],
+            [
+              "Nadia",
+              86.0
+            ],
+            [
+              "Dhanbad",
+              81.0
+            ],
+            [
+              "Aizawl",
+              78.0
+            ],
+            [
+              "Gaya",
+              77.0
+            ],
+            [
+              "Lakhimpur",
+              76.0
+            ],
+            [
+              "Uttar Dinajpur",
+              75.0
+            ],
+            [
+              "Sonitpur",
+              70.0
+            ],
+            [
+              "Begusarai",
+              67.0
+            ],
+            [
+              "Kamrup",
+              67.0
+            ],
+            [
+              "Cooch Behar",
+              66.0
+            ],
+            [
+              "Hazaribagh",
+              63.0
+            ],
+            [
+              "Nalanda",
+              62.0
+            ],
+            [
+              "Cachar",
+              61.0
+            ],
+            [
+              "Jorhat",
+              59.0
+            ],
+            [
+              "Darbhanga",
+              56.0
+            ],
+            [
+              "Dibrugarh",
+              54.0
+            ],
+            [
+              "Purba Medinipur",
+              52.0
+            ],
+            [
+              "Gangtok",
+              51.0
+            ],
+            [
+              "Jajpur",
+              51.0
+            ],
+            [
+              "Bankura",
+              47.0
+            ],
+            [
+              "Bokaro",
+              47.0
+            ],
+            [
+              "Malda",
+              45.0
+            ],
+            [
+              "Bhagalpur",
+              43.0
+            ],
+            [
+              "Purba Bardhaman",
+              43.0
+            ],
+            [
+              "Golaghat",
+              42.0
+            ],
+            [
+              "Saran",
+              42.0
+            ],
+            [
+              "Birbhum",
+              40.0
+            ],
+            [
+              "Samastipur",
+              39.0
+            ],
+            [
+              "Nagaon",
+              38.0
+            ],
+            [
+              "Puri",
+              38.0
+            ],
+            [
+              "Tinsukia",
+              38.0
+            ],
+            [
+              "East Siang",
+              36.0
+            ],
+            [
+              "Ri-Bhoi",
+              36.0
+            ],
+            [
+              "Kohima",
+              35.0
+            ],
+            [
+              "Purulia",
+              34.0
+            ],
+            [
+              "West Garo Hills",
+              34.0
+            ],
+            [
+              "Dimapur",
+              33.0
+            ],
+            [
+              "Purnia",
+              33.0
+            ],
+            [
+              "Alipurduar",
+              30.0
+            ],
+            [
+              "Balasore",
+              28.0
+            ],
+            [
+              "Jalpaiguri",
+              28.0
+            ],
+            [
+              "Mayurbhanj",
+              26.0
+            ],
+            [
+              "Sambalpur",
+              25.0
+            ],
+            [
+              "Thoubal",
+              24.0
+            ],
+            [
+              "Deoghar",
+              22.0
+            ],
+            [
+              "Gomati",
+              22.0
+            ],
+            [
+              "Mokokchung",
+              20.0
+            ],
+            [
+              "Dakshin Dinajpur",
+              19.0
+            ],
+            [
+              "Imphal East",
+              19.0
+            ],
+            [
+              "Barpeta",
+              18.0
+            ],
+            [
+              "Churachandpur",
+              18.0
+            ],
+            [
+              "North Tripura",
+              18.0
+            ],
+            [
+              "Lohit",
+              16.0
+            ],
+            [
+              "Namchi",
+              16.0
+            ],
+            [
+              "Lunglei",
+              13.0
+            ],
+            [
+              "Kalimpong",
+              11.0
+            ],
+            [
+              "Giridih",
+              10.0
+            ],
+            [
+              "Gyalshing",
+              8.0
+            ],
+            [
+              "West Jaintia Hills",
+              7.0
+            ],
+            [
+              "Champhai",
+              5.0
+            ],
+            [
+              "Jhargram",
+              4.0
+            ],
+            [
+              "Dhalai",
+              3.0
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "installer_cohort_month__install_district",
+          "y": "installer_claims",
+          "series": null
+        },
+        "label": "governed_metric",
+        "confidence_note": "10/10 figures traced to query results.",
+        "trace_id": "766efdaf-6c90-4eff-82a5-cb4dd883425f"
+      },
+      "requests": 3,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "MH04": {
+      "id": "MH04",
+      "category": "multi_hop_why",
+      "question": "Why does channel stock tend to rise right after each quarter-end?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "missing_mentions": [],
+        "forbidden_claims": [],
+        "missing_tools": [],
+        "golden": {
+          "scheme_window_share": 0.211848600604268,
+          "avg_days_of_stock_rise_60d": 2.9475848661582176,
+          "quarters": 10
+        }
+      },
+      "answer_text": "Channel stock (channel_stock_units) climbs in the last two weeks of each fiscal quarter and then unwinds: e.g. it rose from ~1.91M units in the week of 2026-02-23 to ~2.50M by 2026-03-30, and from ~1.84M to ~2.25M into the March 2025 quarter-end. The pre-registered stuffing detector flags this as quarter-end channel stuffing — distributors ordering well above their trailing-90-day rate in the scheme window (last 15 days), with 280 distributor-category flags in FY26Q4 and 276 in FY25Q4 (stuffing_flags metric). So the post-quarter-end stock build-up is driven by scheme-window order loading ahead of quarter close, not by a change in sell-out.",
+      "confidence_note": "3/3 figures traced to query results.",
+      "sql": [
+        "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+        "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+        "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , SUM(__stuffing_flags) AS stuffing_flags\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , case when is_stuffing_flag then 1 else 0 end AS __stuffing_flags\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n  WHERE DATE_TRUNC('day', window_start_date) BETWEEN '2024-04-01' AND '2026-03-31'\n) subq_5\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY stuffing_flags DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500",
+        "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('stuffing'::text is null or l.detector = 'stuffing')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector"
+      ],
+      "data_rows": 10,
+      "tools_used": [
+        "get_anomalies",
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_o4fe1535",
+          "name": "get_anomalies",
+          "input": {
+            "as_of_date": null,
+            "detector": "stuffing",
+            "failure_mode": null
+          },
+          "output": "{\"tool_use_id\":\"call_o4fe1535\",\"label\":\"governed_metric\",\"sql\":\"with params as (\\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\\n),\\nlatest as (\\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'categ",
+          "sql": "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('stuffing'::text is null or l.detector = 'stuffing')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "row_count": 500,
+          "duration_ms": 43,
+          "error": null
+        },
+        {
+          "id": "call_djgpub4r",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_stock_units",
+            "filters": [],
+            "group_by": [
+              "metric_time__fiscal_quarter"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\": \"call_djgpub4r\", \"error\": \"Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the gr",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 15,
+          "error": "Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the group-by-item. (fan-out join support is pending). * There are multiple matching join paths. (disambiguation support is pending). Suggestions: [ 'metric_time__week', 'product__category', 'inventory_week__is_settled', 'distributor__state', 'invent"
+        },
+        {
+          "id": "call_f6mm7cfz",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "stuffing_flags",
+            "filters": [],
+            "group_by": [
+              "distributor_scheme_window__fiscal_quarter_label"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_f6mm7cfz\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  distributor_scheme_window__fiscal_quarter_label\\n  , SUM(__stuffing_flags) AS stuffing_flags\\nFROM (\\n  SELECT\\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\\n    , case when is_stuffing_flag then",
+          "sql": "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , SUM(__stuffing_flags) AS stuffing_flags\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , case when is_stuffing_flag then 1 else 0 end AS __stuffing_flags\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n  WHERE DATE_TRUNC('day', window_start_date) BETWEEN '2024-04-01' AND '2026-03-31'\n) subq_5\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY stuffing_flags DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500",
+          "row_count": 8,
+          "duration_ms": 48,
+          "error": null
+        },
+        {
+          "id": "call_ig8wthfl",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_stock_units",
+            "filters": [],
+            "group_by": [
+              "metric_time__fiscal_quarter"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\": \"call_ig8wthfl\", \"error\": \"Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the gr",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 8,
+          "error": "Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the group-by-item. (fan-out join support is pending). * There are multiple matching join paths. (disambiguation support is pending). Suggestions: [ 'metric_time__week', 'product__category', 'inventory_week__is_settled', 'distributor__state', 'invent"
+        },
+        {
+          "id": "call_fm0jmg5i",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_days_of_stock",
+            "filters": [],
+            "group_by": [
+              "metric_time__fiscal_quarter"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\": \"call_fm0jmg5i\", \"error\": \"Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the gr",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 17,
+          "error": "Got error(s) during query resolution. Error #1: Message: The given input does not match any of the available group-by-items for SimpleMetric('channel_stock_units'). Common issues are: * Incorrect names. * No valid join paths exist from the measure to the group-by-item. (fan-out join support is pending). * There are multiple matching join paths. (disambiguation support is pending). Suggestions: [ 'metric_time__week', 'product__category', 'inventory_week__is_settled', 'distributor__state', 'invent"
+        },
+        {
+          "id": "call_wrtqvjbz",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_stock_units",
+            "filters": [],
+            "group_by": [
+              "metric_time__week"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_wrtqvjbz\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  subq_5.metric_time__week AS metric_time__week\\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\\nFROM (\\n  SELECT\\n    channel_stock_units AS __channel_stock_units\\n    , week_start__week\\n    , metric_time__week\\n",
+          "sql": "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2024-04-01' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2024-04-01' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+          "row_count": 105,
+          "duration_ms": 868,
+          "error": null
+        },
+        {
+          "id": "call_hihu8xff",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_stock_units",
+            "filters": [],
+            "group_by": [
+              "metric_time__week"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2025-03-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_hihu8xff\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  subq_5.metric_time__week AS metric_time__week\\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\\nFROM (\\n  SELECT\\n    channel_stock_units AS __channel_stock_units\\n    , week_start__week\\n    , metric_time__week\\n",
+          "sql": "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+          "row_count": 58,
+          "duration_ms": 633,
+          "error": null
+        },
+        {
+          "id": "call_494cq15k",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "channel_stock_units",
+            "filters": [],
+            "group_by": [
+              "metric_time__week"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2026-02-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_494cq15k\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  subq_5.metric_time__week AS metric_time__week\\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\\nFROM (\\n  SELECT\\n    channel_stock_units AS __channel_stock_units\\n    , week_start__week\\n    , metric_time__week\\n",
+          "sql": "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+          "row_count": 10,
+          "duration_ms": 385,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "scheme_window_share",
+          "avg_days_of_stock_rise_60d",
+          "quarters"
+        ],
+        "rows": [
+          [
+            0.211848600604268,
+            2.9475848661582176,
+            10
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 129851,
+        "output": 1093,
+        "cache_read": 116480,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 129859,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "3b0a9952-32b1-406a-a834-0233ae359cc6",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T04:55:24+00:00",
+      "response": {
+        "answer_text": "Channel stock (channel_stock_units) climbs in the last two weeks of each fiscal quarter and then unwinds: e.g. it rose from ~1.91M units in the week of 2026-02-23 to ~2.50M by 2026-03-30, and from ~1.84M to ~2.25M into the March 2025 quarter-end. The pre-registered stuffing detector flags this as quarter-end channel stuffing — distributors ordering well above their trailing-90-day rate in the scheme window (last 15 days), with 280 distributor-category flags in FY26Q4 and 276 in FY25Q4 (stuffing_flags metric). So the post-quarter-end stock build-up is driven by scheme-window order loading ahead of quarter close, not by a change in sell-out.",
+        "sql": [
+          "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2026-01-26' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+          "SELECT\n  subq_5.metric_time__week AS metric_time__week\n  , SUM(subq_5.__channel_stock_units) AS channel_stock_units\nFROM (\n  SELECT\n    channel_stock_units AS __channel_stock_units\n    , week_start__week\n    , metric_time__week\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n      , stock_units AS channel_stock_units\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n) subq_5\nINNER JOIN (\n  SELECT\n    metric_time__week\n    , MAX(week_start__week) AS week_start__week__complete\n  FROM (\n    SELECT\n      DATE_TRUNC('week', week_start) AS week_start__week\n      , DATE_TRUNC('week', week_start) AS metric_time__week\n      , days_of_stock is not null AS inventory_week__has_days_of_stock\n    FROM \"marts\".\"mart_channel_inventory_weekly\" channel_inventory_src_10000\n    WHERE DATE_TRUNC('week', week_start) BETWEEN '2025-02-24' AND '2026-04-05'\n  ) subq_4\n  WHERE inventory_week__has_days_of_stock\n  GROUP BY\n    metric_time__week\n) subq_7\nON\n  subq_5.week_start__week = subq_7.week_start__week__complete\nGROUP BY\n  subq_5.metric_time__week\nORDER BY metric_time__week\nLIMIT 500",
+          "SELECT\n  distributor_scheme_window__fiscal_quarter_label\n  , SUM(__stuffing_flags) AS stuffing_flags\nFROM (\n  SELECT\n    fiscal_quarter_label AS distributor_scheme_window__fiscal_quarter_label\n    , case when is_stuffing_flag then 1 else 0 end AS __stuffing_flags\n  FROM \"marts\".\"mart_scheme_quarterly\" scheme_quarterly_src_10000\n  WHERE DATE_TRUNC('day', window_start_date) BETWEEN '2024-04-01' AND '2026-03-31'\n) subq_5\nGROUP BY\n  distributor_scheme_window__fiscal_quarter_label\nORDER BY stuffing_flags DESC, distributor_scheme_window__fiscal_quarter_label\nLIMIT 500",
+          "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('stuffing'::text is null or l.detector = 'stuffing')\n  and (NULL::text is null or l.failure_mode = NULL)\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector"
+        ],
+        "data": {
+          "columns": [
+            "metric_time__week",
+            "channel_stock_units"
+          ],
+          "rows": [
+            [
+              "2026-01-26T00:00:00+00:00",
+              1912198
+            ],
+            [
+              "2026-02-02T00:00:00+00:00",
+              1902680
+            ],
+            [
+              "2026-02-09T00:00:00+00:00",
+              1938284
+            ],
+            [
+              "2026-02-16T00:00:00+00:00",
+              1913248
+            ],
+            [
+              "2026-02-23T00:00:00+00:00",
+              1918878
+            ],
+            [
+              "2026-03-02T00:00:00+00:00",
+              2014952
+            ],
+            [
+              "2026-03-09T00:00:00+00:00",
+              2110557
+            ],
+            [
+              "2026-03-16T00:00:00+00:00",
+              2280980
+            ],
+            [
+              "2026-03-23T00:00:00+00:00",
+              2434251
+            ],
+            [
+              "2026-03-30T00:00:00+00:00",
+              2501374
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "line",
+          "x": "metric_time__week",
+          "y": "channel_stock_units",
+          "series": null
+        },
+        "label": "governed_metric",
+        "confidence_note": "3/3 figures traced to query results.",
+        "trace_id": "3b0a9952-32b1-406a-a834-0233ae359cc6"
+      },
+      "requests": 6,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
     }
   },
   "meta": {
@@ -5394,8 +6257,8 @@
     "as_of": "2026-09-23",
     "pinned_as_of": "2026-09-23",
     "region": "ALL",
-    "git_commit": "25e7108b04648ecfcbec2db8d7f86a04785c04d6",
-    "timestamp": "2026-09-30T04:36:04+00:00",
+    "git_commit": "017e2008fec072b6a9e65f86966c06ed8cafed38",
+    "timestamp": "2026-09-30T04:54:17+00:00",
     "budget_usd": 5.0,
     "question_count": 40,
     "golden_count": 32,

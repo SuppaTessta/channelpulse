@@ -1,3 +1,4 @@
+import { CalendarCheck, Hourglass } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import type { DataWindow, Metric, Result } from "@/lib/api";
 import { REGIONS, regionSlug, type Region } from "@/lib/config";
@@ -7,6 +8,7 @@ import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { MobileNav } from "./nav";
 import { ParamSelect } from "./param-select";
+import { ICON } from "./ui";
 
 function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<Record<string, Metric>> }) {
   if (!win.ok) return <p className="text-xs text-muted">Data as of: unavailable</p>;
@@ -15,12 +17,18 @@ function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<R
   return (
     <DefinitionButton
       title="Data as of"
-      className="-ml-2.5 h-auto min-h-10 flex-wrap justify-start gap-x-1.5 gap-y-0 py-1 text-left md:min-h-8 lg:-mr-2 lg:ml-0 lg:justify-end lg:text-right"
+      className="-ml-2.5 h-auto min-h-10 flex-wrap justify-start gap-x-1.5 gap-y-0 py-1 text-left md:min-h-8 lg:-mr-2.5 lg:ml-0 lg:justify-end lg:text-right"
       trigger={
         <>
+          <CalendarCheck size={16} {...ICON} className="shrink-0 text-accent" aria-hidden />
           <span className="text-muted">Data as of</span>
           <span className="font-semibold text-ink">{fmtDate(asOf)}</span>
-          {provisionalFrom ? <span className="text-muted">· provisional from {fmtDayMonth(provisionalFrom)}</span> : null}
+          {provisionalFrom ? (
+            <span className="inline-flex items-center gap-1 text-muted">
+              <Hourglass size={14} {...ICON} className="ml-1 shrink-0" aria-hidden />
+              provisional from {fmtDayMonth(provisionalFrom)}
+            </span>
+          ) : null}
         </>
       }
       note={
@@ -46,6 +54,7 @@ function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<R
   );
 }
 
+/** The upper tier of every page's header: where you are, whose data you see, and how fresh it is. */
 export function TopBar({
   title,
   region,
@@ -61,13 +70,13 @@ export function TopBar({
 }) {
   return (
     <header className="border-b border-line bg-canvas md:sticky md:top-0 md:z-20 md:bg-canvas/85 md:backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 md:px-6 lg:min-h-14 lg:flex-nowrap">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 md:px-6 lg:min-h-16 lg:flex-nowrap">
         <MobileNav />
         <div className="min-w-0 flex-1 py-1">
           {children ? <div className="text-xs text-muted">{children}</div> : null}
-          <h1 className="truncate text-base font-semibold text-ink md:text-lg">{title}</h1>
+          <h1 className="truncate text-[17px]/6 font-semibold tracking-[-0.015em] text-ink md:text-xl/7">{title}</h1>
         </div>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 lg:w-auto lg:flex-nowrap lg:justify-end">
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-5 gap-y-1 lg:w-auto lg:flex-nowrap lg:justify-end">
           <ParamSelect
             param="region"
             label="Viewing as"
@@ -81,6 +90,7 @@ export function TopBar({
               </InfoTip>
             }
           />
+          <span aria-hidden className="hidden h-5 w-px bg-line-strong lg:block" />
           <DataAsOf win={win} catalog={catalog} />
         </div>
       </div>
@@ -88,13 +98,15 @@ export function TopBar({
   );
 }
 
-/** The single filter row under the top bar (dataviz: filters sit in one row above what they scope). */
+/** The page's filter row, the lower tier of the header (dashboard layout: filters sit above everything they scope). */
 export function FilterBar({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-4 md:px-6 md:pt-5">{children}</div>
+    <div className="border-b border-line">
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-6">{children}</div>
+    </div>
   );
 }
 
 export function PageBody({ children }: { children: ReactNode }) {
-  return <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 pt-4 pb-12 md:gap-5 md:px-6 md:pt-5">{children}</div>;
+  return <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-4 pt-5 pb-16 md:gap-6 md:px-6 md:pt-6">{children}</div>;
 }

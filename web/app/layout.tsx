@@ -29,7 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <Providers>
           <Rail />
-          <main id="main" tabIndex={-1} className="min-h-dvh outline-none md:pl-[88px]">
+          <main id="main" tabIndex={-1} className="min-h-dvh outline-none md:pl-[72px] wide:pl-[232px]">
             {children}
           </main>
         </Providers>

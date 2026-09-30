@@ -43,8 +43,8 @@ export function ParamSelect({
         <Select.Trigger
           aria-labelledby={labelId}
           className={cx(
-            "inline-flex h-10 min-w-0 items-center gap-2 rounded-control border border-line-strong bg-surface pr-2 pl-3 text-sm text-ink md:h-8",
-            "transition-colors duration-150 ease-out hover:border-control data-[state=open]:border-control",
+            "inline-flex h-10 min-w-0 items-center gap-2 rounded-control border border-line-strong bg-surface pr-2 pl-3 text-sm font-medium text-ink shadow-highlight md:h-9",
+            "transition-colors duration-150 ease-out hover:border-control hover:bg-hover data-[state=open]:border-control",
           )}
         >
           <span className="truncate">

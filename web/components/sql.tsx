@@ -20,7 +20,7 @@ export function SqlBlock({ sql, label = "Copy SQL", className }: { sql: string; 
   }
   out.push(sql.slice(last));
   return (
-    <div className={cx("overflow-hidden rounded-control border border-line bg-canvas", className)}>
+    <div className={cx("overflow-hidden rounded-control border border-line bg-sunken", className)}>
       <div className="flex items-center justify-between border-b border-line py-1 pr-1 pl-3">
         <span className="text-xs text-subtle">SQL</span>
         <CopyButton text={sql} label={label} />

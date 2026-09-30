@@ -21,7 +21,7 @@ export function DataTable({
     <div className={cx("overflow-auto rounded-control border border-line", maxHeight, className)}>
       <table className="w-full border-collapse text-[13px]">
         <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-surface">
+        <thead className="sticky top-0 bg-sunken">
           <tr>
             {columns.map((c) => (
               <th

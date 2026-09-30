@@ -2,6 +2,7 @@
 
 /*
   ChannelPulse tokens (web/DESIGN.md). One semantic set, swapped for dark mode under prefers-color-scheme.
+  Surfaces step canvas < sunken < surface < raised; hover is the pointer tint. Accent teal is the only hue outside charts and status.
   Chart colours follow the dataviz method: the categorical order below was chosen by enumerating orders with the
   brand teal fixed in slot 1 and keeping only those that pass every validator gate in both modes
   (worst adjacent CVD dE 13.0, normal-vision dE 19.3). The heatmap ramp is one hue (teal, OKLCH h 200), light to
@@ -13,6 +14,7 @@
   --surface: #fcfcfd;
   --surface-raised: #fefeff;
   --surface-hover: #eef0f3;
+  --surface-sunken: #eceef2;
   --text: #16181d;
   --text-muted: #50555e;
   --text-subtle: #646973;
@@ -55,6 +57,9 @@
   --seq-6: #023f42;
 
   --shadow-raised: 0 1px 2px rgb(22 38 48 / 0.05), 0 12px 32px -12px rgb(22 38 48 / 0.16);
+  /* The lifted segment of a segmented control, and the inner highlight of a raised plate. */
+  --shadow-segment: 0 1px 2px rgb(22 38 48 / 0.08), 0 0 0 1px var(--border-strong);
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.7);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,6 +69,7 @@
     --surface: #16171a;
     --surface-raised: #1d1e22;
     --surface-hover: #22242a;
+    --surface-sunken: #121316;
     --text: #ececef;
     --text-muted: #a7abb4;
     --text-subtle: #9296a0;
@@ -106,6 +112,8 @@
     --seq-6: #aee7ea;
 
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+    --shadow-segment: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px var(--border-strong);
+    --highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
   }
 }
 
@@ -114,6 +122,7 @@
   --color-surface: var(--surface);
   --color-raised: var(--surface-raised);
   --color-hover: var(--surface-hover);
+  --color-sunken: var(--surface-sunken);
   --color-ink: var(--text);
   --color-muted: var(--text-muted);
   --color-subtle: var(--text-subtle);
@@ -138,6 +147,10 @@
   --radius-control: 6px;
   --radius-panel: 10px;
   --shadow-raised: var(--shadow-raised);
+  --shadow-segment: var(--shadow-segment);
+  --shadow-highlight: var(--highlight);
+  /* The rail opens into a labelled sidebar from 1440px. */
+  --breakpoint-wide: 90rem;
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -162,6 +175,21 @@
   }
   ::selection {
     background: color-mix(in oklab, var(--accent) 24%, transparent);
+  }
+  /* Browser surfaces wear the palette too: caret, scrollbars, native checkboxes and date fields. */
+  html {
+    caret-color: var(--accent);
+    accent-color: var(--accent);
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  * {
+    scrollbar-width: thin;
+  }
+  ::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+  }
+  hr {
+    border-color: var(--border);
   }
   button:not(:disabled),
   [role="button"],

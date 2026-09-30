@@ -386,6 +386,12 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Known ceiling:** like the Ask tracer, it skips bare single digits and years, so a wrong "3 flags" isn't caught. Figures with a unit or a thousands separator are.
 - **Found while building it:** sums over the float4 column `avg_daily_secondary_units` vary in the fifth significant digit between runs, because parallel workers add in a different order (days of stock 43.654685 vs 43.654642). Re-executed floats compare within 1e-5 relative. The column type is a warehouse choice, so it's left as is and noted here.
 
+**D42. Ollama replies are streamed, because the quick tunnel cuts silent responses at 100 s (Part C 1, 2026-10-01).**
+- **What happened:** Qwen's governed v2 run paused at question 24 (FG06). Five attempts in a row came back as HTTP 524 from Cloudflare: a quick tunnel closes any response that sends no byte for 100 s. The calls weren't streamed, so a long generation sent nothing until it finished. It was classified as infrastructure, as it should be, so nothing was scored.
+- **Fix:** `OpenAICompatProvider` gains `stream`, on for Ollama by default (`OLLAMA_STREAM=0` turns it off). Tokens flow as they're generated, and the reply is rebuilt into the non-streamed shape, so parsing, the transcript echo and token usage are unchanged. An error sent inside the stream is classified like an error status: unparseable tool-call markup fails the question; anything else is infrastructure.
+- **Unchanged:** the model, its settings, the prompts and scoring. Gemini doesn't stream. The 23 governed answers before the change stand; streaming changes transport, not answers.
+- **Ceiling:** a prompt whose prefill alone takes over 100 s would still get a 524, because no token comes before prefill ends. The governed prompts are about 27–60k tokens, and Ollama reuses their cached prefix.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

@@ -310,3 +310,60 @@ def test_a_tool_call_the_server_cannot_parse_is_the_models_failure_not_an_outage
     with pytest.raises(ProviderError) as caught:
         provider(Server(bad_markup)).complete("s", [{"role": "user", "content": "q"}], TOOLS, final_only=False, timeout=5)
     assert caught.value.kind == "rejected" and "XML syntax error" in str(caught.value)
+
+
+# --- streaming (D42): a quick tunnel cuts a response that sends no byte for 100 s --------------------------------
+
+
+def sse(*chunks) -> httpx2.Response:
+    body = "".join(f"data: {json.dumps(c)}\n\n" for c in chunks) + "data: [DONE]\n\n"
+    return httpx2.Response(200, text=body, headers={"content-type": "text/event-stream"})
+
+
+def delta(**d):
+    return {"model": "qwen3.8-27b-64k", "choices": [{"index": 0, "delta": d, "finish_reason": None}]}
+
+
+def streamed(*replies):
+    server = Server(*replies)
+    turn = provider(server, stream=True).complete("rules", [{"role": "user", "content": "q"}], TOOLS,
+                                                  final_only=False, timeout=5)
+    return turn, server
+
+
+def test_a_streamed_tool_call_split_across_chunks_is_reassembled():
+    call = {"index": 0, "id": "call_1", "type": "function", "function": {"name": "query_metric", "arguments": '{"metric_'}}
+    more = {"index": 0, "function": {"arguments": 'name": "dso", "filters": [], "group_by": [], "date_range": null}'}}
+    usage = {"choices": [], "usage": {"prompt_tokens": 900, "completion_tokens": 40, "total_tokens": 940}}
+    turn, server = streamed(sse(delta(role="assistant", content=""), delta(tool_calls=[call]),
+                                delta(tool_calls=[more]), usage))
+    assert server.requests[0]["body"]["stream"] is True
+    assert (turn.stop, turn.tool_uses[0].id, turn.tool_uses[0].input["metric_name"]) == ("tool_use", "call_1", "dso")
+    assert (turn.usage.input_tokens, turn.usage.output_tokens) == (900, 40)
+    assert turn.native["tool_calls"][0]["function"]["name"] == "query_metric"  # echoed back whole next round
+
+
+def test_streamed_text_is_joined():
+    turn, _ = streamed(sse(delta(content="Hel"), delta(content="lo")))
+    assert (turn.stop, turn.text) == ("end_turn", "Hello")
+
+
+def test_an_error_inside_the_stream_is_a_question_failure_when_the_output_was_unparseable():
+    with pytest.raises(ProviderError) as e:
+        streamed(sse(delta(content="<tool"), {"error": {"message": "failed to parse tool call"}}))
+    assert e.value.kind == "rejected"
+
+
+def test_a_streamed_error_status_is_still_classified():
+    with pytest.raises(ProviderError) as e:
+        streamed(httpx2.Response(524, text="timeout"))
+    assert (e.value.kind, e.value.status) == ("infrastructure", 524)
+
+
+def test_ollama_streams_by_default(monkeypatch):
+    monkeypatch.setattr(config, "PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_BASE_URL", BASE)
+    monkeypatch.setenv("OLLAMA_MODEL", "m")
+    assert providers.from_env()._stream is True
+    monkeypatch.setenv("OLLAMA_STREAM", "0")
+    assert providers.from_env()._stream is False

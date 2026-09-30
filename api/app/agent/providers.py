@@ -172,7 +172,8 @@ _QUESTION_FAILURE = re.compile(r"context (length|window)|too long|exceeds|syntax
 class OpenAICompatProvider:
     def __init__(self, name: str, base_url: str, model: str, api_key: str | None = None, *,
                  temperature: float | None = 0.0, reasoning_effort: str | None = None, extra: dict | None = None,
-                 http: httpx2.Client | None = None, record: dict | None = None, call_timeout: float = 120.0):
+                 http: httpx2.Client | None = None, record: dict | None = None, call_timeout: float = 120.0,
+                 stream: bool = False):
         self.name, self.model = name, model
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
@@ -181,6 +182,9 @@ class OpenAICompatProvider:
         self._http = http or httpx2.Client()
         self._record = record or {}  # facts about the serving setup, reported with every eval run
         self._call_timeout = call_timeout  # one model call; the loop's own budget covers the whole question
+        # Stream the reply. A Cloudflare quick tunnel (Ollama on Kaggle, D35) cuts any response that sends no byte
+        # for 100 s with a 524, so a long generation must send its tokens as they come (D42).
+        self._stream = stream
 
     def settings(self) -> dict:
         return {"temperature": self._temperature, "reasoning_effort": self._reasoning or "provider default",
@@ -204,15 +208,57 @@ class OpenAICompatProvider:
             body["temperature"] = self._temperature
         if self._reasoning:
             body["reasoning_effort"] = self._reasoning
+        if self._stream:
+            body |= {"stream": True, "stream_options": {"include_usage": True}}
         return self._turn(self._post(body, min(timeout, self._call_timeout)))
 
     def _post(self, body: dict, timeout: float) -> dict:
         try:
-            res = self._http.post(self._url, json=body, headers=self._headers, timeout=timeout)
+            if not self._stream:
+                return self._payload(self._http.post(self._url, json=body, headers=self._headers, timeout=timeout))
+            with self._http.stream("POST", self._url, json=body, headers=self._headers, timeout=timeout) as res:
+                if res.status_code >= 400:
+                    res.read()
+                    return self._payload(res)  # raises: every error status is handled there
+                return self._assemble(res.iter_lines())
         except httpx2.TimeoutException:
             raise ProviderError(f"{self.name}: no response within {timeout:.0f} s.", "infrastructure") from None
         except httpx2.HTTPError as e:  # connection refused, DNS, reset: the message would carry the URL, so it's dropped
             raise ProviderError(f"{self.name}: couldn't connect ({type(e).__name__}).", "infrastructure") from None
+
+    def _assemble(self, lines) -> dict:
+        """A streamed reply (server-sent events) rebuilt into the non-streamed shape _turn reads."""
+        content, calls, finish, usage, model = [], {}, None, None, None
+        for line in lines:
+            if not line.startswith("data:") or (data := line[5:].strip()) == "[DONE]":
+                continue
+            try:
+                chunk = json.loads(data)
+            except ValueError:
+                raise ProviderError(f"{self.name}: a streamed chunk wasn't JSON.", "infrastructure") from None
+            if "error" in chunk:  # a failure after the 200, such as unparseable tool-call markup
+                reason = str((chunk["error"] or {}).get("message") if isinstance(chunk["error"], dict) else chunk["error"])[:300]
+                kind = "rejected" if _QUESTION_FAILURE.search(reason) else "infrastructure"
+                raise ProviderError(f"{self.name}: server error in the stream: {reason}", kind)
+            model, usage = chunk.get("model") or model, chunk.get("usage") or usage
+            for choice in chunk.get("choices") or []:
+                delta = choice.get("delta") or {}
+                content.append(delta.get("content") or "")
+                for call in delta.get("tool_calls") or []:
+                    slot = calls.setdefault(call.get("index", len(calls)),
+                                            {"id": None, "type": "function", "function": {"name": "", "arguments": ""}})
+                    slot["id"] = call.get("id") or slot["id"]
+                    fn = call.get("function") or {}
+                    slot["function"]["name"] += fn.get("name") or ""
+                    args = fn.get("arguments")
+                    slot["function"]["arguments"] += args if isinstance(args, str) else json.dumps(args) if args else ""
+                finish = choice.get("finish_reason") or finish
+        message = {"role": "assistant", "content": "".join(content)}
+        if calls:
+            message["tool_calls"] = [calls[i] for i in sorted(calls)]
+        return {"model": model, "usage": usage, "choices": [{"message": message, "finish_reason": finish}]}
+
+    def _payload(self, res: httpx2.Response) -> dict:
         if res.status_code == 429:
             raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res), _quota_id(res))
         if res.status_code >= 500 or res.status_code in _CLOUDFLARE_DOWN:
@@ -354,7 +400,8 @@ def from_env(anthropic_client=None) -> Provider | None:
                   else (reasoning or "server default")}
         return OpenAICompatProvider("ollama", base.rstrip("/") + "/v1", model, env("OLLAMA_API_TOKEN") or None,
                                     temperature=temperature, reasoning_effort=reasoning, record=record,
-                                    call_timeout=float(env("OLLAMA_CALL_TIMEOUT_S", "300")))
+                                    call_timeout=float(env("OLLAMA_CALL_TIMEOUT_S", "300")),
+                                    stream=env("OLLAMA_STREAM", "1") != "0")
     raise ValueError(f"Unknown CHANNELPULSE_PROVIDER {name!r}: use gemini, ollama or anthropic.")
 
 

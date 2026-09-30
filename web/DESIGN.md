@@ -39,8 +39,9 @@ Hero sections, scroll reveals and marketing copy don't apply to a dashboard and 
 ## Layout
 - **Navigation** is one config, `NAV` in `components/nav.tsx`, grouped by job:
   - **Dashboards:** Executive KPIs, Distributor 360, Batch cohort heatmap.
-  - **Analyst:** Ask ChannelPulse.
-  - A new page is one entry. The Weekly Brief joins Analyst, and the admin Traces page opens an Admin group. Rail, sidebar and mobile sheet all render from the same list.
+  - **Analyst:** Ask ChannelPulse, Weekly Brief.
+  - **Admin:** Agent traces.
+  - A new page is one entry in its group, and a new job is a new group. Rail, sidebar and mobile sheet all render from the same list.
 - **Rail and sidebar:**
   - From 768px the rail is 72px of icons with short captions, and groups are split by a hairline.
   - From 1440px (`wide:`) it opens into a 232px sidebar with the wordmark, the company name, group names, full page titles and a one-line synthetic-data note.
@@ -62,6 +63,20 @@ Hero sections, scroll reveals and marketing copy don't apply to a dashboard and 
 - **Ask ChannelPulse:**
   - Replay mode opens with the notice and the recording's scorecard (scored correct, traps handled, governed answers), counted from the answers shown.
   - The question list scrolls on its own beside the pinned answer from 1024px, with category names pinned and a per-category tally.
+- **Weekly Brief** reads like a printed one-page report: one 800px paper column on the canvas.
+  - A week picker and a Print button sit in the filter row.
+  - The paper shows the title, the week, the as-of and whether the week is provisional.
+  - Next comes the numbers-check line: "Numbers check passed: N queries re-executed" on the accent tint, or "Numbers check failed" on the danger tint with the problems listed and no sentences.
+  - Then the narration note: the model's name, or "Written from the template" with any reasons the model's draft was set aside.
+  - Then the sections, and a numbered Sources list.
+  - Every cited fact is a footnote marker after its sentence. The marker opens that fact's label, value, metric, source and SQL.
+  - Print drops the rail and header and forces light ink on paper.
+- **Agent traces** (admin) follows the dashboard layout.
+  - Filters sit in the header: label, provider, model, category and source (each with facet counts), plus a text search. All of them are kept in the URL, and a change resets paging and closes the drawer.
+  - A KPI strip (traces, tokens in and out, median latency, estimated cost) comes next, with the label mix as a segmented bar whose legend carries every count and share.
+  - Then a sortable table of 50 rows, paged by URL offset. Times are fixed to IST, so server and browser render the same text.
+  - A question opens the trace drawer (`?trace=`, so a trace is deep-linkable). The drawer shows the label badge (all four labels), the eval verdict, the measurements, the final SQL and each tool call with its input, SQL, rows, duration, error and the first 300 characters of output.
+  - Live traces need `X-Admin-Token`. The dashboard server reads it from the server-only `CHANNELPULSE_ADMIN_TOKEN` and never sends it to the browser. Without the token, the page says it lists recorded eval traces only.
 
 ## Trust patterns (the brand story)
 - Every number on every page can show **where it came from**:

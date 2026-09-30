@@ -10,7 +10,7 @@ const REGIONS = [
   { name: "All regions", query: "" },
   { name: "Assam", query: "?region=assam" },
 ];
-const PAGES = ["/", "/distributors", "/quality", "/ask"];
+const PAGES = ["/", "/distributors", "/quality", "/ask", "/brief", "/traces"];
 
 // Both crashes seen before Phase 2 were stale processes (decisions D28). Name them outright instead of letting the
 // page tests fail on their symptoms.

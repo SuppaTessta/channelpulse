@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatCenteredText, GridFour, List, PresentationChart, Pulse, Storefront, X, type Icon } from "@phosphor-icons/react";
+import { ChatCenteredText, GridFour, List, ListMagnifyingGlass, Newspaper, PresentationChart, Pulse, Storefront, X, type Icon } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -10,8 +10,8 @@ import { buttonClass, cx, ICON } from "./ui";
 type Page = { href: string; label: string; title: string; icon: Icon };
 
 /**
- * Every page, grouped by job (DESIGN.md, navigation). A new page is one entry: the Weekly Brief joins Analyst, the
- * admin Traces page opens an Admin group. `label` is the short rail caption, `title` the page's own h1.
+ * Every page, grouped by job (DESIGN.md, navigation). A new page is one entry in its group; a new job is a new group.
+ * `label` is the short rail caption, `title` the page's own h1.
  */
 export const NAV: { group: string; pages: Page[] }[] = [
   {
@@ -24,7 +24,14 @@ export const NAV: { group: string; pages: Page[] }[] = [
   },
   {
     group: "Analyst",
-    pages: [{ href: "/ask", label: "Ask", title: "Ask ChannelPulse", icon: ChatCenteredText }],
+    pages: [
+      { href: "/ask", label: "Ask", title: "Ask ChannelPulse", icon: ChatCenteredText },
+      { href: "/brief", label: "Brief", title: "Weekly Brief", icon: Newspaper },
+    ],
+  },
+  {
+    group: "Admin",
+    pages: [{ href: "/traces", label: "Traces", title: "Agent traces", icon: ListMagnifyingGlass }],
   },
 ];
 
@@ -105,7 +112,7 @@ export function Rail() {
   return (
     <nav
       aria-label="Pages"
-      className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col gap-5 border-r border-line bg-canvas py-3 md:flex wide:w-[232px] wide:py-4"
+      className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col gap-5 border-r border-line bg-canvas py-3 md:flex wide:w-[232px] wide:py-4 print:hidden"
     >
       <Link href="/" className="mx-auto flex rounded-control p-1 wide:mx-3 wide:px-2" aria-label="ChannelPulse home">
         <Brand />

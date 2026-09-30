@@ -330,6 +330,21 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Fix:** multi-hop names are rendered with `entity_path`. A new test compiles all 41 pairs as filters: all 41 fail with the fix disabled and pass with it.
 - **Effect on results:** Gemini's two governed runs (before and after D36) and Qwen's governed run all ran with this bug, and are reported as run. A governed re-run after D37 would be a separate, labelled result.
 
+**D38. Part B results: the semantic layer's lift on two free providers (2026-09-30).**
+- **Runs of record:**
+  - one governed and one raw run per provider, all after D37: `gemini-3.5-flash-lite`, and `qwen3.8-27b-64k` with thinking off;
+  - earlier governed runs are kept as superseded rows (`__before-D36`, `__after-D36-pre-D37`) in `evals/results/runs/`;
+  - the README table is generated from these files by `make scorecard`, never typed by hand.
+- **Headline:** governed vs raw on the same model is 93.8% vs 71.9% for Gemini (+21.9 points) and 93.8% vs 56.2% for Qwen (+37.5 points). Confidently wrong falls from 11 to 3 and from 11 to 2, and refusal correctness is 97.5% governed on both. Each failure is diagnosed in the case study, section 5.
+- **Replay:** the public demo's Ask page serves the Gemini governed run of record (provider `gemini` by default). The Qwen run's answers are recorded too (`api/app/recordings/ollama__qwen3.8-27b-64k.json`).
+- **Not evaluated:** Claude. The Anthropic adapter is unit-tested only, and wherever the docs used to imply otherwise they were corrected.
+- **Infrastructure during the runs, never scored:**
+  - Gemini 503 "high demand";
+  - two dead Kaggle sessions, where the tunnel returned 530;
+  - a Docker restart that stopped Postgres.
+
+  Each time, the run paused, saved its progress, and resumed at the next question.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

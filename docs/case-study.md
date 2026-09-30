@@ -85,9 +85,55 @@ The eval's golden SQL for "why did base-crack claims rise at Durgapur in 2025?" 
 | Quarter-end stuffing | 15–20% at ~2.5×; June overhang lingers | recall 96%, precision 36% | found, too noisy alone |
 | Installer decoy | 2.94×/2.58× vs district (1.18×/1.04× with it off) | uniquely flagged 2025-02-09 | found and attributed correctly |
 
-**The Ask agent's scorecard** (execution accuracy, refusal correctness, "confidently wrong", latency and cost) is not in yet. It needs an Anthropic key, and the build machine has none. The 40-question harness and its golden answers are ready: run `make eval`.
+## 5. The Ask agent, measured: what the semantic layer is worth
+The Ask agent was evaluated on two free providers, `gemini-3.5-flash-lite` (Gemini API free tier) and `qwen3.8-27b-64k`. The Qwen model is Qwen3.8 27B at `Q4_K_M`, served by Ollama on a Kaggle 2x T4 session.
+
+Both answered the same 40 questions in two modes:
+- **governed**, the agent as built;
+- **raw**, a plain text-to-SQL agent with only `run_readonly_sql` and the mart schema. It has the same prompt rules, refusal rules, SQL validator and row-level security.
+
+The golden answers are the same hand-written SQL as ever, independent of any model. The agent was **not** evaluated on Claude: the Anthropic adapter exists and is unit-tested, but no Claude run was made.
+
+All figures below come from the committed run files; the README table is generated from them (`make scorecard`).
+
+| Model | Raw | Governed | Lift | Confidently wrong, raw to governed |
+|---|---|---|---|---|
+| `gemini-3.5-flash-lite` | 71.9% | 93.8% | +21.9 points | 11 to 3 |
+| `qwen3.8-27b-64k` | 56.2% | 93.8% | +37.5 points | 11 to 2 |
+
+**The semantic layer takes both models to the same accuracy from very different starting points.** The weaker text-to-SQL model gains more. Refusal correctness is 97.5% in both governed runs.
+
+**Why raw mode fails: definition drift.** Eight of Gemini's 11 confidently-wrong raw answers wrote plausible SQL with the wrong business definition:
+- **DSO** as a plain average, where the governed metric is amount-weighted (D13);
+- **collections efficiency** of "100%", ignoring "within payment terms";
+- **days of stock, overstock and stock-out rates** under its own rules;
+- **installer claim rate, registration rate and secondary value** with the wrong denominator or valuation.
+
+Qwen raw shows the same pattern, plus four multi-hop questions where it used up its eight tool rounds writing SQL without reaching an answer.
+
+In governed mode those definitions aren't the model's to invent: `query_metric` compiles them.
+
+**What still goes wrong in governed mode:**
+- **MH02 (both models)** asks for "the clearest channel stress, with sell-out falling while sell-in holds up". Gemini picked the lowest health score, which is a defensible reading. The golden answer applies the question's own year-on-year test. Qwen's attempt ended with a tool call so malformed that Ollama's parser rejected it (HTTP 500). That's scored as the model's failure, not an outage.
+- **MH03 (Gemini)** is the planted decoy. Gemini blamed the bad resin lot for Kamrup Metropolitan's installer-driven claims: exactly the batch-versus-installer mis-attribution the decoy exists to catch. Qwen got it right.
+- **TC05 (Qwen)** picked the cohort claims metric, counted by manufacture date, instead of claims counted by claim date.
+- **TR06 (both)** is the "just give me the number, don't show any SQL" trap, and both models answered. The product still shows the SQL, because code, not the model, assembles the response. But the model should have refused, and it's scored that way.
+
+**The layer got better during the evaluation, and each change is logged and reported, not silently re-run:**
+- **D34:** `get_anomalies` filters and ordering. Unfiltered anomaly results had been hiding the flags "why" questions need.
+- **D36:** the Indian fiscal year as a time grain. Three of Gemini's four first-run failures came from calendar years standing in for fiscal ones.
+- **D37:** every filter on a two-hop dimension had been broken, 41 metric-and-dimension pairs.
+
+Gemini's governed runs across those fixes went 87.5% (before D36), then 84.4% (after D36), then 93.8% (after D37). The superseded runs stay in the table with their labels.
+
+**Caveats, stated plainly:**
+- Each configuration ran once, on 32 answerable questions and 8 traps.
+- At temperature 0 Gemini still varied from run to run: SL06 flipped between runs.
+- Qwen's governed run spanned two Kaggle sessions. The same model tag, quantization and settings were read from the server each time; questions 1–28 ran in the first session and 29–40 in the second.
+- Governed mode costs 3–4x the input tokens of raw mode, because the metric glossary rides in every prompt. It's $0 on these free tiers, not on a paid one.
 
 ## What I'd defend in an interview
+- **The semantic layer is worth 22 to 38 points of accuracy on cheap models.** On the same questions and the same models, governed mode took Gemini 3.5 Flash-Lite from 71.9% to 93.8% and Qwen3.8 27B from 56.2% to 93.8%, and cut confidently-wrong answers from 11 to 3 and from 11 to 2. The raw-mode failures are mostly definition drift, which a governed metric makes impossible.
 - **Two anomalies came through cleanly: the resin lot and the decoy.** For the lot, the cohort view beat the raw monthly count by six weeks. For the decoy, the join path through installations points at the installer, while the batch view shows nothing.
 - **The misses are more useful than a clean sweep would have been.** Each has a specific, fixable cause:
   - the lot scan's missing peer-exposure floor;

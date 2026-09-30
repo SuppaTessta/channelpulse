@@ -1,0 +1,788 @@
+{
+  "throttle_state": {
+    "requests_by_day": {
+      "2026-09-29": 13
+    }
+  },
+  "results": {
+    "SL01": {
+      "id": "SL01",
+      "category": "simple_lookup",
+      "question": "What was our total primary sales value (sell-in to distributors) in Q1 FY27, April to June 2026?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "primary_sales_value": true
+        },
+        "golden": {
+          "primary_sales_value": 1482535220.12
+        }
+      },
+      "answer_text": "Total primary sales value (sell-in to distributors) in Q1 FY27 (1 Apr – 30 Jun 2026) was ₹1,482,535,220.12, per the governed primary_sales_value metric.",
+      "confidence_note": "2/2 figures traced to query results.",
+      "sql": [
+        "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2026-04-01' AND '2026-06-30'\nORDER BY primary_sales_value DESC\nLIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_8ssp0jv4",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "primary_sales_value",
+            "filters": [],
+            "group_by": [],
+            "date_range": {
+              "end": "2026-06-30",
+              "start": "2026-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_8ssp0jv4\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  SUM(primary_value_inr) AS primary_sales_value\\nFROM \\\"marts\\\".\\\"fct_primary_sales\\\" primary_sales_src_10000\\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2026-04-01' AND '2026-06-30'\\nORDER BY primary_sales_value DESC\\nLIMIT",
+          "sql": "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2026-04-01' AND '2026-06-30'\nORDER BY primary_sales_value DESC\nLIMIT 500",
+          "row_count": 1,
+          "duration_ms": 145,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            1482535220.12
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 25005,
+        "output": 263,
+        "cache_read": 12373,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 66468,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "dbf67534-50fd-4374-aa7b-eb2ea7867087",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:32:41+00:00",
+      "response": {
+        "answer_text": "Total primary sales value (sell-in to distributors) in Q1 FY27 (1 Apr – 30 Jun 2026) was ₹1,482,535,220.12, per the governed primary_sales_value metric.",
+        "sql": [
+          "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2026-04-01' AND '2026-06-30'\nORDER BY primary_sales_value DESC\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "primary_sales_value"
+          ],
+          "rows": [
+            [
+              1482535220.12
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "governed_metric",
+        "confidence_note": "2/2 figures traced to query results.",
+        "trace_id": "dbf67534-50fd-4374-aa7b-eb2ea7867087"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "FG01": {
+      "id": "FG01",
+      "category": "filtered_grouped",
+      "question": "Break down FY26 primary sales value by sales region.",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "matched": 6,
+        "expected": 6,
+        "missing": [],
+        "extra_keys": [],
+        "extra_keys_allowed": false
+      },
+      "answer_text": "FY26 (Apr 2025–Mar 2026) primary sales value by region, using the governed primary_sales_value metric: South Bengal ₹1,229.4M, Bihar & Jharkhand ₹1,211.3M, Odisha ₹822.9M, North East ₹713.2M, Assam ₹603.7M, and North Bengal & Sikkim ₹310.0M.",
+      "confidence_note": "No figures stated, so there was nothing to trace.",
+      "sql": [
+        "SELECT\n  distributors_src_10000.region AS distributor__region\n  , SUM(subq_3.__primary_sales_value) AS primary_sales_value\nFROM (\n  SELECT\n    distributor_id AS distributor\n    , primary_value_inr AS __primary_sales_value\n  FROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\n  WHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\n) subq_3\nLEFT OUTER JOIN\n  \"marts\".\"dim_distributor\" distributors_src_10000\nON\n  subq_3.distributor = distributors_src_10000.distributor_id\nGROUP BY\n  distributors_src_10000.region\nORDER BY primary_sales_value DESC, distributor__region\nLIMIT 500"
+      ],
+      "data_rows": 6,
+      "tools_used": [
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_cifo21ia",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "primary_sales_value",
+            "filters": [],
+            "group_by": [
+              "distributor__region"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2025-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_cifo21ia\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  distributors_src_10000.region AS distributor__region\\n  , SUM(subq_3.__primary_sales_value) AS primary_sales_value\\nFROM (\\n  SELECT\\n    distributor_id AS distributor\\n    , primary_value_inr AS __primary_sales_value\\n  FROM ",
+          "sql": "SELECT\n  distributors_src_10000.region AS distributor__region\n  , SUM(subq_3.__primary_sales_value) AS primary_sales_value\nFROM (\n  SELECT\n    distributor_id AS distributor\n    , primary_value_inr AS __primary_sales_value\n  FROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\n  WHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\n) subq_3\nLEFT OUTER JOIN\n  \"marts\".\"dim_distributor\" distributors_src_10000\nON\n  subq_3.distributor = distributors_src_10000.distributor_id\nGROUP BY\n  distributors_src_10000.region\nORDER BY primary_sales_value DESC, distributor__region\nLIMIT 500",
+          "row_count": 6,
+          "duration_ms": 129,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "region",
+          "primary_sales_value"
+        ],
+        "rows": [
+          [
+            "Assam",
+            603706242.7
+          ],
+          [
+            "Bihar & Jharkhand",
+            1211336723.95
+          ],
+          [
+            "North Bengal & Sikkim",
+            310012527.57
+          ],
+          [
+            "North East",
+            713184149.36
+          ],
+          [
+            "Odisha",
+            822928105.36
+          ],
+          [
+            "South Bengal",
+            1229433355.34
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 25191,
+        "output": 321,
+        "cache_read": 24221,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 21985,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "1a4c57f1-fe69-4e67-aea2-0a20486fe4c6",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:33:47+00:00",
+      "response": {
+        "answer_text": "FY26 (Apr 2025–Mar 2026) primary sales value by region, using the governed primary_sales_value metric: South Bengal ₹1,229.4M, Bihar & Jharkhand ₹1,211.3M, Odisha ₹822.9M, North East ₹713.2M, Assam ₹603.7M, and North Bengal & Sikkim ₹310.0M.",
+        "sql": [
+          "SELECT\n  distributors_src_10000.region AS distributor__region\n  , SUM(subq_3.__primary_sales_value) AS primary_sales_value\nFROM (\n  SELECT\n    distributor_id AS distributor\n    , primary_value_inr AS __primary_sales_value\n  FROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\n  WHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\n) subq_3\nLEFT OUTER JOIN\n  \"marts\".\"dim_distributor\" distributors_src_10000\nON\n  subq_3.distributor = distributors_src_10000.distributor_id\nGROUP BY\n  distributors_src_10000.region\nORDER BY primary_sales_value DESC, distributor__region\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "distributor__region",
+            "primary_sales_value"
+          ],
+          "rows": [
+            [
+              "South Bengal",
+              1229433355.34
+            ],
+            [
+              "Bihar & Jharkhand",
+              1211336723.95
+            ],
+            [
+              "Odisha",
+              822928105.36
+            ],
+            [
+              "North East",
+              713184149.36
+            ],
+            [
+              "Assam",
+              603706242.7
+            ],
+            [
+              "North Bengal & Sikkim",
+              310012527.57
+            ]
+          ]
+        },
+        "chart_spec": {
+          "type": "bar",
+          "x": "distributor__region",
+          "y": "primary_sales_value",
+          "series": null
+        },
+        "label": "governed_metric",
+        "confidence_note": "No figures stated, so there was nothing to trace.",
+        "trace_id": "1a4c57f1-fe69-4e67-aea2-0a20486fe4c6"
+      },
+      "requests": 2,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TC01": {
+      "id": "TC01",
+      "category": "time_comparison",
+      "question": "How did total primary sales value in FY26 (April 2025 to March 2026) compare with FY25 (April 2024 to March 2025)?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "found": {
+          "fy25": true,
+          "fy26": true
+        },
+        "golden": {
+          "fy25": 4563765266.46,
+          "fy26": 4890601104.28
+        }
+      },
+      "answer_text": "Using the governed primary_sales_value metric, total primary sales value was ₹4,890.6M in FY26 (Apr 2025–Mar 2026) versus ₹4,563.8M in FY25 (Apr 2024–Mar 2025), an increase of about ₹326.8M (roughly 7.2% year over year).",
+      "confidence_note": "0/1 figure traced to query results; untraced: 7.2%.",
+      "sql": [
+        "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500",
+        "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-04-01' AND '2025-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_ox06gvjp",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "primary_sales_value",
+            "filters": [],
+            "group_by": [
+              "metric_time__year"
+            ],
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_ox06gvjp\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  DATE_TRUNC('year', invoice_date) AS metric_time__year\\n  , SUM(primary_value_inr) AS primary_sales_value\\nFROM \\\"marts\\\".\\\"fct_primary_sales\\\" primary_sales_src_10000\\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-01-01'",
+          "sql": "SELECT\n  DATE_TRUNC('year', invoice_date) AS metric_time__year\n  , SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-01-01' AND '2026-12-31'\nGROUP BY\n  DATE_TRUNC('year', invoice_date)\nORDER BY metric_time__year\nLIMIT 500",
+          "row_count": 3,
+          "duration_ms": 194,
+          "error": null
+        },
+        {
+          "id": "call_1e0csmu3",
+          "name": "query_metric",
+          "input": {
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2024-04-01"
+            },
+            "filters": [],
+            "group_by": [
+              "metric_time__quarter"
+            ],
+            "metric_name": "primary_sales_value"
+          },
+          "output": "{\"tool_use_id\":\"call_1e0csmu3\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  DATE_TRUNC('quarter', invoice_date) AS metric_time__quarter\\n  , SUM(primary_value_inr) AS primary_sales_value\\nFROM \\\"marts\\\".\\\"fct_primary_sales\\\" primary_sales_src_10000\\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-",
+          "sql": "SELECT\n  DATE_TRUNC('quarter', invoice_date) AS metric_time__quarter\n  , SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-04-01' AND '2026-03-31'\nGROUP BY\n  DATE_TRUNC('quarter', invoice_date)\nORDER BY metric_time__quarter\nLIMIT 500",
+          "row_count": 8,
+          "duration_ms": 317,
+          "error": null
+        },
+        {
+          "id": "call_6oytc4rs",
+          "name": "query_metric",
+          "input": {
+            "date_range": {
+              "end": "2025-03-31",
+              "start": "2024-04-01"
+            },
+            "filters": [],
+            "group_by": [],
+            "metric_name": "primary_sales_value"
+          },
+          "output": "{\"tool_use_id\":\"call_6oytc4rs\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  SUM(primary_value_inr) AS primary_sales_value\\nFROM \\\"marts\\\".\\\"fct_primary_sales\\\" primary_sales_src_10000\\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-04-01' AND '2025-03-31'\\nORDER BY primary_sales_value DESC\\nLIMIT",
+          "sql": "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-04-01' AND '2025-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500",
+          "row_count": 1,
+          "duration_ms": 124,
+          "error": null
+        },
+        {
+          "id": "call_0k189ssk",
+          "name": "query_metric",
+          "input": {
+            "date_range": {
+              "end": "2026-03-31",
+              "start": "2025-04-01"
+            },
+            "filters": [],
+            "group_by": [],
+            "metric_name": "primary_sales_value"
+          },
+          "output": "{\"tool_use_id\":\"call_0k189ssk\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  SUM(primary_value_inr) AS primary_sales_value\\nFROM \\\"marts\\\".\\\"fct_primary_sales\\\" primary_sales_src_10000\\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\\nORDER BY primary_sales_value DESC\\nLIMIT",
+          "sql": "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500",
+          "row_count": 1,
+          "duration_ms": 100,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "fy25",
+          "fy26"
+        ],
+        "rows": [
+          [
+            4563765266.46,
+            4890601104.28
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 52461,
+        "output": 601,
+        "cache_read": 50720,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 43375,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "07e5ac4d-be04-46d3-b3be-17cb7fc27041",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:34:09+00:00",
+      "response": {
+        "answer_text": "Using the governed primary_sales_value metric, total primary sales value was ₹4,890.6M in FY26 (Apr 2025–Mar 2026) versus ₹4,563.8M in FY25 (Apr 2024–Mar 2025), an increase of about ₹326.8M (roughly 7.2% year over year).",
+        "sql": [
+          "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2025-04-01' AND '2026-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500",
+          "SELECT\n  SUM(primary_value_inr) AS primary_sales_value\nFROM \"marts\".\"fct_primary_sales\" primary_sales_src_10000\nWHERE DATE_TRUNC('day', invoice_date) BETWEEN '2024-04-01' AND '2025-03-31'\nORDER BY primary_sales_value DESC\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "primary_sales_value"
+          ],
+          "rows": [
+            [
+              4890601104.28
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "governed_metric",
+        "confidence_note": "0/1 figure traced to query results; untraced: 7.2%.",
+        "trace_id": "07e5ac4d-be04-46d3-b3be-17cb7fc27041"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "MH01": {
+      "id": "MH01",
+      "category": "multi_hop_why",
+      "question": "Why did base-crack warranty claims rise at our Durgapur plant in 2025?",
+      "expected_label": "governed_metric",
+      "actual_label": "governed_metric",
+      "correct": true,
+      "refused": false,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true,
+        "missing_mentions": [],
+        "forbidden_claims": [],
+        "missing_tools": [],
+        "golden": {
+          "resin_lot_id": "RL-DGP-L2-250310",
+          "units_shipped": 3376.0,
+          "base_crack_claims": 291,
+          "base_crack_per_1000": 86.19668246445498
+        }
+      },
+      "answer_text": "The Durgapur (DGP) plant's base-crack claims per 1,000 units spiked in March–April 2025 (76.1 and 61.0 vs ~15–24 in other months), and the lot_scan anomaly detector traces this to a single resin lot, RL-DGP-L2-250310 (line 2), which was flagged on 2025-05-18 with 291 base-crack claims on 3,376 units — an effect size of 3.84 (p ≈ 9e-79) versus ~76 expected claims across 10 peer lots. In other words, the 2025 rise is concentrated in one defective resin lot used on line 2, not a broad plant-wide problem.",
+      "confidence_note": "10/10 figures traced to query results.",
+      "sql": [
+        "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+        "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+        "SELECT\n  batch\n  , batch__line_no\n  , batch__product__product_name\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    batch\n    , batch__line_no\n    , batch__product__product_name\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_19.batch AS batch\n      , subq_25.line_no AS batch__line_no\n      , subq_25.resin_lot_id AS batch__resin_lot_id\n      , subq_25.product__product_name AS batch__product__product_name\n      , subq_19.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_19.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n    ) subq_19\n    LEFT OUTER JOIN (\n      SELECT\n        batches_src_10000.batch_id AS batch\n        , batches_src_10000.line_no AS line_no\n        , batches_src_10000.resin_lot_id AS resin_lot_id\n        , products_src_10000.product_name AS product__product_name\n      FROM \"marts\".\"dim_batch\" batches_src_10000\n      LEFT OUTER JOIN\n        \"marts\".\"dim_product\" products_src_10000\n      ON\n        batches_src_10000.sku = products_src_10000.sku\n    ) subq_25\n    ON\n      subq_19.batch = subq_25.batch\n  ) subq_27\n  WHERE batch__resin_lot_id = 'RL-DGP-L2-250310'\n  GROUP BY\n    batch\n    , batch__line_no\n    , batch__product__product_name\n) subq_31\nORDER BY base_crack_claims_per_1000_units DESC, batch, batch__line_no, batch__product__product_name\nLIMIT 500"
+      ],
+      "data_rows": 1,
+      "tools_used": [
+        "get_anomalies",
+        "query_metric",
+        "query_metric",
+        "query_metric",
+        "query_metric"
+      ],
+      "tool_calls": [
+        {
+          "id": "call_2kgc9pz0",
+          "name": "get_anomalies",
+          "input": {
+            "as_of_date": null,
+            "detector": "lot_scan",
+            "failure_mode": "base_crack"
+          },
+          "output": "{\"tool_use_id\":\"call_2kgc9pz0\",\"label\":\"governed_metric\",\"sql\":\"with params as (\\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\\n),\\nlatest as (\\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'categ",
+          "sql": "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "row_count": 1,
+          "duration_ms": 70,
+          "error": null
+        },
+        {
+          "id": "call_5pg4a31r",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "base_crack_claims_per_1000_units",
+            "filters": [
+              {
+                "dimension": "batch__plant_id",
+                "op": "=",
+                "value": "Durgapur"
+              }
+            ],
+            "group_by": [
+              "metric_time__month"
+            ],
+            "date_range": {
+              "end": "2025-12-31",
+              "start": "2025-01-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_5pg4a31r\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  metric_time__month\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    metric_time__month\\n    , SUM(cohort_base_crack_claims) AS claims\\n    , SUM(cohort_units_shipped) AS units\\n ",
+          "sql": "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_4.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_4.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_4.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_4\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_4.batch = batches_src_10000.batch_id\n  ) subq_9\n  WHERE batch__plant_id = 'Durgapur'\n  GROUP BY\n    metric_time__month\n) subq_13\nORDER BY metric_time__month\nLIMIT 500",
+          "row_count": 0,
+          "duration_ms": 105,
+          "error": null
+        },
+        {
+          "id": "call_x1p3ldbi",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "base_crack_claims_per_1000_units",
+            "filters": [
+              {
+                "dimension": "batch__plant_id",
+                "op": "=",
+                "value": "DGP"
+              }
+            ],
+            "group_by": [
+              "metric_time__month"
+            ],
+            "date_range": {
+              "end": "2025-12-31",
+              "start": "2025-01-01"
+            }
+          },
+          "output": "{\"tool_use_id\":\"call_x1p3ldbi\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  metric_time__month\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    metric_time__month\\n    , SUM(cohort_base_crack_claims) AS claims\\n    , SUM(cohort_units_shipped) AS units\\n ",
+          "sql": "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+          "row_count": 12,
+          "duration_ms": 162,
+          "error": null
+        },
+        {
+          "id": "call_flzz431e",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "base_crack_claims_per_1000_units",
+            "filters": [
+              {
+                "dimension": "batch__resin_lot_id",
+                "op": "=",
+                "value": "RL-DGP-L2-250310"
+              }
+            ],
+            "group_by": [
+              "batch",
+              "batch__mfg_month"
+            ],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\": \"call_flzz431e\", \"error\": \"base_crack_claims_per_1000_units can't be grouped by batch__mfg_month; use names from: batch, batch__is_legacy, batch__line_no, batch__plant_id, batch__plant_name, batch__product__capacity_l, batch__product__category, batch__product__is_serialised, batch__p",
+          "sql": null,
+          "row_count": null,
+          "duration_ms": 0,
+          "error": "base_crack_claims_per_1000_units can't be grouped by batch__mfg_month; use names from: batch, batch__is_legacy, batch__line_no, batch__plant_id, batch__plant_name, batch__product__capacity_l, batch__product__category, batch__product__is_serialised, batch__product__product_name, batch__resin_lot_id, batch_cohort_month__is_fully_observed, batch_cohort_month__months_since_ship, metric_time__day, metric_time__month, metric_time__quarter, metric_time__week, metric_time__year."
+        },
+        {
+          "id": "call_6ij5ikig",
+          "name": "query_metric",
+          "input": {
+            "metric_name": "base_crack_claims_per_1000_units",
+            "filters": [
+              {
+                "dimension": "batch__resin_lot_id",
+                "op": "=",
+                "value": "RL-DGP-L2-250310"
+              }
+            ],
+            "group_by": [
+              "batch",
+              "batch__line_no",
+              "batch__product__product_name"
+            ],
+            "date_range": null
+          },
+          "output": "{\"tool_use_id\":\"call_6ij5ikig\",\"label\":\"governed_metric\",\"sql\":\"SELECT\\n  batch\\n  , batch__line_no\\n  , batch__product__product_name\\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\\nFROM (\\n  SELECT\\n    batch\\n    , batch__line_no\\n    , batch__product__product_name\\n    ",
+          "sql": "SELECT\n  batch\n  , batch__line_no\n  , batch__product__product_name\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    batch\n    , batch__line_no\n    , batch__product__product_name\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_19.batch AS batch\n      , subq_25.line_no AS batch__line_no\n      , subq_25.resin_lot_id AS batch__resin_lot_id\n      , subq_25.product__product_name AS batch__product__product_name\n      , subq_19.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_19.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n    ) subq_19\n    LEFT OUTER JOIN (\n      SELECT\n        batches_src_10000.batch_id AS batch\n        , batches_src_10000.line_no AS line_no\n        , batches_src_10000.resin_lot_id AS resin_lot_id\n        , products_src_10000.product_name AS product__product_name\n      FROM \"marts\".\"dim_batch\" batches_src_10000\n      LEFT OUTER JOIN\n        \"marts\".\"dim_product\" products_src_10000\n      ON\n        batches_src_10000.sku = products_src_10000.sku\n    ) subq_25\n    ON\n      subq_19.batch = subq_25.batch\n  ) subq_27\n  WHERE batch__resin_lot_id = 'RL-DGP-L2-250310'\n  GROUP BY\n    batch\n    , batch__line_no\n    , batch__product__product_name\n) subq_31\nORDER BY base_crack_claims_per_1000_units DESC, batch, batch__line_no, batch__product__product_name\nLIMIT 500",
+          "row_count": 72,
+          "duration_ms": 123,
+          "error": null
+        }
+      ],
+      "golden": {
+        "columns": [
+          "resin_lot_id",
+          "units_shipped",
+          "base_crack_claims",
+          "base_crack_per_1000"
+        ],
+        "rows": [
+          [
+            "RL-DGP-L2-250310",
+            3376.0,
+            291,
+            86.19668246445498
+          ]
+        ]
+      },
+      "tokens": {
+        "input": 59008,
+        "output": 871,
+        "cache_read": 53177,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 82828,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "e72b81e1-e4db-4bca-8d51-6bbfd3c8ce45",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:34:52+00:00",
+      "response": {
+        "answer_text": "The Durgapur (DGP) plant's base-crack claims per 1,000 units spiked in March–April 2025 (76.1 and 61.0 vs ~15–24 in other months), and the lot_scan anomaly detector traces this to a single resin lot, RL-DGP-L2-250310 (line 2), which was flagged on 2025-05-18 with 291 base-crack claims on 3,376 units — an effect size of 3.84 (p ≈ 9e-79) versus ~76 expected claims across 10 peer lots. In other words, the 2025 rise is concentrated in one defective resin lot used on line 2, not a broad plant-wide problem.",
+        "sql": [
+          "with params as (\n    select coalesce(NULL::date, (select max(snapshot_date) from marts.mart_anomaly_flags)) as as_of\n),\nlatest as (\n    select distinct on (f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category') f.*\n    from marts.mart_anomaly_flags f, params p\n    where f.snapshot_date <= p.as_of\n    order by f.detector, f.entity_type, f.entity_id, f.failure_mode, f.details ->> 'category', f.snapshot_date desc\n)\nselect p.as_of, l.detector, l.entity_type, l.entity_id, l.failure_mode, l.region, l.snapshot_date,\n       l.first_flag_date, l.effect_size, l.p_value, l.details\nfrom latest l, params p\nwhere l.first_flag_date <= p.as_of\n  and ('lot_scan'::text is null or l.detector = 'lot_scan')\n  and ('base_crack'::text is null or l.failure_mode = 'base_crack')\n-- Strongest first within each detector, interleaved across detectors (D34): the model reads only the first rows, so\n-- one detector's long list must not push the others out of view.\norder by row_number() over (partition by l.detector order by l.effect_size desc nulls last, l.entity_id, l.failure_mode),\n         l.detector",
+          "SELECT\n  metric_time__month\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    metric_time__month\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_2.metric_time__month AS metric_time__month\n      , batches_src_10000.plant_id AS batch__plant_id\n      , subq_2.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_2.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        DATE_TRUNC('month', mfg_date) AS metric_time__month\n        , batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n      WHERE DATE_TRUNC('day', mfg_date) BETWEEN '2025-01-01' AND '2025-12-31'\n    ) subq_2\n    LEFT OUTER JOIN\n      \"marts\".\"dim_batch\" batches_src_10000\n    ON\n      subq_2.batch = batches_src_10000.batch_id\n  ) subq_7\n  WHERE batch__plant_id = 'DGP'\n  GROUP BY\n    metric_time__month\n) subq_11\nORDER BY metric_time__month\nLIMIT 500",
+          "SELECT\n  batch\n  , batch__line_no\n  , batch__product__product_name\n  , 1000 * claims / nullif(units, 0) AS base_crack_claims_per_1000_units\nFROM (\n  SELECT\n    batch\n    , batch__line_no\n    , batch__product__product_name\n    , SUM(cohort_base_crack_claims) AS claims\n    , SUM(cohort_units_shipped) AS units\n  FROM (\n    SELECT\n      subq_19.batch AS batch\n      , subq_25.line_no AS batch__line_no\n      , subq_25.resin_lot_id AS batch__resin_lot_id\n      , subq_25.product__product_name AS batch__product__product_name\n      , subq_19.__cohort_base_crack_claims AS cohort_base_crack_claims\n      , subq_19.__cohort_units_shipped AS cohort_units_shipped\n    FROM (\n      SELECT\n        batch_id AS batch\n        , claims_base_crack AS __cohort_base_crack_claims\n        , case when months_since_ship = 0 then units_shipped else 0 end AS __cohort_units_shipped\n      FROM \"marts\".\"mart_batch_claim_cohorts\" batch_claim_cohorts_src_10000\n    ) subq_19\n    LEFT OUTER JOIN (\n      SELECT\n        batches_src_10000.batch_id AS batch\n        , batches_src_10000.line_no AS line_no\n        , batches_src_10000.resin_lot_id AS resin_lot_id\n        , products_src_10000.product_name AS product__product_name\n      FROM \"marts\".\"dim_batch\" batches_src_10000\n      LEFT OUTER JOIN\n        \"marts\".\"dim_product\" products_src_10000\n      ON\n        batches_src_10000.sku = products_src_10000.sku\n    ) subq_25\n    ON\n      subq_19.batch = subq_25.batch\n  ) subq_27\n  WHERE batch__resin_lot_id = 'RL-DGP-L2-250310'\n  GROUP BY\n    batch\n    , batch__line_no\n    , batch__product__product_name\n) subq_31\nORDER BY base_crack_claims_per_1000_units DESC, batch, batch__line_no, batch__product__product_name\nLIMIT 500"
+        ],
+        "data": {
+          "columns": [
+            "as_of",
+            "detector",
+            "entity_type",
+            "entity_id",
+            "failure_mode",
+            "region",
+            "snapshot_date",
+            "first_flag_date",
+            "effect_size",
+            "p_value",
+            "details"
+          ],
+          "rows": [
+            [
+              "2026-09-23",
+              "lot_scan",
+              "resin_lot",
+              "RL-DGP-L2-250310",
+              "base_crack",
+              null,
+              "2026-09-20",
+              "2025-05-18",
+              3.8386502094570054,
+              9.119874512631793e-79,
+              {
+                "units": 3376,
+                "claims": 291,
+                "line_no": 2,
+                "expected": 75.8079,
+                "plant_id": "DGP",
+                "peer_lots": 10,
+                "peer_claims": 549,
+                "peer_unit_days": 17901360,
+                "flagged_this_snapshot": true
+              }
+            ]
+          ]
+        },
+        "chart_spec": null,
+        "label": "governed_metric",
+        "confidence_note": "10/10 figures traced to query results.",
+        "trace_id": "e72b81e1-e4db-4bca-8d51-6bbfd3c8ce45"
+      },
+      "requests": 4,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    },
+    "TR01": {
+      "id": "TR01",
+      "category": "trap",
+      "question": "What will our primary sales be next quarter, October to December 2026?",
+      "expected_label": "refused",
+      "actual_label": "refused",
+      "correct": true,
+      "refused": true,
+      "refusal_correct": true,
+      "label_correct": true,
+      "confidently_wrong": false,
+      "match": {
+        "ok": true
+      },
+      "answer_text": "I can't forecast primary sales for October–December 2026 — that's a future period, and my tools only compute governed metrics over historical data that actually exists in the marts. I can instead show you actual primary sales value for past quarters (e.g., the same Oct–Dec window in prior years) as a baseline, if you'd like.",
+      "confidence_note": "Refused by the model; no figures reported.",
+      "sql": [],
+      "data_rows": 0,
+      "tools_used": [],
+      "tool_calls": [],
+      "golden": null,
+      "tokens": {
+        "input": 12366,
+        "output": 220,
+        "cache_read": 11882,
+        "cache_write": 0
+      },
+      "cost_usd": 0.0,
+      "latency_ms": 15203,
+      "served_model": "qwen3.8-27b-64k",
+      "trace_id": "394730b3-25c3-4b97-acaa-0cc86b89300c",
+      "error": null,
+      "provider": "ollama",
+      "mode": "governed",
+      "asked_at": "2026-09-30T03:36:15+00:00",
+      "response": {
+        "answer_text": "I can't forecast primary sales for October–December 2026 — that's a future period, and my tools only compute governed metrics over historical data that actually exists in the marts. I can instead show you actual primary sales value for past quarters (e.g., the same Oct–Dec window in prior years) as a baseline, if you'd like.",
+        "sql": [],
+        "data": null,
+        "chart_spec": null,
+        "label": "refused",
+        "confidence_note": "Refused by the model; no figures reported.",
+        "trace_id": "394730b3-25c3-4b97-acaa-0cc86b89300c"
+      },
+      "requests": 1,
+      "infra_retries": 0,
+      "rate_limit_waits": 0
+    }
+  },
+  "meta": {
+    "provider": "ollama",
+    "mode": "governed",
+    "model": "qwen3.8-27b-64k",
+    "effort": "none",
+    "as_of": "2026-09-23",
+    "pinned_as_of": "2026-09-23",
+    "region": "ALL",
+    "git_commit": "1264c449202ebfe377d5ab9fc006bf44184c59dc",
+    "timestamp": "2026-09-30T03:32:39+00:00",
+    "budget_usd": 5.0,
+    "question_count": 40,
+    "golden_count": 32,
+    "selected": [
+      "SL01",
+      "FG01",
+      "TC01",
+      "MH01",
+      "TR01"
+    ],
+    "settings": {
+      "temperature": 0.0,
+      "reasoning_effort": "none",
+      "thinking": "off (reasoning_effort=none)",
+      "quantization": "Q4_K_M",
+      "context_length": 65536,
+      "context_length_trained": 262144,
+      "family": "qwen35",
+      "parameter_size": "27.3B",
+      "format": "gguf",
+      "server_parameters": {
+        "top_p": "0.95",
+        "draft_num_predict": "2",
+        "min_p": "0",
+        "num_ctx": "65536",
+        "presence_penalty": "0",
+        "repeat_penalty": "1",
+        "temperature": "0",
+        "top_k": "20"
+      },
+      "server_thinking_default": "medium"
+    },
+    "agent_timeout_s": 1800
+  },
+  "status": "complete",
+  "scorecard": {
+    "questions": 5,
+    "scored": 5,
+    "skipped": 0,
+    "errors": 0,
+    "execution_accuracy": 1.0,
+    "accuracy_by_category": {
+      "simple_lookup": 1.0,
+      "filtered_grouped": 1.0,
+      "time_comparison": 1.0,
+      "multi_hop_why": 1.0,
+      "trap": 1.0
+    },
+    "refusal_correctness": 1.0,
+    "refused_exactly_the_traps": true,
+    "missed_traps": [],
+    "false_refusals": [],
+    "label_accuracy": 1.0,
+    "confidently_wrong": [],
+    "avg_latency_ms": 45972,
+    "median_latency_ms": 43375,
+    "p95_latency_ms": 82828,
+    "avg_cost_usd": 0.0,
+    "total_cost_usd": 0.0,
+    "total_tokens": {
+      "input": 174031,
+      "output": 2276,
+      "cache_read": 152373,
+      "cache_write": 0
+    },
+    "tokens_per_question": {
+      "input": 34806,
+      "output": 455
+    },
+    "infra_retries": 0,
+    "rate_limit_waits": 0
+  }
+}

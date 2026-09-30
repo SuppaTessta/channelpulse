@@ -345,6 +345,47 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 
   Each time, the run paused, saved its progress, and resumed at the next question.
 
+**D39. Golden set v2: 102 questions, a clarification category, and a free tier in CI (Part C 1, 2026-09-30).**
+- **The set** (`evals/questions.yaml`) grew from 40 to 102 questions: 18 simple lookups, 18 filtered or grouped, 18 time comparisons, 14 multi-hop "why" questions, 18 traps, and a sixth category, 16 **ambiguous** questions whose right answer is a question back.
+  - Every golden answer is still hand-written SQL on the marts.
+  - An ambiguous question carries two or three *readings* (sell-in or sell-out, calendar or fiscal Q1, which of two reps named Sharma), each with its own golden SQL. The eval fails unless the readings give different answers, so each question is ambiguous in fact, not just in wording.
+- **`needs_clarification`, a fourth answer label.** The final-answer schema gains `clarifying_question`, and the prompt tells the model to ask when a question could mean two things with different answers. Code turns that into a response with no figures and the question back. It's scored correct only on ambiguous questions, and never counts as confidently wrong. It's carried through the API, `ops.agent_traces` and the web badge.
+- **Model-free refusal routing** (`app/guardrails/refusal_routing.py`). Four narrow patterns are refused before any model call: SQL writes, raw/staging/system tables, prompt injection, and "don't show the SQL". The rest, forecasts, personal data and off-topic questions included, stays the model's call. This fixes TR06, the "no SQL" trap both models answered in Part B.
+- **Two tiers:**
+  - **Free and deterministic** (`evals/tests/test_free_tier.py`, `make eval-free`, run by `make test` in CI on every PR). No model is involved:
+    - **Semantic layer:** each of the 47 governed scalar and keyed questions has a hand-written `governed_call`, the `query_metric` call(s) a correct answer makes. Its results must reproduce the golden under the eval's own scorer. This checks the metric definitions against independent SQL.
+    - **SQL validator:** every trap's `attack_sql` is rejected.
+    - **Router:** it refuses exactly the questions marked `router` (9 traps) and none of the 84 non-traps.
+    - **Goldens:** every golden validates, and every ambiguous question's readings disagree.
+  - **Full model suite:** manual only (`make eval`). It reports execution accuracy on the 68 answerable questions against a threshold of 85% (exit 5 below it), plus refusal and clarification correctness and the number of router refusals. CI never holds a model credential (a test enforces it).
+- **Found by the free tier:**
+  - **A fiscal-grain query timed out.** Since D36, `primary_sales_value` grouped by `metric_time__fiscal_year` took 10 s and hit the statement timeout. That's why TC01 logged timeouts in every governed run since. Under the RLS filter and MetricFlow's `date_trunc` predicates, the planner estimated the fact table at 2 rows and nested a loop over the time spine. `readonly_db` now sets `enable_nestloop = off` per transaction, and the query takes 0.15 s. Index scans still serve filters.
+  - **`channel_stock_units` isn't total stock.** It counts only distributor-SKU rows with a days-of-stock value, so it's about 40% below all units held at the latest snapshot. It's a building block of `channel_days_of_stock`, where that filter is right, but its label ("Channel stock (units)") suggests all stock. Changing a metric definition needs the owner's approval, so it's unchanged. FG18 asks about days of stock instead, and the finding is open.
+- **v1's runs of record** are kept as `__v1-40q` rows, and the scorecard gains a Questions column, so the 40- and 102-question sets are never compared as if they were one.
+- **Scoring rules were not changed mid-evaluation.** Some misses are strict by design and stay misses:
+  - TC14 queried every quarter, not just FY26's, where extra keys aren't allowed;
+  - SL16 and FG16 counted or summed result rows themselves, which rule 4 forbids, so their figures aren't in the evidence.
+
+**D40. Agent traces view: recorded traces for anyone, live ones behind a token (Part C 2, 2026-09-30).**
+- **Two sources, one shape:**
+  - Recorded: each answer in the eval's replay recordings carries the trace the eval wrote: tool calls with SQL, row counts, durations and errors; tokens; latency; cost; label; and the eval's verdict.
+  - Live: `ops.agent_traces`, written by `POST /api/ask`.
+- **Why recorded traces:** the public demo is replay-only (D29), so `ops.agent_traces` there stays empty. The recordings are the traces reviewers can actually inspect. Like replayed answers, they're served only under the region claim they were recorded with, because their tool outputs can hold rows another claim may not see.
+- **Why the token:** live rows are questions real visitors typed. `GET /api/traces` includes them only when the request carries `X-Admin-Token` equal to `ADMIN_TOKEN`, compared in constant time. With the variable unset, the default, they're never served. The dashboard sends the token server-side only.
+- **API:** `GET /api/traces` filters by source, label, provider, model, category, and a text search over the question and SQL. It's paged, with facets over all rows and totals over the filtered ones. `GET /api/traces/{id}` returns the tool calls.
+
+**D41. The Weekly Brief and its numbers check (Part C 3, 2026-09-30).**
+- **A brief is facts plus sentences:**
+  - **Facts.** Each is one query under the viewer's region claim: a governed metric for the chosen Monday-to-Sunday week and the week before, or, for new anomaly flags, the detector-flags query. Each fact carries its SQL.
+  - **Sentences.** Each one cites the facts it states, so every figure on the page links to the query behind it.
+- **Narration.** In live mode, the model narrates, told to copy each fact's display text exactly and never to compute. Otherwise, or when its narration is unusable, a deterministic template does. The demo is replay-only, so it serves the template.
+- **The numbers check** runs before a brief is served. It re-executes every cited query, then reads each sentence's figures back (`response.figures`, the Ask agent's own tracer) and requires each to match one of its cited facts.
+  - A model narration that fails is blocked. The template is served in its place, and the reasons come with the brief.
+  - A template that fails, because the data changed underneath it, blocks the brief outright.
+  - Tested both ways: an invented "up 17%" blocks the narration, and a changed value blocks the brief.
+- **Known ceiling:** like the Ask tracer, it skips bare single digits and years, so a wrong "3 flags" isn't caught. Figures with a unit or a thousands separator are.
+- **Found while building it:** sums over the float4 column `avg_daily_secondary_units` vary in the fifth significant digit between runs, because parallel workers add in a different order (days of stock 43.654685 vs 43.654642). Re-executed floats compare within 1e-5 relative. The column type is a warehouse choice, so it's left as is and noted here.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

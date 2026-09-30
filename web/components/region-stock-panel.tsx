@@ -35,6 +35,7 @@ export async function RegionStockPanel({ period, region, catalog, className }: {
   const series = METRICS.map((m, i) => ({ key: m, label: shortLabel(metric(m).label), slot: i + 1, values: rows.map((row) => byRegion[i].get(row.key) ?? null) }));
   const definition = (
     <DefinitionButton
+      source
       title={title}
       metrics={METRICS.map((m) => toDefMetric(metric(m)))}
       queries={r.value.map((q, i) => toDefQuery(q, `${series[i].label} by region`))}

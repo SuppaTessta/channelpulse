@@ -1,3 +1,4 @@
+import { ArrowDownRight, ArrowUpRight, Database, Minus, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import { query, type DataWindow, type Metric, type Query, type Result } from "@/lib/api";
 import type { Region } from "@/lib/config";
 import { daysBetween, type Grain } from "@/lib/dates";
@@ -10,7 +11,7 @@ import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { Sparkline } from "./sparkline";
 import { describeError, ErrorState } from "./states";
-import { cx, Sheet, Skeleton } from "./ui";
+import { cx, Figure, ICON, Sheet, Skeleton } from "./ui";
 
 export const KPI_METRICS = ["primary_sales_value", "secondary_sales_value", "channel_days_of_stock", "claims_per_1000_units", "dso"];
 
@@ -37,7 +38,7 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
   const label = shortLabel(metric.label);
   const kind = metricKind(k.name, metric.label);
   const head = (
-    <div className="flex items-center gap-0.5">
+    <div className="flex min-w-0 items-center gap-0.5">
       <p className="text-[13px] font-medium text-muted">{label}</p>
       {metric.description ? <InfoTip label={`Definition of ${label}`}>{metric.description}</InfoTip> : null}
     </div>
@@ -45,9 +46,12 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
   if (!k.current.ok || !k.trend.ok) {
     const error = !k.current.ok ? k.current.error : !k.trend.ok ? k.trend.error : null;
     return (
-      <div className={cx("flex flex-col gap-2 bg-surface p-4", span)}>
+      <div className={cx("flex flex-col gap-2 bg-surface p-4 md:p-5", span)}>
         {head}
-        <p className="text-sm text-danger">{error ? describeError(error).title : "Couldn't load"}</p>
+        <p className="flex items-start gap-1.5 text-sm text-danger">
+          <WarningCircle size={16} {...ICON} className="mt-0.5 shrink-0" aria-hidden />
+          {error ? describeError(error).title : "Couldn't load"}
+        </p>
       </div>
     );
   }
@@ -66,29 +70,52 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
     toDefQuery(k.trend.value, `Trend by ${k.grain}`),
   ];
 
+  const Arrow = !delta || delta.sign === 0 ? Minus : delta.sign > 0 ? ArrowUpRight : ArrowDownRight;
+  const note = cohort
+    ? "By manufacture date: newer batches have had less time to collect claims."
+    : provisional
+      ? `Includes provisional sell-out from ${fmtDayMonth(ctx.win.provisionalFrom!)}.`
+      : null;
+
   return (
-    <div className={cx("grid grid-cols-[1fr_minmax(96px,34%)] content-start items-end gap-x-4 gap-y-2 bg-surface p-4 md:grid-cols-1", span)}>
-      <div className="flex min-w-0 flex-col gap-1">
-        {head}
-        <p className="text-[26px]/8 font-semibold tracking-tight text-ink md:text-[28px]/9">{formatValue(kind, value)}</p>
-        <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
-          {delta ? (
-            <span className={cx("font-semibold", tone)}>{delta.text}</span>
-          ) : (
-            <span className="text-muted">No comparison</span>
-          )}
-          {priorValue != null ? <span className="text-muted">vs {formatValue(kind, priorValue)}</span> : null}
-        </p>
-        {cohort ? <p className="text-xs text-subtle">By manufacture date: newer batches have had less time to collect claims.</p> : null}
-        {provisional ? <p className="text-xs text-subtle">Includes provisional sell-out from {fmtDayMonth(ctx.win.provisionalFrom!)}.</p> : null}
-      </div>
-      <div className="md:pt-1">
+    <div className={cx("flex min-w-0 flex-col gap-3 bg-surface p-4 md:p-5", span)}>
+      {head}
+      <div className="grid grid-cols-[1fr_minmax(96px,38%)] items-end gap-x-4 gap-y-3 md:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Figure text={formatValue(kind, value)} className="text-[28px]/9 font-semibold tracking-[-0.03em] text-ink md:text-[32px]/10" />
+          <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
+            {delta ? (
+              <span className={cx("inline-flex items-center gap-0.5 font-semibold", tone)}>
+                <Arrow size={13} weight="bold" className="shrink-0" aria-hidden />
+                {delta.text}
+              </span>
+            ) : (
+              <span className="text-muted">No comparison</span>
+            )}
+            {priorValue != null ? <span className="text-muted">vs {formatValue(kind, priorValue)}</span> : null}
+          </p>
+        </div>
         <Sparkline
           values={trend}
           label={`${label} by ${k.grain}, ${buckets.length} ${k.grain}s; latest ${formatValue(kind, trend.findLast((v) => v != null))}`}
         />
       </div>
-      <DefinitionButton className="col-span-full -ml-2.5 w-fit" title={label} metrics={[toDefMetric(metric)]} queries={queries} />
+      <div className="mt-auto flex items-end justify-between gap-3">
+        <p className="text-[11.5px]/4 text-subtle">{note}</p>
+        <DefinitionButton
+          className="-mr-2 -mb-1 h-8 shrink-0 px-2 text-xs max-md:h-10"
+          label={`Definition and SQL: ${label}`}
+          trigger={
+            <>
+              <Database size={14} {...ICON} aria-hidden />
+              SQL
+            </>
+          }
+          title={label}
+          metrics={[toDefMetric(metric)]}
+          queries={queries}
+        />
+      </div>
     </div>
   );
 }
@@ -132,7 +159,7 @@ export function KpiStripSkeleton() {
       <Skeleton className="h-4 w-48" />
       <div className="grid grid-cols-1 gap-px overflow-clip rounded-panel border border-line bg-line md:grid-cols-6 lg:grid-cols-5">
         {SPANS.map((span, i) => (
-          <div key={i} className={cx("flex flex-col gap-2 bg-surface p-4", span, "lg:col-span-1")}>
+          <div key={i} className={cx("flex flex-col gap-3 bg-surface p-4 md:p-5", span, "lg:col-span-1")}>
             <Skeleton className="h-3.5 w-32" />
             <Skeleton className="h-8 w-28" />
             <Skeleton className="h-3 w-24" />

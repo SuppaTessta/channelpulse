@@ -58,6 +58,7 @@ export async function TrendPanel(p: TrendProps) {
   const kind = metricKind(p.metrics[0].name, metric(p.metrics[0].name).label);
   const definition = r.ok ? (
     <DefinitionButton
+      source
       title={p.title}
       metrics={p.metrics.map((m) => toDefMetric(metric(m.name)))}
       queries={r.value.map((q, i) => toDefQuery(q, `${shortLabel(metric(p.metrics[i].name).label)} by ${p.grain}`))}

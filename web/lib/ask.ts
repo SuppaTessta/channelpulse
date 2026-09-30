@@ -7,7 +7,7 @@ import { fmtDate, fmtDayMonth, fmtMonth, fmtMonthShort, type Kind } from "./form
 import { metricKind } from "./metrics";
 import { num, type Table } from "./table";
 
-export type AskLabel = "governed_metric" | "ad_hoc_sql_verify" | "refused";
+export type AskLabel = "governed_metric" | "ad_hoc_sql_verify" | "refused" | "needs_clarification";
 export type ChartSpec = { type: "line" | "bar" | "table"; x: string | null; y: string | null; series: string | null };
 export type AskResponse = {
   answer_text: string;
@@ -145,4 +145,5 @@ export const LABEL_TEXT: Record<AskLabel, string> = {
   governed_metric: "Governed metric",
   ad_hoc_sql_verify: "Ad-hoc SQL, verify",
   refused: "Refused",
+  needs_clarification: "Needs clarification",
 };

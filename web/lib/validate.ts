@@ -34,7 +34,7 @@ export function isMetricList(v: unknown): v is { metrics: Metric[] } {
   );
 }
 
-const LABELS = new Set(["governed_metric", "ad_hoc_sql_verify", "refused"]);
+const LABELS = new Set(["governed_metric", "ad_hoc_sql_verify", "refused", "needs_clarification"]);
 const CHART_TYPES = new Set(["line", "bar", "table"]);
 
 export function isAskResponse(v: unknown): v is AskResponse {

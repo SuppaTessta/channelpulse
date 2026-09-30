@@ -1,4 +1,4 @@
-import { CheckCircle, HandPalm, SealCheck, SealWarning } from "@phosphor-icons/react/dist/ssr";
+import { ChatCircleDots, CheckCircle, HandPalm, SealCheck, SealWarning } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import { buildAskChart, LABEL_TEXT, type AskResponse } from "@/lib/ask";
 import { toISODate } from "@/lib/dates";
@@ -23,6 +23,13 @@ export function LabelBadge({ label }: { label: AskResponse["label"] }) {
   if (label === "ad_hoc_sql_verify") {
     return (
       <Badge tone="adhoc" icon={<SealWarning size={14} {...ICON} aria-hidden />}>
+        {LABEL_TEXT[label]}
+      </Badge>
+    );
+  }
+  if (label === "needs_clarification") {
+    return (
+      <Badge tone="neutral" icon={<ChatCircleDots size={14} {...ICON} aria-hidden />}>
         {LABEL_TEXT[label]}
       </Badge>
     );
@@ -88,6 +95,18 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
         <p className="max-w-[70ch] text-sm text-muted">{response.confidence_note}</p>
         <p className="max-w-[70ch] text-sm text-muted">
           Declining is a normal outcome: the analyst only states figures it can trace to governed data in the marts.
+        </p>
+        <TraceId id={response.trace_id} />
+      </article>
+    );
+  }
+  if (response.label === "needs_clarification") {
+    return (
+      <article className="flex flex-col gap-3 rounded-panel border border-l-4 border-line border-l-line-strong bg-refused-soft p-4 md:p-5">
+        <AnswerHeader question={question} meta={meta} badge={<LabelBadge label="needs_clarification" />} />
+        <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
+        <p className="max-w-[70ch] text-sm text-muted">
+          {response.confidence_note} Ask again with the reading you mean.
         </p>
         <TraceId id={response.trace_id} />
       </article>

@@ -264,6 +264,26 @@
   background: transparent;
 }
 
+/* Print (the Weekly Brief is meant to be printed): light ink on paper whatever the screen theme, no chrome. */
+@media print {
+  :root {
+    color-scheme: light;
+    --canvas: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #f4f5f7;
+    --text: #16181d;
+    --text-muted: #50555e;
+    --text-subtle: #646973;
+    --border: #d9dce1;
+    --accent: #0a7377;
+    --accent-soft: #e6f6f7;
+  }
+  @page {
+    margin: 16mm;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

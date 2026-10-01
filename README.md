@@ -160,7 +160,9 @@ The gap between the two modes on one model is what the semantic layer is worth.
 
 Every row below comes from a committed run file in [`evals/results/runs/`](evals/results/runs); `make scorecard` regenerates the block. Free tiers cost $0, so cost is shown as tokens per question. Infrastructure retries (a dead tunnel, a 503) are counted, never scored. **Each result is a single run at temperature 0**, which doesn't make a model deterministic, so read small differences with care.
 
-The current rows are golden set v2. Labelled rows are earlier runs kept on record:
+The current rows are golden set v2. **They were graded under detector v1.** On 2026-10-02 the product switched to detector v2 (D48), and five golden answers that read detector flags moved with it: SL16, FG16, MH02, MH10 and MH12. Each run file keeps the golden it was graded against, and the rows are not re-run.
+
+Labelled rows are earlier runs kept on record:
 - **`v1-40q`** is the first 40-question set;
 - **before D36** and **after-D36-pre-D37** are governed runs from before the layer gained the fiscal-year grain (D36) and before filters on two-hop dimensions were fixed (D37).
 
@@ -235,7 +237,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 - **Scope:** no real auth (the RLS stub only), and no forecasting. The Weekly Brief and the Agent traces page arrived in Phase 2 (D40, D41).
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
-- **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The v1 stuffing rule is loose, and the v1 health rule flagged the churning account late. Detector v2 (D46, D47) improves both on the seed of record and on a holdout seed nobody had inspected. The product still serves v1, pending the owner's decision.
+- **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The v1 stuffing rule is loose, and the v1 health rule flagged the churning account late. Detector v2 (D46, D47) improves both on the seed of record and on a holdout seed nobody had inspected, and it's in production since D48. The holdout churn flag lands only 6 days before its target, and stuffers in their overhang still cross the health flag more often than the acceptance target allows.
 - **Refactors deferred, deliberately (D44).** The scored eval runs and their replay recordings must stay reproducible from the code that made them, and deployment comes first. These are future work:
   - `evals/run_eval.py`'s `main()`, 131 lines, could split into setup, run and report;
   - `generator/acceptance.py`, about 1,000 lines, and a few long generator functions (`tables.build_tables`, `fates.serial_fates`);

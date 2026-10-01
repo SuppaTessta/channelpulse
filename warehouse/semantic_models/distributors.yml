@@ -63,7 +63,7 @@ models:
     description: >-
       distributor_health_score per distributor × completed ISO week: point-in-time, exactly as pre-registered in
       detectors/detectors.yaml. Five region-peer percentile components (0-100), a weighted score, and is_at_risk
-      after 3 consecutive flag weeks. RLS by region.
+      after 3 consecutive flag weeks under detector v2 (decisions D46-D48). RLS by region.
     semantic_model:
       enabled: true
       name: distributor_health
@@ -128,7 +128,9 @@ models:
         expr: score_visit_recency
       - name: at_risk_distributors
         label: At-risk distributors
-        description: Distributors flagged at risk (score < 30 with a bottom-15% sell-out trend, 3 weeks running).
+        description: >-
+          Distributors flagged at risk: health score under 30, sell-out under 0.8x the same 8 weeks a year earlier
+          and sell-in above 1.1x sell-out, 3 weeks running (detector v2).
         type: simple
         agg: count_distinct
         expr: distributor_id
@@ -182,7 +184,9 @@ models:
         expr: rate_ratio
       - name: stuffing_flags
         label: Stuffing flags
-        description: Distributor × window × category combinations ordering at ≥ 2× their trailing-90-day rate.
+        description: >-
+          Distributor × window × category combinations ordering at ≥ 2× their trailing-90-day rate in the scheme
+          window, with at least one scheme invoice there (detector v2, provisional at the window's end).
         type: simple
         agg: sum
         expr: "case when is_stuffing_flag then 1 else 0 end"

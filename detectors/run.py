@@ -274,17 +274,24 @@ def write_table(conn, rows, as_of):
         with conn.cursor().copy(f"copy marts.mart_anomaly_flags ({', '.join(COLUMNS)}) from stdin") as copy:
             for row in rows:
                 copy.write_row((*row[:-1], Jsonb(row[-1])))
-        # Stuffing: each flagged window is its own flag event, dated when it is visible. concentration_ratio and
-        # the follow-through use later quarters and post-window days, so they stay out of this point-in-time row.
+        # Stuffing (detector v2, D46-D48): each flagged window is its own flag event. The provisional row is dated
+        # when the window is visible. A confirmed row follows at QE+60, when the post-quarter evidence it rests on is,
+        # so an as-of read never sees later data. concentration_ratio stays out: it uses later quarters.
         conn.execute("""
             insert into marts.mart_anomaly_flags
-            select 'stuffing', 'distributor', distributor_id, null, region, least(window_end_date, %(as_of)s),
+            select 'stuffing', 'distributor', distributor_id, null, region, f.snapshot_date,
                    least(window_end_date, %(as_of)s), rate_ratio, null,
                    jsonb_build_object('fiscal_quarter', fiscal_quarter_label, 'category', category,
                                       'window_start_date', window_start_date, 'window_end_date', window_end_date,
                                       'is_window_complete', is_window_complete, 'window_units', window_units,
-                                      'baseline_units', baseline_units)
-            from marts.mart_scheme_quarterly where is_stuffing_flag""", {"as_of": as_of})
+                                      'baseline_units', baseline_units, 'scheme_invoices', scheme_invoices,
+                                      'status', f.status, 'rule_version', 2)
+                   || case when f.status = 'confirmed' then jsonb_build_object(
+                          'post_rate_ratio', post_rate_ratio, 'dos_excess_60d', dos_excess_60d) else '{}' end
+            from marts.mart_scheme_quarterly
+            cross join lateral (values (least(window_end_date, %(as_of)s), 'provisional'),
+                                       (window_end_date + 60, 'confirmed')) as f (snapshot_date, status)
+            where is_stuffing_flag and (f.status = 'provisional' or is_stuffing_confirmed)""", {"as_of": as_of})
         # Health: consecutive at-risk weeks form a run (gaps and islands); first_flag_date is the run's first week.
         conn.execute("""
             insert into marts.mart_anomaly_flags
@@ -298,7 +305,7 @@ def write_table(conn, rows, as_of):
                        'secondary_trend_ratio', secondary_trend_ratio,
                        'primary_secondary_ratio', primary_secondary_ratio,
                        'days_of_stock_vs_median', days_of_stock_vs_median, 'dso_vs_median', dso_vs_median,
-                       'days_since_verified_visit', days_since_verified_visit)
+                       'days_since_verified_visit', days_since_verified_visit, 'rule_version', 2)
             from (
                 select *,
                     snapshot_date - 7 * (row_number() over (partition by distributor_id order by snapshot_date))::int
@@ -339,7 +346,8 @@ def distributor_summary(conn, detector):
                 with events as (
                     select entity_id, region, first_flag_date, details ->> 'fiscal_quarter' as fiscal_quarter,
                            details ->> 'category' as category, max(snapshot_date) as last_snapshot_date,
-                           count(*) as snapshots, min(effect_size) as min_effect, max(effect_size) as max_effect
+                           count(*) as snapshots, min(effect_size) as min_effect, max(effect_size) as max_effect,
+                           bool_or(details ->> 'status' = 'confirmed') as confirmed
                     from marts.mart_anomaly_flags where detector = %s
                     group by 1, 2, 3, 4, 5
                 )
@@ -347,7 +355,7 @@ def distributor_summary(conn, detector):
                        jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
                            'first_flag_date', first_flag_date, 'last_snapshot_date', last_snapshot_date,
                            'snapshots', snapshots, 'fiscal_quarter', fiscal_quarter, 'category', category,
-                           'min_effect_size', min_effect, 'max_effect_size', max_effect))
+                           'min_effect_size', min_effect, 'max_effect_size', max_effect, 'confirmed', confirmed))
                            order by first_flag_date, category)
                 from events group by 1, 2 order by 3, 1""", (detector,))]
 

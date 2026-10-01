@@ -27,9 +27,10 @@ GROUND_TRUTH = ROOT / "generator" / "ground_truth.yaml"
 STUFFER_MULTIPLE = 1.8  # generator/acceptance.py stuffing_cells: raw >= 1.8x the stuffing-off run
 CHURN_DEADLINE = dt.date(2026, 1, 31)  # acceptance C7 and the v2 goal: flagged before the end of January 2026
 OVERHANG_DAYS = 60  # the stock overhang after a quarter-end (ground truth: elevated_through = QE+60)
-STUFFING_RULES = {"v1": "is_stuffing_flag", "v2_provisional": "is_stuffing_flag_v2",
-                  "v2_confirmed": "is_stuffing_confirmed_v2"}
-HEALTH_RULES = {"v1": "is_at_risk", "v2": "is_at_risk_v2"}
+# v2 is in production since D48, under the unversioned column names; v1 stays on record as *_v1.
+STUFFING_RULES = {"v1": "is_stuffing_flag_v1", "v2_provisional": "is_stuffing_flag",
+                  "v2_confirmed": "is_stuffing_confirmed"}
+HEALTH_RULES = {"v1": "is_at_risk_v1", "v2": "is_at_risk"}
 
 WINDOW_UNITS = """
 select i.distributor_id, p.category, sum(l.qty)

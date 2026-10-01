@@ -484,6 +484,24 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   On the holdout, v2 is slightly worse than v1 on the stuffer measure. Both versions fail acceptance C7's under-5% target on both seeds.
 - **Status:** the product keeps serving v1 (`mart_anomaly_flags`, `get_anomalies`) until the owner decides whether to switch. The results are in `detectors/results/evaluation_20260924.json` and `evaluation_20261002.json`.
 
+**D48. Detector v2 in production; the eval's runs of record stay graded under v1 (owner decision, 2026-10-02).**
+- **Switch:** the marts' unversioned flag columns now carry v2, and v1 stays on record as `*_v1`:
+  - `mart_scheme_quarterly.is_stuffing_flag` (provisional) and `is_stuffing_confirmed`;
+  - `mart_distributor_health_weekly.is_flag_week` and `is_at_risk`.
+
+  So everything that reads them moved together: `mart_anomaly_flags` and `get_anomalies`, the governed metrics `at_risk_distributors` and `stuffing_flags` (descriptions updated, manifest regenerated), the Weekly Brief and the dashboard. `detectors/evaluate.py` reproduces the frozen D47 numbers exactly under the new names.
+- **Point-in-time:** a stuffing flag writes a provisional row dated at the window's end and, if confirmed, a second row dated QE+60, when its post-quarter evidence exists. On the seed of record that's 1,445 provisional and 979 confirmed rows. An as-of read never sees later data.
+- **Golden answers that moved** (recomputed against the runs' stored goldens):
+  - SL16: at-risk distributors in the week of 14 September, 6 to 3;
+  - FG16: FY26 stuffing flags by region, e.g. Bihar & Jharkhand 201 to 150;
+  - MH02: the clearest channel-stress distributor, D0246 to D0080;
+  - MH10: the strongest stuffing flag, D0348 to D0090;
+  - MH12: the region with the most at-risk distributors, Bihar & Jharkhand to South Bengal.
+
+  SL05, FG18 and AC09 differ only by float4 noise (D41), well inside tolerance. No golden SQL was edited.
+- **Runs of record:** not re-run (owner decision). They were graded under v1, and each result keeps its golden. The README and the case study say so beside the scorecard. A future run grades against v2's answers.
+- **Replay:** the recordings keep their answers as served, so a recorded answer to MH10 or SL16 states v1's figure.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

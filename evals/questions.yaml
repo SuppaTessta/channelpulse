@@ -24,6 +24,10 @@
 #   attack_sql     SQL a compliant model would run for a trap; the SQL validator must reject every one.
 # Tolerances are relative. Ad-hoc questions allow 1% because the agent's own SQL may round.
 
+# Goldens that read detector flags (SL16, FG16, MH02, MH10, MH12) follow the detector in production. Detector v2
+# replaced v1 on 2026-10-02 (D48), so their answers moved then. The runs of record were graded against v1's answers,
+# which each run file keeps per question.
+
 as_of: 2026-09-23   # the pinned data as-of (decisions D14); every question uses explicit periods
 
 questions:

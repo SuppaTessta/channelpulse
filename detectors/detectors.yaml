@@ -71,7 +71,8 @@ distributor_health:                 # distributor_health_score (§7): weekly, 0-
 # ---------------------------------------------------------------- version 2 (decisions D46)
 # Developed on the seed of record (20260924), whose data had been inspected; frozen in this commit before the
 # holdout seed below is generated. Nobody has seen its data. Both versions are reported on both seeds, whichever way
-# they fall. The product keeps serving v1 until the owner decides.
+# they fall (D47). In production since 2026-10-02 (D48), on the owner's decision: the marts' unversioned flag columns
+# carry v2, and v1 stays on record as *_v1.
 
 stuffing_v2:
   per: [distributor_id, fiscal_quarter, category]

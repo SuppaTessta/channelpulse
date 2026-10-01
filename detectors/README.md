@@ -14,7 +14,9 @@ The statistics live in `stats.py` as pure functions, and `tests/` tests them.
 - **Stuffing v2:** a provisional flag at the window's end, then a confirmed flag once 60 days after quarter-end are in.
 - **Health v2:** an absolute sell-out gate in place of v1's regional percentile.
 
-dbt computes both versions side by side, as `is_stuffing_flag` / `is_stuffing_flag_v2` / `is_stuffing_confirmed_v2` and `is_at_risk` / `is_at_risk_v2`. `mart_anomaly_flags` and the product keep serving v1 until the owner decides.
+v2 is in production since D48. The marts' unversioned columns carry it (`is_stuffing_flag` provisional, `is_stuffing_confirmed`, `is_at_risk`), and v1 stays on record as `is_stuffing_flag_v1` and `is_at_risk_v1`.
+- In `mart_anomaly_flags`, a stuffing flag has a provisional row dated at the window's end. When it's confirmed, a second row is dated at QE+60, when its evidence exists, so as-of reads stay point-in-time.
+- Health rows come from the v2 runs.
 
 `python -m detectors.evaluate` scores both versions on whichever database the `POSTGRES_*` variables point at:
 - stuffing precision and recall against the acceptance suite's stuffer rule, which needs the stuffing-off schema `raw_cf_quarter_end_stuffing`;

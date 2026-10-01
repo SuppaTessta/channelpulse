@@ -107,7 +107,7 @@ What generalised, and what didn't:
 - **Stuffing.** The gains carry over almost exactly, which is the evidence that they aren't fitted to the development seed.
 - **Churn.** The goal is met on both seeds, but only by 6 days on the holdout. The 0.8 sell-out gate was chosen on a seed where 0.75 missed the account entirely, so it sits close to the signal.
 - **False positives.** v2 flags fewer distributors overall on both seeds. On the holdout it's slightly worse than v1 on the stuffer-overhang measure. Both versions fail the acceptance target of under 5% (C7).
-- **Product.** It keeps serving v1 until the owner decides.
+- **Product.** v2 has been in production since 2026-10-02 (D48). The Ask agent's runs of record were graded under v1, so five of its golden answers that read detector flags moved with the switch. Each run file keeps the golden it was graded against.
 
 ## Scorecard
 
@@ -196,6 +196,7 @@ On the first 40-question set, the governed runs reached 93.8% on both models, ag
 
 **Caveats, stated plainly:**
 - One run per configuration, at temperature 0.
+- The runs were graded under detector v1. Five golden answers that read detector flags (SL16, FG16, MH02, MH10, MH12) moved when the product switched to v2 (D48), and the runs keep the goldens they were graded against.
 - Gemini raw spanned two days, because the free tier's daily quota ran out at question 31. Nothing in Gemini's path changed in between.
 - Qwen governed's first 23 answers came before streaming (D42); its other 79 came after.
 - MH04's evidence-tool requirement applies to governed mode only, by design (D32).

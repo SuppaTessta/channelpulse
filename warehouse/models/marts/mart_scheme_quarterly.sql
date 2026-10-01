@@ -6,9 +6,10 @@
 --                         quarters, floored at 15/91)
 --   dos_excess_60d      = mean channel days of stock over QE+1..QE+60 minus the median over [start - 90, start - 1]
 --   post_rate_ratio     = daily primary units over QE+1..QE+30 / daily primary units over [start - 90, start - 1]
--- Flags: is_stuffing_flag is v1 (rate_ratio >= 2.0). v2 (decisions D46) adds is_stuffing_flag_v2, provisional at
--- the window's end (v1 and at least one scheme invoice in the window), and is_stuffing_confirmed_v2 once the 60 days
--- after quarter-end are in (v2 and either orders below the baseline rate for 30 days or a 3-day stock excess).
+-- Flags, detector v2 in production (decisions D46-D48): is_stuffing_flag is provisional at the window's end
+-- (rate_ratio >= 2.0 and at least one scheme invoice in the window); is_stuffing_confirmed follows once the 60 days
+-- after quarter-end are in (the provisional flag and either orders below the baseline rate for 30 days or a 3-day
+-- stock excess). is_stuffing_flag_v1 keeps the original pre-registered rule (rate_ratio >= 2.0) on record.
 {{ config(post_hook="{{ apply_region_rls() }}") }}
 
 with run as (
@@ -151,15 +152,15 @@ select
     round(s.window_share, 4) as window_share,
     round(b.baseline_share::numeric, 4) as baseline_share,
     round(s.window_share / nullif(b.baseline_share::numeric, 0), 3) as concentration_ratio,
-    coalesce(s.rate_ratio >= 2.0, false) as is_stuffing_flag,   -- detectors.yaml stuffing.flag (v1)
-    coalesce(s.rate_ratio >= 2.0 and s.scheme_invoices >= 1, false) as is_stuffing_flag_v2,   -- stuffing_v2.flag
+    coalesce(s.rate_ratio >= 2.0 and s.scheme_invoices >= 1, false) as is_stuffing_flag,   -- stuffing_v2.flag
+    coalesce(s.rate_ratio >= 2.0, false) as is_stuffing_flag_v1,   -- detectors.yaml stuffing.flag (v1)
     s.is_follow_through_complete,
     round(s.post_rate_ratio, 3) as post_rate_ratio,
     coalesce(
         s.rate_ratio >= 2.0 and s.scheme_invoices >= 1 and s.is_follow_through_complete
         and (s.post_rate_ratio < 1.0 or f.dos_post_60d_mean - f.dos_pre_window_median >= 3),
         false
-    ) as is_stuffing_confirmed_v2,   -- stuffing_v2.confirmed
+    ) as is_stuffing_confirmed,   -- stuffing_v2.confirmed
     round(f.dos_pre_window_median::numeric, 1) as dos_pre_window_median,
     round(f.dos_post_60d_mean::numeric, 1) as dos_post_60d_mean,
     round((f.dos_post_60d_mean - f.dos_pre_window_median)::numeric, 1) as dos_excess_60d

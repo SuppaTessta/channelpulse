@@ -126,7 +126,7 @@ def confidence_note(answer_text: str, evidence: list[ToolCall], primary: ToolCal
     stated = figures(answer_text)
     if stated:
         pool = [number for call in evidence for number in _numbers(call.result)]
-        untraced = [figure.text for figure in stated if not _traced(figure, pool)]
+        untraced = [figure.text for figure in stated if not traced(figure, pool)]
         count = len(stated)
         note = f"{count - len(untraced)}/{count} figure{'' if count == 1 else 's'} traced to query results"
         note += f"; untraced: {', '.join(untraced[:3])}." if untraced else "."
@@ -137,7 +137,7 @@ def confidence_note(answer_text: str, evidence: list[ToolCall], primary: ToolCal
     return note
 
 
-def _traced(figure: Figure, pool: list[float]) -> bool:
+def traced(figure: Figure, pool: list[float]) -> bool:
     # A percent may be stored as a ratio (0.125 for 12.5%). Signs are ignored: "fell 45%" can match -0.45.
     for number in pool:
         for candidate in (abs(number), abs(number) * 100) if figure.percent else (abs(number),):

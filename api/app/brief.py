@@ -19,7 +19,7 @@ from dataclasses import dataclass
 
 from app import config, semantic
 from app.agent.providers import Provider, ProviderError
-from app.agent.response import _traced, figures
+from app.agent.response import figures, traced
 from app.guardrails import readonly_db
 
 log = logging.getLogger("channelpulse.api")
@@ -206,7 +206,7 @@ def numbers_check(sections: list[dict], fs: dict[str, Fact]) -> list[str]:
             pool = [n for i in sentence["facts"] for n in _numbers(rechecked[i])]
             # ponytail: figures() skips bare single digits and years, so a wrong "3 flags" isn't caught; a unit
             # or a comma makes it checkable.
-            untraced = [f.text for f in figures(sentence["text"]) if not _traced(f, pool)]
+            untraced = [f.text for f in figures(sentence["text"]) if not traced(f, pool)]
             if untraced:
                 problems.append(f"\"{sentence['text']}\" states {', '.join(untraced)}, which no cited query returned")
     return problems

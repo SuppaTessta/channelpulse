@@ -416,6 +416,16 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 
   The Qwen runs used one Kaggle session, stopped when they finished.
 
+**D44. Cleanup audit: deletions only, refactors deferred (owner decision, 2026-10-02).**
+- **Audit (2026-10-01).** Searches for defined-but-unused code, plus ruff and eslint; no new tools were installed. Baseline: build, 850 tests and lint all passing.
+- **Found:**
+  - one dead function, `detailPairs` in `web/lib/metrics.ts`, unused since the redesign. It was deleted, with the import it left unused (7dafa51).
+  - No dead Python code, TODO/FIXME comments, bare `except:`, lint suppressions or unimported files.
+- **Also applied in that pass, before this decision:** both are behaviour-neutral and verified by the type check, build, tests and smoke run.
+  - `response._traced` became public `traced`, since the Brief uses it (84ef0e5).
+  - 31 web names lost an unneeded `export` (f30d2a5).
+- **Decision:** no larger refactors now. The scored runs and their recordings must stay reproducible from the current code, and deployment comes next. Only deletions that are provably dead and covered by passing tests are applied. The refactor candidates are listed as future work in the README's known limitations.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

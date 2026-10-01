@@ -236,4 +236,9 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
 - **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The stuffing rule is loose. The health rule flagged the churning account late.
+- **Refactors deferred, deliberately (D44).** The scored eval runs and their replay recordings must stay reproducible from the code that made them, and deployment comes first. These are future work:
+  - `evals/run_eval.py`'s `main()`, 131 lines, could split into setup, run and report;
+  - `generator/acceptance.py`, about 1,000 lines, and a few long generator functions (`tables.build_tables`, `fates.serial_fates`);
+  - `web/components/quality-sections.tsx`, about 540 lines, could split by section;
+  - `detectors/run.py`'s `lot_scan` and `installer_scan`, about 60 lines each.
 - **GitHub disables scheduled workflows in public repos after 60 days without activity.** The daily refresh needs a periodic commit or a manual dispatch.

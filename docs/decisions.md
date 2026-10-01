@@ -426,6 +426,19 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - 31 web names lost an unneeded `export` (f30d2a5).
 - **Decision:** no larger refactors now. The scored runs and their recordings must stay reproducible from the current code, and deployment comes next. Only deletions that are provably dead and covered by passing tests are applied. The refactor candidates are listed as future work in the README's known limitations.
 
+**D45. `channel_stock_units` counts all stock; days of stock keeps its own numerator (owner-approved, 2026-10-02).**
+- **The finding (D39):** "Channel stock (units)" summed stock only on distributor-SKU pairs with a days-of-stock value. Every excluded pair at the latest snapshot holds stock with no sell-out in the trailing 30 days: idle stock. At the week of 14 September 2026 it reported 1,555,029 units against 2,471,122 held, leaving out 37%. The share is seasonal: about 18–21% each March, about 36–37% each September.
+- **Change:**
+  - `channel_stock_units` now sums all stock.
+  - A new building block, `channel_stock_units_selling` (stock on pairs with recent sell-out), is the numerator of `channel_days_of_stock`, because days of stock is undefined where nothing sold.
+  - `channel_days_of_stock`, the stock-out rate and the overstock rate are unchanged: 43.65 days for that week before and after.
+  - The manifest is regenerated (51 metrics), and a free-tier test pins all three against independent SQL.
+- **What depends on it:** nothing scored.
+  - No golden question's governed call uses `channel_stock_units`, and no dashboard panel or the Brief does either.
+  - The stuffing flag (window rate ratio on primary units) and the health score compute their own stock in dbt.
+  - Three recorded model answers called the metric: AC09 for Gemini and Qwen governed, and Qwen's MH04. None of the three verdicts depends on its value: AC09 is scored on asking, and MH04 on the stated cause and tools. No question is re-run, and the recordings keep those answers as served, with the old figure.
+- **Also:** `api/app/admin.py` now imports psycopg only for `roles`, so `make semantic` needs no database driver, as its docstring already said.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

@@ -15,9 +15,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-import psycopg
-from psycopg import sql
-
 API_DIR = Path(__file__).resolve().parents[1]
 WAREHOUSE_DIR = API_DIR.parent / "warehouse"
 ROLE_PASSWORDS = {"channelpulse_agent": "AGENT_DB_PASSWORD", "channelpulse_ops": "OPS_DB_PASSWORD"}
@@ -25,6 +22,9 @@ ROLE_PASSWORDS = {"channelpulse_agent": "AGENT_DB_PASSWORD", "channelpulse_ops":
 
 def apply_roles() -> str:
     """Create or refresh the agent and ops roles, their grants and ops.agent_traces (api/sql/roles.sql)."""
+    import psycopg  # here, not at the top: `semantic` needs no database driver
+    from psycopg import sql
+
     from app.db import db_conninfo
 
     with psycopg.connect(db_conninfo(), autocommit=True, connect_timeout=10) as conn:

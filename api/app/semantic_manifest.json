@@ -172,7 +172,7 @@
         "numerator": {
           "alias": null,
           "filter": null,
-          "name": "channel_stock_units",
+          "name": "channel_stock_units_selling",
           "offset_to_grain": null,
           "offset_window": null
         },
@@ -184,7 +184,50 @@
         "meta": {}
       },
       "datatype": null,
-      "description": "Implied units held by distributors, read on the last day of the period.",
+      "description": "Implied units held by distributors, read on the last day of the period: all of it, including stock with no sell-out in the trailing 30 days.",
+      "filter": null,
+      "label": "Channel stock (units)",
+      "metadata": null,
+      "name": "channel_stock_units",
+      "time_granularity": null,
+      "type": "simple",
+      "type_params": {
+        "conversion_type_params": null,
+        "cumulative_type_params": null,
+        "denominator": null,
+        "expr": "stock_units",
+        "fill_nulls_with": null,
+        "grain_to_date": null,
+        "input_measures": [],
+        "is_private": false,
+        "join_to_timespine": false,
+        "measure": null,
+        "metric_aggregation_params": {
+          "agg": "sum",
+          "agg_params": {
+            "percentile": null,
+            "use_approximate_percentile": false,
+            "use_discrete_percentile": false
+          },
+          "agg_time_dimension": "week_start",
+          "non_additive_dimension": {
+            "name": "week_start",
+            "window_choice": "max",
+            "window_groupings": []
+          },
+          "semantic_model": "channel_inventory"
+        },
+        "metrics": [],
+        "numerator": null,
+        "window": null
+      }
+    },
+    {
+      "config": {
+        "meta": {}
+      },
+      "datatype": null,
+      "description": "Implied units held by distributors on the pairs with sell-out in the trailing 30 days, read on the last day of the period. The numerator of channel days of stock.",
       "filter": {
         "where_filters": [
           {
@@ -192,9 +235,9 @@
           }
         ]
       },
-      "label": "Channel stock (units)",
+      "label": "Channel stock with recent sell-out (units)",
       "metadata": null,
-      "name": "channel_stock_units",
+      "name": "channel_stock_units_selling",
       "time_granularity": null,
       "type": "simple",
       "type_params": {

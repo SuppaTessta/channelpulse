@@ -34,7 +34,7 @@ web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · 
 |---|---|
 | Data | 36 months, 2023-10-01 to 2026-09-23, 1.84M raw rows. It's a simulator, not a CSV: four anomalies emerge from its rules. |
 | Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 125 tests (schema plus business logic). |
-| Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 50 metrics, including the 12 below, with calendar and Indian fiscal (April–March) time grains. MetricFlow compiles the SQL at query time. |
+| Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 51 metrics, including the 12 below, with calendar and Indian fiscal (April–March) time grains. MetricFlow compiles the SQL at query time. |
 | Agent | A hand-rolled tool-use loop with five tools behind a thin provider interface (D31): Gemini by default (`gemini-3.5-flash-lite`, free tier), Ollama for a self-hosted open-weight model, or Anthropic's Claude, switched by `CHANNELPULSE_PROVIDER`. The Anthropic adapter is unit-tested but was **not evaluated live**; the scorecard below is Gemini and Qwen. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
 | Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, a daily spend cap, and a trace of every question. |
 

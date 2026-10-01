@@ -18,7 +18,7 @@ flowchart LR
 
     subgraph dbt["warehouse/ (dbt 1.12)"]
         models[39 models + 125 tests]
-        sem[semantic_models/<br/>13 semantic models, 50 metrics,<br/>calendar and fiscal grains]
+        sem[semantic_models/<br/>13 semantic models, 51 metrics,<br/>calendar and fiscal grains]
     end
 
     det[detectors/<br/>pre-registered scans]

@@ -73,3 +73,21 @@ def test_governed_call_reproduces_the_golden(q, conn):
 def test_every_golden_validates_and_every_ambiguous_question_has_distinct_readings():
     _, goldens = run_eval.compute_goldens(QUESTIONS)  # raises GoldenError listing every failure
     assert {q["id"] for q in QUESTIONS if q["category"] != "trap"} == goldens.keys()
+
+
+@pytest.mark.db
+def test_channel_stock_units_counts_all_stock_and_days_of_stock_only_the_selling_pairs(conn):
+    """D45: channel stock is every unit held; days of stock divides only the stock that has recent sell-out."""
+    week = {"start": "2026-09-14", "end": "2026-09-20"}
+    (total, selling, dos), = conn.execute(
+        "select sum(stock_units), sum(stock_units) filter (where days_of_stock is not null),"
+        " sum(stock_units) filter (where days_of_stock is not null)::numeric"
+        " / sum(avg_daily_secondary_units) filter (where days_of_stock is not null)"
+        " from marts.mart_channel_inventory_weekly where week_start = '2026-09-14'").fetchall()
+
+    def metric(name):
+        call = {"metric_name": name, "filters": [], "group_by": ["metric_time__week"], "date_range": week}
+        return query_metric(call, run_eval.REGION)["data"]["rows"][-1][-1]
+
+    assert metric("channel_stock_units") == total and metric("channel_stock_units_selling") == selling
+    assert scoring.close(metric("channel_days_of_stock"), float(dos), 1e-5)

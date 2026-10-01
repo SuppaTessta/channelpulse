@@ -44,7 +44,22 @@ models:
     metrics:
       - name: channel_stock_units
         label: Channel stock (units)
-        description: Implied units held by distributors, read on the last day of the period.
+        description: >-
+          Implied units held by distributors, read on the last day of the period: all of it, including stock with
+          no sell-out in the trailing 30 days.
+        type: simple
+        agg: sum
+        expr: stock_units
+        non_additive_dimension:
+          name: week_start
+          window_agg: max
+      # Days of stock is undefined where nothing sold in the trailing 30 days, so the ratio's numerator and
+      # denominator both cover only the pairs with recent sell-out (decisions D45).
+      - name: channel_stock_units_selling
+        label: Channel stock with recent sell-out (units)
+        description: >-
+          Implied units held by distributors on the pairs with sell-out in the trailing 30 days, read on the last
+          day of the period. The numerator of channel days of stock.
         type: simple
         agg: sum
         expr: stock_units
@@ -68,7 +83,7 @@ models:
           (cumulative primary shipped − cumulative secondary sold) ÷ trailing-30-day average daily secondary
           sales, in units, on the last day of the period.
         type: ratio
-        numerator: channel_stock_units
+        numerator: channel_stock_units_selling
         denominator: avg_daily_sellout_units
       - name: stock_days_measured
         label: Distributor-SKU-days measured

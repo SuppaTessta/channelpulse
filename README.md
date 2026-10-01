@@ -27,7 +27,7 @@ generator/ (rules-based simulator) -> raw -> dbt staging -> intermediate -> mart
                                                           semantic_models/ -> MetricFlow (compile-only, in the API)
 detectors/ (pre-registered scans) -> marts.mart_anomaly_flags
 api/ (FastAPI): governed query_metric | guarded run_readonly_sql | get_anomalies | hand-rolled tool-use loop over any provider
-web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · Ask ChannelPulse
+web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · Ask ChannelPulse · Weekly Brief · Agent traces
 ```
 
 | Layer | What it is |
@@ -50,7 +50,7 @@ make dbt               # build + test the warehouse, run the detectors, apply th
 make api               # FastAPI on :$API_PORT (default 8000)
 make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
 make web-start         # or: production build, then serve it (restart it after every rebuild)
-make test lint         # 599 Python tests, ruff, dbt parse, eslint
+make test lint         # 850 Python tests (incl. the eval's free tier), ruff, dbt parse, eslint
 make smoke             # browser smoke test of every page against the running API and dashboard (SMOKE_URL if not :3000)
 make eval              # golden-set eval; with a key it prints an estimate and asks before spending (MODEL= BUDGET= YES=1)
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
@@ -135,21 +135,19 @@ All of them, with the plan text each one touches, are in [docs/decisions.md](doc
 - **Point-in-time.** The weekly health score only uses what was visible that week, including reporting lag, so "flagged N weeks early" is an honest claim.
 
 ## Evaluation
-[`evals/questions.yaml`](evals/questions.yaml) holds 40 questions, 8 in each of five categories:
-- simple lookup;
-- filtered and grouped;
-- time comparison;
-- multi-hop "why", scored against a rubric of entities the golden SQL identifies;
-- traps that must be refused: a forecast, data outside the marts, raw tables, a write, a prompt injection, "a number without SQL", off-topic, and personal data.
+[`evals/questions.yaml`](evals/questions.yaml) holds 102 questions in six categories (golden set v2, D39):
+- 18 simple lookups;
+- 18 filtered and grouped;
+- 18 time comparisons;
+- 14 multi-hop "why", scored against a rubric of entities the golden SQL identifies;
+- 18 traps that must be refused: forecasts, data outside the marts, raw and system tables, writes, prompt injection, "a number without SQL", off-topic questions, and personal data;
+- 16 ambiguous questions whose right answer is a clarifying question. Each has two or three readings with their own golden SQL, and the readings must give different answers.
 
-Golden answers come from hand-written SQL against the marts, never from the agent. The scorer reports:
-- execution accuracy, with values matched within tolerance;
-- refusal correctness;
-- a confidently-wrong count;
-- label correctness;
-- latency and cost per query.
+Golden answers come from hand-written SQL against the marts, never from the agent. There are two tiers:
+- **Free tier** (`make eval-free`, in CI on every PR, no model). Every governed question's hand-written `query_metric` call must reproduce its golden. Every trap's attack SQL must be rejected by the validator. The model-free refusal router must refuse exactly the marked traps.
+- **Model suite** (`make eval`, manual only). It reports execution accuracy on the 68 answerable questions against an 85% threshold. "Confidently wrong" is split into its three failures: wrong answers, ambiguous questions answered without asking, and traps answered. Trap refusals are split into those the router makes before any model call and those the model makes itself. Label correctness, latency and tokens are reported too.
 
-**Two providers, two modes.** The same 40 questions ran on two free providers, each in two modes (D31, D32):
+**Two providers, two modes.** The same 102 questions ran on two free providers, each in two modes (D31, D32):
 - **Governed** is the agent as built: the semantic layer, the anomaly detectors and the SQL fallback.
 - **Raw** is a plain text-to-SQL baseline on the same model. It gets only `run_readonly_sql` and the mart schema, with the same prompt rules, refusal rules, SQL validator and row-level security.
 
@@ -160,33 +158,48 @@ The gap between the two modes on one model is what the semantic layer is worth.
 | Gemini API, free tier | `gemini-3.5-flash-lite`, thinking at its default (minimal), temperature 0 | Google's OpenAI-compatible endpoint (D33) |
 | Ollama on a Kaggle GPU session (2x T4) | `qwen3.8-27b-64k`: Qwen3.8 27B, `Q4_K_M`, 64K context, thinking off, temperature 0 | a Cloudflare quick tunnel; the server's facts are read from `/api/show` and recorded (D35) |
 
-Every row below comes from a committed run file in [`evals/results/runs/`](evals/results/runs); `make scorecard` regenerates the block. Free tiers cost $0, so cost is shown as tokens per question. Infrastructure retries (a dead tunnel, a 503) are counted, never scored. Rows labelled with a D-entry are earlier runs kept on record: the governed layer changed between them.
-- **D36** added the fiscal-year grain.
-- **D37** fixed filters on two-hop dimensions.
+Every row below comes from a committed run file in [`evals/results/runs/`](evals/results/runs); `make scorecard` regenerates the block. Free tiers cost $0, so cost is shown as tokens per question. Infrastructure retries (a dead tunnel, a 503) are counted, never scored. **Each result is a single run at temperature 0**, which doesn't make a model deterministic, so read small differences with care.
 
-The current governed rows run after both.
+The current rows are golden set v2. Labelled rows are earlier runs kept on record:
+- **`v1-40q`** is the first 40-question set;
+- **before D36** and **after-D36-pre-D37** are governed runs from before the layer gained the fiscal-year grain (D36) and before filters on two-hop dimensions were fixed (D37).
 
 <!-- scorecard:start -->
 <!-- generated by `make scorecard` from evals/results/runs; don't edit by hand -->
-| Provider / model | Mode | Run | Execution accuracy | Refusal correctness | Confidently wrong | Latency median / p95 | Tokens / question (in / out) | Infra retries | Date |
-|---|---|---|---|---|---|---|---|---|---|
-| gemini / `gemini-3.5-flash-lite` | governed | current | 93.8% | 97.5% | 3 | 5.8 s / 52.3 s | 52,079 / 356 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | raw | current | 71.9% | 95.0% | 11 | 7.5 s / 52.9 s | 11,865 / 481 | 0 | 2026-09-30 |
-| ollama / `qwen3.8-27b-64k` | governed | current | 93.8% | 97.5% | 2 | 25.9 s / 146.0 s | 39,926 / 453 | 0 | 2026-09-30 |
-| ollama / `qwen3.8-27b-64k` | raw | current | 56.2% | 97.5% | 11 | 25.5 s / 182.8 s | 14,482 / 622 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | governed | after-D36-pre-D37 | 84.4% | 97.5% | 6 | 7.1 s / 36.1 s | 43,921 / 310 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | governed | before-D36 | 87.5% | 100.0% | 4 | 9.0 s / 44.5 s | 40,670 / 304 | 1 | 2026-09-29 |
+| Provider / model | Mode | Run | Questions | Execution accuracy | Wrong answers | Ambiguous answered without asking | Traps answered | Traps refused: router + model | Latency median / p95 | Tokens / question (in / out) | Infra retries | Date |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| gemini / `gemini-3.5-flash-lite` | governed | current | 102 | 88.2% | 8 | 12 of 16 | 0 | 9 + 9 of 9 | 12.4 s / 50.3 s | 46,326 / 302 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | raw | current | 102 | 72.1% | 19 | 14 of 16 | 1 | 9 + 8 of 9 | 8.1 s / 44.7 s | 10,899 / 393 | 1 | 2026-10-01 |
+| ollama / `qwen3.8-27b-64k` | governed | current | 102 | 97.1% | 2 | 8 of 16 | 2 | 9 + 7 of 9 | 62.9 s / 220.4 s | 32,172 / 985 | 0 | 2026-09-30 |
+| ollama / `qwen3.8-27b-64k` | raw | current | 102 | 69.1% | 20 | 6 of 16 | 0 | 9 + 9 of 9 | 59.1 s / 212.0 s | 7,970 / 973 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | governed | after-D36-pre-D37 | 40 | 84.4% | 5 | n/a | 1 | 0 + 7 of 8 | 7.1 s / 36.1 s | 43,921 / 310 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | governed | before-D36 | 40 | 87.5% | 4 | n/a | 0 | 0 + 8 of 8 | 9.0 s / 44.5 s | 40,670 / 304 | 1 | 2026-09-29 |
+| gemini / `gemini-3.5-flash-lite` | governed | v1-40q | 40 | 93.8% | 2 | n/a | 1 | 0 + 7 of 8 | 5.8 s / 52.3 s | 52,079 / 356 | 0 | 2026-09-30 |
+| gemini / `gemini-3.5-flash-lite` | raw | v1-40q | 40 | 71.9% | 9 | n/a | 2 | 0 + 6 of 8 | 7.5 s / 52.9 s | 11,865 / 481 | 0 | 2026-09-30 |
+| ollama / `qwen3.8-27b-64k` | governed | v1-40q | 40 | 93.8% | 1 | n/a | 1 | 0 + 7 of 8 | 25.9 s / 146.0 s | 39,926 / 453 | 0 | 2026-09-30 |
+| ollama / `qwen3.8-27b-64k` | raw | v1-40q | 40 | 56.2% | 10 | n/a | 1 | 0 + 7 of 8 | 25.5 s / 182.8 s | 14,482 / 622 | 0 | 2026-09-30 |
 
 Execution accuracy by category:
 
-| Run | filtered_grouped | multi_hop_why | simple_lookup | time_comparison | trap |
-|---|---|---|---|---|---|
-| gemini governed (current) | 100.0% | 75.0% | 100.0% | 100.0% | 87.5% |
-| gemini raw (current) | 62.5% | 87.5% | 75.0% | 62.5% | 75.0% |
-| ollama governed (current) | 100.0% | 87.5% | 100.0% | 87.5% | 87.5% |
-| ollama raw (current) | 62.5% | 50.0% | 62.5% | 50.0% | 87.5% |
-| gemini governed (after-D36-pre-D37) | 87.5% | 75.0% | 87.5% | 87.5% | 87.5% |
-| gemini governed (before-D36) | 100.0% | 87.5% | 100.0% | 62.5% | 100.0% |
+| Run | ambiguous_clarify | filtered_grouped | multi_hop_why | simple_lookup | time_comparison | trap |
+|---|---|---|---|---|---|---|
+| gemini governed (current) | 25.0% | 94.4% | 71.4% | 88.9% | 94.4% | 100.0% |
+| gemini raw (current) | 12.5% | 66.7% | 71.4% | 83.3% | 66.7% | 94.4% |
+| ollama governed (current) | 50.0% | 100.0% | 92.9% | 94.4% | 100.0% | 88.9% |
+| ollama raw (current) | 62.5% | 72.2% | 71.4% | 77.8% | 55.6% | 100.0% |
+| gemini governed (after-D36-pre-D37) | n/a | 87.5% | 75.0% | 87.5% | 87.5% | 87.5% |
+| gemini governed (before-D36) | n/a | 100.0% | 87.5% | 100.0% | 62.5% | 100.0% |
+| gemini governed (v1-40q) | n/a | 100.0% | 75.0% | 100.0% | 100.0% | 87.5% |
+| gemini raw (v1-40q) | n/a | 62.5% | 87.5% | 75.0% | 62.5% | 75.0% |
+| ollama governed (v1-40q) | n/a | 100.0% | 87.5% | 100.0% | 87.5% | 87.5% |
+| ollama raw (v1-40q) | n/a | 62.5% | 50.0% | 62.5% | 50.0% | 87.5% |
+
+Governed against raw on the same model, question by question (answerable questions; each result is a single run at temperature 0):
+
+| Model | Answerable questions | Wrong to right | Right to wrong | Both right | Both wrong | McNemar exact p |
+|---|---|---|---|---|---|---|
+| gemini / `gemini-3.5-flash-lite` | 68 | 15 | 4 (MH04, SL11, SL16, TC14) | 45 | 4 | 0.019 |
+| ollama / `qwen3.8-27b-64k` | 68 | 20 | 1 (SL10) | 46 | 1 | 2.1e-05 |
 <!-- scorecard:end -->
 
 To run it yourself: `make eval PROVIDER=gemini MODE=governed` (or `raw`; `PROVIDER=ollama`, `ONLY=SL01,TC01`, `FRESH=1`). Runs are paced to 80% of the key's quota, save after every question, and resume where they stopped when a daily quota or a server runs out (exit 4). The Anthropic provider asks for confirmation before spending (`BUDGET=`, `YES=1`). CI runs the eval without any model credential (a test enforces it), so there it only validates the golden answers.
@@ -219,7 +232,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
   - A model key never goes into GitHub: a test fails if any workflow references one.
 
 ## Known limitations
-- **Phase 1 scope:** no real auth (the RLS stub only), no forecasting, and no Weekly Brief generator (PLAN §11).
+- **Scope:** no real auth (the RLS stub only), and no forecasting. The Weekly Brief and the Agent traces page arrived in Phase 2 (D40, D41).
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
 - **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The stuffing rule is loose. The health rule flagged the churning account late.

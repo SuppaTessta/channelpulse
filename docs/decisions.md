@@ -392,6 +392,30 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Unchanged:** the model, its settings, the prompts and scoring. Gemini doesn't stream. The 23 governed answers before the change stand; streaming changes transport, not answers.
 - **Ceiling:** a prompt whose prefill alone takes over 100 s would still get a 524, because no token comes before prefill ends. The governed prompts are about 27–60k tokens, and Ollama reuses their cached prefix.
 
+**D43. Part C 1 results: golden set v2 on two free providers (2026-10-01).**
+- **Runs of record:** one governed and one raw run per provider on the 102 questions. The v1 runs stay as `__v1-40q`. The README tables are generated from the run files by `make scorecard`, never typed by hand.
+- **Headline,** execution accuracy on the 68 answerable questions, governed vs raw:
+  - Gemini: 88.2% vs 72.1%, +16.2 points;
+  - Qwen: 97.1% vs 69.1%, +27.9 points.
+
+  Both governed runs meet the 85% threshold, and neither raw run does.
+- **Paired on the same 68 questions** (raw to governed): Gemini 15 wrong to right and 4 right to wrong, McNemar exact p = 0.019; Qwen 20 and 1, p = 0.00002. Each is one run at temperature 0.
+- **"Confidently wrong" split into its three failures** (wrong answers / ambiguous answered without asking / traps answered):
+  - Gemini: governed 8 / 12 / 0, raw 19 / 14 / 1;
+  - Qwen: governed 2 / 8 / 2, raw 20 / 6 / 0.
+
+  The card now reports these separately, because one combined number read as wrong figures.
+- **Trap refusals:** the router refuses 9 of 18 before any model call, in every run. Of the other 9, the model refuses 9 (Gemini governed), 8 (Gemini raw), 7 (Qwen governed) and 9 (Qwen raw).
+  - Qwen governed's two misses, TR01 and TR12, are forecasts. It said it can't forecast, then showed governed context without refusing.
+  - They're scored as answered, under the rubric as written. The rubric is not changed after seeing results, and the case study describes the partial behaviour.
+- **Ambiguous questions** are the weakest category everywhere: clarification asked on 4, 2, 8 and 10 of 16. Qwen asked more in raw than in governed.
+- **Infrastructure, never scored:**
+  - Qwen governed paused once on Cloudflare 524s, which led to D42;
+  - Gemini raw paused once on the daily quota and resumed the next day;
+  - Gemini raw logged one infrastructure retry.
+
+  The Qwen runs used one Kaggle session, stopped when they finished.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

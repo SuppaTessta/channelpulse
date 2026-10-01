@@ -41,6 +41,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - `OPS_DATABASE_URL`: `postgresql://channelpulse_ops.<ref>:<OPS_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
   - `GEMINI_API_KEY`: leave it empty for replay only.
   - `CORS_ORIGINS`: leave it empty for now, and fill it in after step 4.
+  - `ADMIN_TOKEN`: optional, and best left empty. Set, it lets the Agent traces page list live `/api/ask` traces, which are visitors' own questions, to a request carrying it (D40). Empty, the page shows only the eval's recorded traces.
 - [ ] Keep `ASK_LIVE=0`, as the blueprint sets it: this is replay mode.
 - [ ] Check that `https://<render-url>/health` returns `{"status":"ok","db":"ok"}`.
 - [ ] Check that `https://<render-url>/api/ask/status` shows `"mode":"replay"`.
@@ -51,6 +52,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 - [ ] Add the environment variable `NEXT_PUBLIC_API_URL=https://<render-url>`, then deploy.
   - This value is compiled into the browser code, so changing it later needs a redeploy.
   - Optionally, also set `CHANNELPULSE_API_URL` if the server-side calls should use a different base URL.
+  - Only if you set `ADMIN_TOKEN` on Render: set the same value as `CHANNELPULSE_ADMIN_TOKEN`. It's read server-side only and never reaches the browser. Never put it in a `NEXT_PUBLIC_` variable.
 - [ ] Back on Render, set `CORS_ORIGINS=https://<vercel-url>`.
   - It's only needed once live mode is on, since that's when the browser calls the API directly.
   - Setting it now saves forgetting later.
@@ -61,7 +63,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   `SMOKE_URL=https://<vercel-url> SMOKE_API_URL=https://<render-url> SMOKE_REMOTE=1 make smoke`
 
   `SMOKE_REMOTE=1` skips the two checks that need a local build: the build-ID check and the fault-injection test.
-- [ ] Open all four pages in "All regions" and one single region. The Ask page must show replay mode, or "no recorded answers yet", and never an error.
+- [ ] Open all six pages (the four dashboards, Weekly Brief and Agent traces) in "All regions" and one single region. The Ask page must show replay mode, or "no recorded answers yet", and never an error.
 - [ ] The nightly refresh republishes `marts` around 00:30 IST. Queries during those few seconds can fail, and Retry fixes them.
 
 ## 6. Live mode (optional, later, costs money)

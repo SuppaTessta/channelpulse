@@ -1,7 +1,7 @@
 // Presentation rules for governed metrics, derived from the catalogue (GET /api/metrics) wherever possible.
 import type { DefMetric, DefQuery } from "@/components/definition";
 import type { Anomaly, Metric, Query } from "./api";
-import { fmtNumber, type Kind } from "./format";
+import type { Kind } from "./format";
 
 export const toDefMetric = ({ name, label, description, formula, type, time_dimension }: Metric): DefMetric => ({
   name,
@@ -111,10 +111,4 @@ export function latestSnapshot(rows: Anomaly[]): string | null {
  */
 export function isCurrentFlag(a: Anomaly, latest: string | null): boolean {
   return !!latest && day(a.snapshot_date) === latest && a.details?.flagged_this_snapshot !== false;
-}
-
-/** A detector's details JSON as label and value pairs, for display. Its keys are the detector's own. */
-export function detailPairs(details: Anomaly["details"]): [string, string][] {
-  if (!details || typeof details !== "object") return [];
-  return Object.entries(details).map(([k, v]) => [k, typeof v === "number" ? fmtNumber(v, Number.isInteger(v) ? 0 : 2) : typeof v === "string" ? v : JSON.stringify(v)]);
 }

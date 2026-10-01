@@ -1,0 +1,39 @@
+{
+  "seed": 20260924,
+  "stuffing": {
+    "v1": {
+      "flags": 2156,
+      "true_positives": 732,
+      "precision": 0.3395,
+      "recall": 0.9581
+    },
+    "v2_provisional": {
+      "flags": 1445,
+      "true_positives": 729,
+      "precision": 0.5045,
+      "recall": 0.9542
+    },
+    "v2_confirmed": {
+      "flags": 979,
+      "true_positives": 636,
+      "precision": 0.6496,
+      "recall": 0.8724
+    },
+    "truth_cells": 764
+  },
+  "distributor_health": {
+    "v1": {
+      "churn_first_at_risk": "2026-02-15",
+      "churn_before_deadline": false,
+      "other_distributors_ever_at_risk": 172,
+      "stuffers_at_risk_during_overhang": 0.1317
+    },
+    "v2": {
+      "churn_first_at_risk": "2026-01-11",
+      "churn_before_deadline": true,
+      "other_distributors_ever_at_risk": 137,
+      "stuffers_at_risk_during_overhang": 0.1152
+    }
+  },
+  "churn_id": "D0084"
+}

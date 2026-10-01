@@ -466,6 +466,24 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Product:** `mart_anomaly_flags` and `get_anomalies` keep serving v1 until the owner decides. The new mart columns aren't in the semantic layer, so the agent's metric glossary is unchanged. The marts' column list in the system prompt grows, but no scored run is re-run.
 - **Generator:** `--seed` runs a holdout seed. It never asserts against, or writes back into, `ground_truth.yaml`, which records only the seed of record.
 
+**D47. Detector v2 results on both seeds, reported as they fell (2026-10-02).**
+- **Holdout:** seed 20261002, generated after the freeze (a9354eb) in its own Compose project and database on port 5433. Its stuffing-off counterfactual came from the same generator. dbt passed 164 of 164 on it. The generator picked churn account `D0089`. `ground_truth.yaml` wasn't touched.
+- **Stuffing,** precision / recall, seed of record then holdout:
+  - v1: 34.0% / 95.8%, then 34.6% / 94.9%;
+  - v2 provisional: 50.5% / 95.4%, then 50.5% / 94.8%;
+  - v2 confirmed: 65.0% / 87.2%, then 64.3% / 86.6%.
+
+  The confirmed stage is scored only on windows whose 60 days after quarter-end are in the data. The gains carry over to the holdout almost exactly.
+- **Churn,** first at-risk week (target: by 2026-01-31):
+  - v1: 2026-02-15, then 2026-03-15, both late;
+  - v2: 2026-01-11, then 2026-01-25, both in time, the holdout by 6 days.
+- **Health false positives:**
+  - other distributors ever at risk, v1 to v2: 172 to 137, and 171 to 130;
+  - stuffers at risk during their overhang: 13.2% to 11.5%, and 11.7% to 12.6%.
+
+  On the holdout, v2 is slightly worse than v1 on the stuffer measure. Both versions fail acceptance C7's under-5% target on both seeds.
+- **Status:** the product keeps serving v1 (`mart_anomaly_flags`, `get_anomalies`) until the owner decides whether to switch. The results are in `detectors/results/evaluation_20260924.json` and `evaluation_20261002.json`.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

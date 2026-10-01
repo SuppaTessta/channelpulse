@@ -235,7 +235,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 - **Scope:** no real auth (the RLS stub only), and no forecasting. The Weekly Brief and the Agent traces page arrived in Phase 2 (D40, D41).
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
-- **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The stuffing rule is loose. The health rule flagged the churning account late.
+- **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The v1 stuffing rule is loose, and the v1 health rule flagged the churning account late. Detector v2 (D46, D47) improves both on the seed of record and on a holdout seed nobody had inspected. The product still serves v1, pending the owner's decision.
 - **Refactors deferred, deliberately (D44).** The scored eval runs and their replay recordings must stay reproducible from the code that made them, and deployment comes first. These are future work:
   - `evals/run_eval.py`'s `main()`, 131 lines, could split into setup, run and report;
   - `generator/acceptance.py`, about 1,000 lines, and a few long generator functions (`tables.build_tables`, `fates.serial_fates`);

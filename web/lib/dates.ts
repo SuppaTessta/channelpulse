@@ -31,7 +31,7 @@ export function addMonths(d: string, n: number): string {
   return iso(Date.UTC(y, m, Math.min(day, last)));
 }
 
-export const monthStart = (d: string) => `${d.slice(0, 7)}-01`;
+const monthStart = (d: string) => `${d.slice(0, 7)}-01`;
 export const monthEnd = (d: string) => addDays(addMonths(monthStart(d), 1), -1);
 
 /** Monday of the ISO week, matching Postgres date_trunc('week'). */
@@ -40,7 +40,7 @@ export function weekStart(d: string): string {
   return addDays(d, -((weekday + 6) % 7));
 }
 
-export function bucketStart(d: string, grain: Grain): string {
+function bucketStart(d: string, grain: Grain): string {
   switch (grain) {
     case "day":
       return d;
@@ -55,7 +55,7 @@ export function bucketStart(d: string, grain: Grain): string {
   }
 }
 
-export function nextBucket(start: string, grain: Grain): string {
+function nextBucket(start: string, grain: Grain): string {
   switch (grain) {
     case "day":
       return addDays(start, 1);
@@ -80,12 +80,12 @@ export function bucketsBetween(from: string, to: string, grain: Grain): string[]
 }
 
 /** Indian fiscal year, named by the year it ends: FY27 runs 1 Apr 2026 to 31 Mar 2027. */
-export const fiscalYear = (d: string) => (+d.slice(5, 7) >= 4 ? +d.slice(0, 4) + 1 : +d.slice(0, 4));
-export const fyStart = (fy: number) => `${fy - 1}-04-01`;
-export const fyEnd = (fy: number) => `${fy}-03-31`;
-export const fyLabel = (fy: number) => `FY${String(fy % 100).padStart(2, "0")}`;
+const fiscalYear = (d: string) => (+d.slice(5, 7) >= 4 ? +d.slice(0, 4) + 1 : +d.slice(0, 4));
+const fyStart = (fy: number) => `${fy - 1}-04-01`;
+const fyEnd = (fy: number) => `${fy}-03-31`;
+const fyLabel = (fy: number) => `FY${String(fy % 100).padStart(2, "0")}`;
 
-export type Preset = { key: string; label: string; range: Range; prior: Range; priorLabel: string };
+type Preset = { key: string; label: string; range: Range; prior: Range; priorLabel: string };
 
 /** The date-range presets, relative to the data's as-of date. Each carries the window its delta compares against. */
 export function presets(asOf: string): Preset[] {

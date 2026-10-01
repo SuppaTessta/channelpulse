@@ -14,9 +14,9 @@ import { DefinitionButton } from "./definition";
 import { EmptyState, ErrorState } from "./states";
 import { ICON, PanelSkeleton, cx } from "./ui";
 
-export type TrendMetric = { name: string; slot: number | "deemph"; label?: string };
+type TrendMetric = { name: string; slot: number | "deemph"; label?: string };
 
-export type TrendProps = {
+type TrendProps = {
   id: string;
   title: string;
   /** Describes the measure; the covered dates are appended. */

@@ -13,7 +13,7 @@ import { Sparkline } from "./sparkline";
 import { describeError, ErrorState } from "./states";
 import { cx, Figure, ICON, Sheet, Skeleton } from "./ui";
 
-export const KPI_METRICS = ["primary_sales_value", "secondary_sales_value", "channel_days_of_stock", "claims_per_1000_units", "dso"];
+const KPI_METRICS = ["primary_sales_value", "secondary_sales_value", "channel_days_of_stock", "claims_per_1000_units", "dso"];
 
 type Ctx = { period: Period; win: DataWindow; region: Region; cat: Record<string, Metric> };
 type Loaded = { name: string; current: Result<Query>; prior: Result<Query> | null; trend: Result<Query>; grain: Grain };

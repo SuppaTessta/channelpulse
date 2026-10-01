@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "./ui";
 
-export type TableColumn = { label: string; numeric?: boolean };
+type TableColumn = { label: string; numeric?: boolean };
 
 /** The table twin of a chart (and the plain table views): semantic, captioned, numbers right-aligned. */
 export function DataTable({

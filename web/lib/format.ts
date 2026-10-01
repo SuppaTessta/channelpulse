@@ -37,14 +37,14 @@ export function fmtNumber(value: number, digits = 0): string {
 /** How a metric's values read. Inferred from the governed label and name (see metricFormat). */
 export type Kind = "inr" | "count" | "pct" | "days" | "per1000" | "ratio" | "score" | "number";
 
-export function fmtINR(v: number): string {
+function fmtINR(v: number): string {
   const a = Math.abs(v);
   if (a >= 1e7) return `₹${fmtNumber(v / 1e7, a >= 1e10 ? 0 : 1)} cr`;
   if (a >= 1e5) return `₹${fmtNumber(v / 1e5, 1)} lakh`;
   return `₹${fmtNumber(v, 0)}`;
 }
 
-export function fmtCount(v: number): string {
+function fmtCount(v: number): string {
   return Math.abs(v) >= 1e7 ? `${fmtNumber(v / 1e7, 1)} cr` : Math.abs(v) >= 1e5 ? `${fmtNumber(v / 1e5, 1)} lakh` : fmtNumber(v, Number.isInteger(v) ? 0 : 1);
 }
 

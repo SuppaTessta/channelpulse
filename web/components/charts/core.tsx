@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export type PlotModule = typeof import("@observablehq/plot");
+type PlotModule = typeof import("@observablehq/plot");
 let plotModule: Promise<PlotModule> | null = null;
 /** Plot is loaded on demand, so pages hydrate before the chart library arrives. */
 export const loadPlot = () => (plotModule ??= import("@observablehq/plot"));
@@ -57,7 +57,7 @@ export function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-export type TooltipRow = { key: string; color: string; value: string; label: string; shape?: "line" | "rect"; muted?: boolean };
+type TooltipRow = { key: string; color: string; value: string; label: string; shape?: "line" | "rect"; muted?: boolean };
 
 /** Values lead, series names follow, each keyed by a short stroke of its colour (dataviz interaction spec). */
 export function ChartTooltip({ x, y, containerWidth, title, note, rows }: { x: number; y: number; containerWidth: number; title: string; note?: string | null; rows: TooltipRow[] }) {

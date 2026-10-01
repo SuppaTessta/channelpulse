@@ -32,7 +32,7 @@ export const SEGMENT =
   "flex h-8 items-center rounded-[5px] px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,box-shadow] duration-150 ease-out hover:text-ink max-md:h-9";
 export const SEGMENT_ON = "bg-raised text-ink shadow-segment";
 
-export type Tone = "governed" | "adhoc" | "refused" | "danger" | "neutral";
+type Tone = "governed" | "adhoc" | "refused" | "danger" | "neutral";
 
 const TONE: Record<Tone, string> = {
   governed: "bg-accent-soft text-accent",

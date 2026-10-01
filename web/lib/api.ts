@@ -9,9 +9,9 @@ import type { Brief, BriefWeeks } from "./brief";
 import type { TraceDetail, TraceList } from "./traces";
 import { isAskStatus, isBrief, isBriefWeeks, isGoverned, isMetricList, isReplay, isTraceDetail, isTraceList } from "./validate";
 
-export type Scalar = string | number | boolean;
+type Scalar = string | number | boolean;
 export type Filter = { dimension: string; op: "=" | "!=" | ">" | ">=" | "<" | "<=" | "in" | "not_in"; value: Scalar | Scalar[] };
-export type MetricQuery = {
+type MetricQuery = {
   metric_name: string;
   filters?: Filter[];
   group_by?: string[];

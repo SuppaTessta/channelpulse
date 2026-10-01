@@ -24,7 +24,7 @@ export type TraceRow = {
   tool_errors: number | unknown[] | null;
 } & Record<string, unknown>;
 
-export type ToolCall = {
+type ToolCall = {
   id: string;
   name: string;
   input: unknown;
@@ -37,11 +37,11 @@ export type ToolCall = {
 export type TraceDetail = TraceRow & { tool_calls: ToolCall[] };
 
 /** A facet as the API sends it: a value-to-count map or a list of {value, count}. */
-export type FacetCounts = Record<string, number> | { value: string | null; count: number }[];
+type FacetCounts = Record<string, number> | { value: string | null; count: number }[];
 export const FACETS = ["label", "provider", "model", "category", "source"] as const;
 export type FacetKey = (typeof FACETS)[number];
 
-export type TraceTotals = {
+type TraceTotals = {
   traces: number;
   input_tokens: number | null;
   output_tokens: number | null;
@@ -92,7 +92,7 @@ export const fmtLatency = (ms: number | null | undefined) =>
 
 export const fmtUsd = (v: number | null | undefined) => (v == null ? "No value" : v === 0 ? "$0" : v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
-export const CATEGORY_TEXT: Record<string, string> = {
+const CATEGORY_TEXT: Record<string, string> = {
   simple_lookup: "Simple lookup",
   filtered_grouped: "Filtered and grouped",
   time_comparison: "Time comparison",

@@ -13,7 +13,7 @@ type Page = { href: string; label: string; title: string; icon: Icon };
  * Every page, grouped by job (DESIGN.md, navigation). A new page is one entry in its group; a new job is a new group.
  * `label` is the short rail caption, `title` the page's own h1.
  */
-export const NAV: { group: string; pages: Page[] }[] = [
+const NAV: { group: string; pages: Page[] }[] = [
   {
     group: "Dashboards",
     pages: [

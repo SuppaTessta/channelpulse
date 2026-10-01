@@ -2,7 +2,7 @@
 // with the query behind it, and the API re-runs those queries before it serves the brief (the numbers check).
 
 export type BriefFact = { label: string; kind: string; metric: string | null; value: unknown; display: string; sql: string | null; source: string | null };
-export type BriefSentence = { text: string; facts: string[] };
+type BriefSentence = { text: string; facts: string[] };
 export type Brief = {
   week: { start: string; end: string };
   as_of: string;

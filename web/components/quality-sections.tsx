@@ -158,7 +158,7 @@ export async function CohortHeatmap({ ctx, activeMonth, className }: { ctx: Qual
 const detail = (a: Anomaly, key: string) => num(a.details?.[key]);
 
 /** What the lot scan measured, in its own terms: the rate ratio and the claims it expected from peers. */
-export function lotFlagText(a: Anomaly): string {
+function lotFlagText(a: Anomaly): string {
   const claims = detail(a, "claims");
   const expected = detail(a, "expected");
   return [

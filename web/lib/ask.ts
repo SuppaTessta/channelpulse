@@ -8,7 +8,7 @@ import { metricKind } from "./metrics";
 import { num, type Table } from "./table";
 
 export type AskLabel = "governed_metric" | "ad_hoc_sql_verify" | "refused" | "needs_clarification";
-export type ChartSpec = { type: "line" | "bar" | "table"; x: string | null; y: string | null; series: string | null };
+type ChartSpec = { type: "line" | "bar" | "table"; x: string | null; y: string | null; series: string | null };
 export type AskResponse = {
   answer_text: string;
   sql: string[];
@@ -43,7 +43,7 @@ export type ReplayAnswer = {
 };
 export type Replay = { recording: Recording | null; answers: ReplayAnswer[]; withheld: boolean };
 
-export type AskChart =
+type AskChart =
   | { kind: "time"; mark: "line" | "bar"; buckets: Bucket[]; series: ChartSeries[]; valueKind: Kind; grain: string; x: string; y: string }
   | { kind: "category"; rows: { key: string; label: string }[]; series: BarSeries[]; valueKind: Kind; x: string; y: string }
   | { kind: "none"; reason: string | null };

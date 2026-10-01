@@ -255,9 +255,9 @@ export async function SchemePanel({ ctx, className }: { ctx: Ctx; className?: st
   );
 }
 
-export type Profile = { id: string; name: string; region: string; tier: string; district: string; state: string; rep: string; status: string };
+type Profile = { id: string; name: string; region: string; tier: string; district: string; state: string; rep: string; status: string };
 
-export const PROFILE_DIMENSIONS = [
+const PROFILE_DIMENSIONS = [
   "distributor",
   "distributor__distributor_name",
   "distributor__region",

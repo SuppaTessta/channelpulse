@@ -58,7 +58,7 @@ export function describeError(error: ApiError): { title: string; body: string; i
   return { title: "The API couldn't answer", body: "Something went wrong on the API side. The API's message is below.", icon: icon(Warning) };
 }
 
-export function ErrorDetail({ error, className }: { error: ApiError; className?: string }) {
+function ErrorDetail({ error, className }: { error: ApiError; className?: string }) {
   return (
     <details className={cx("group text-xs text-muted", className)}>
       <summary className="w-fit rounded-control underline decoration-line-strong underline-offset-4 hover:text-ink">Technical detail</summary>

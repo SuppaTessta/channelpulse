@@ -439,6 +439,33 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - Three recorded model answers called the metric: AC09 for Gemini and Qwen governed, and Qwen's MH04. None of the three verdicts depends on its value: AC09 is scored on asking, and MH04 on the stated cause and tools. No question is re-run, and the recordings keep those answers as served, with the old figure.
 - **Also:** `api/app/admin.py` now imports psycopg only for `roles`, so `make semantic` needs no database driver, as its docstring already said.
 
+**D46. Detector v2: pre-registered on the seed of record, frozen before the holdout seed (owner-approved, 2026-10-02).**
+- **Goals (owner):** stuffing precision well above v1's 36% without recall falling far below 96%, and the churn account flagged before 2026-01-31. Detectors make no model calls.
+- **Protocol (Phase 2 spec):**
+  1. Develop on the current seed, 20260924, whose data had been inspected.
+  2. Freeze the v2 rules in `detectors/detectors.yaml` and commit them, together with the holdout seed, 20261002, chosen before any generation.
+  3. Generate the holdout in a separate Compose project and database on port 5433.
+  4. Report v1 and v2 on both seeds, whichever way they fall.
+- **Ground truth:** the acceptance suite's own rule, never a detector's. A stuffer cell is a (distributor, tank or pipe, window) with window units at least 1.8x the stuffing-off run. The churn account is the generator's pick for the seed. `detectors/evaluate.py` scores both versions.
+- **Re-measured v1 on the seed of record:** precision 34.0% and recall 95.8% (2,156 flags, 764 stuffer cells). That's against the case study's 36% and 96% from an earlier data window. Health v1 flags D0084 on 2026-02-15, flags 172 other distributors, and has 13.2% of stuffers at risk during their overhang. The acceptance target (C7) is under 5%, so v1 already fails it.
+- **What development found:**
+  - **Stuffing:**
+    - v1's false positives order lumpily: an ordinary order lands in the 15-day window. Inside the window they look like stuffers in rate, order size and scheme share.
+    - The concentration ratio made precision worse, and order-size and block-maximum tests failed.
+    - Scheme participation (at least one scheme invoice in the window) doubled precision at almost no cost in recall.
+    - What separates loading from demand comes after the quarter: the order dip over the next 30 days, and the stock excess.
+  - **Health:** v1's secondary gate is a percentile among region peers, which moves in coarse steps in a small region. An absolute year-on-year sell-out gate, with sell-in holding up, is the churn signature itself.
+- **v2 as frozen:**
+  - **Stuffing:** provisional = v1 and at least one in-window scheme invoice. Confirmed (once QE+60 is in the data) = provisional and (orders over QE+1..QE+30 below the baseline daily rate, or a stock excess of at least 3 days).
+  - **Health:** `score < 30` and sell-out under 0.8x the same 8 weeks a year earlier and sell-in/sell-out above 1.1, in 3 consecutive weeks.
+  - **On the seed of record:** stuffing provisional 50.5% precision / 95.4% recall, confirmed 65.0% / 87.2%; health flags D0084 on 2026-01-11, 137 other distributors, 11.5% of stuffers in overhang.
+- **Overfitting risk, stated before the holdout:**
+  - The thresholds are round, but they were chosen by looking at this seed.
+  - The churn gate's 0.8 sits close to D0084's signal: at 0.75 the rule misses the account entirely.
+  - The holdout seed is the test of both.
+- **Product:** `mart_anomaly_flags` and `get_anomalies` keep serving v1 until the owner decides. The new mart columns aren't in the semantic layer, so the agent's metric glossary is unchanged. The marts' column list in the system prompt grows, but no scored run is re-run.
+- **Generator:** `--seed` runs a holdout seed. It never asserts against, or writes back into, `ground_truth.yaml`, which records only the seed of record.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

@@ -127,10 +127,13 @@ def build(cfg: dict, gt: dict, as_of: dt.date, disabled=frozenset(), scale: floa
     return build_tables(ch, s, cfg, gt, disabled), SimpleNamespace(cal=cal, m=m, ch=ch, s=s, disabled=disabled)
 
 
-def resolve_ids(gt: dict, run, may_write: bool) -> dict:
-    """The two ids ground truth leaves null until master data exists: write back once, assert ever after."""
+def resolve_ids(gt: dict, run, may_write: bool, of_record: bool = True) -> dict:
+    """The two ids ground truth leaves null until master data exists: write back once, assert ever after. A holdout
+    seed (--seed, decisions D46) only reports its own picks: ground truth records the seed of record alone."""
     picks = {("distributor_churn", "distributor_id"): run.m.dist_id[run.m.churn],
              ("installer_decoy", "installer_id"): run.m.inst_id[run.m.decoy]}
+    if not of_record:
+        return {key: value for (_, key), value in picks.items()}
     text = GROUND_TRUTH.read_text(encoding="utf-8")
     for (anomaly, key), value in picks.items():
         current = gt["anomalies"][anomaly][key]
@@ -212,8 +215,12 @@ def main(argv=None):
     parser.add_argument("--disable", default="", help="comma-separated anomaly ids: " + ", ".join(ANOMALIES))
     parser.add_argument("--scale", type=float, default=1.0)
     parser.add_argument("--dry-run", action="store_true", help="simulate and report without touching the database")
+    parser.add_argument("--seed", type=int, help="a holdout seed instead of ground truth's (never written back)")
     args = parser.parse_args(argv)
     cfg, gt = read_yaml(HERE / "config.yaml"), read_yaml(GROUND_TRUTH)
+    of_record = args.seed is None or args.seed == gt["seed"]
+    if not of_record:
+        gt["seed"] = args.seed
     check_ground_truth(gt)
     check_calibration(cfg, gt)
     disabled = {x.strip() for x in args.disable.split(",") if x.strip()}
@@ -223,7 +230,7 @@ def main(argv=None):
     started = time.perf_counter()
     tables, run = build(cfg, gt, as_of, disabled, args.scale)
     full_run = args.scale == 1.0 and not run.disabled
-    ids = resolve_ids(gt, run, may_write=full_run and not args.dry_run)
+    ids = resolve_ids(gt, run, may_write=full_run and not args.dry_run and of_record, of_record=of_record)
     size = None
     if not args.dry_run:
         from load import load

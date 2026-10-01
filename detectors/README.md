@@ -8,6 +8,21 @@
 
 The statistics live in `stats.py` as pure functions, and `tests/` tests them.
 
+## Version 2 (D46)
+
+`detectors.yaml` also pre-registers v2 of the stuffing and health rules, next to v1.
+- **Stuffing v2:** a provisional flag at the window's end, then a confirmed flag once 60 days after quarter-end are in.
+- **Health v2:** an absolute sell-out gate in place of v1's regional percentile.
+
+dbt computes both versions side by side, as `is_stuffing_flag` / `is_stuffing_flag_v2` / `is_stuffing_confirmed_v2` and `is_at_risk` / `is_at_risk_v2`. `mart_anomaly_flags` and the product keep serving v1 until the owner decides.
+
+`python -m detectors.evaluate` scores both versions on whichever database the `POSTGRES_*` variables point at:
+- stuffing precision and recall against the acceptance suite's stuffer rule, which needs the stuffing-off schema `raw_cf_quarter_end_stuffing`;
+- the churn account's first at-risk week;
+- the health flag's false positives.
+
+It writes `results/evaluation_<seed>.json`. The protocol: develop on the seed of record, freeze the rules in a commit, generate the holdout seed in its own database, and report all four results.
+
 ## Interpretations
 
 Where the spec is open, the code takes the most conservative reading:

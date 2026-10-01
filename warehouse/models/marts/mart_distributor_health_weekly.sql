@@ -150,7 +150,10 @@ scored as (
 flagged as (
     select
         *,
-        health_score < 30 and pct_secondary_trend * 100 < 15 as is_flag_week
+        health_score < 30 and pct_secondary_trend * 100 < 15 as is_flag_week,
+        -- v2 (decisions D46): the secondary gate is absolute, not a regional percentile. Sell-out under 0.8x the
+        -- same 8 weeks a year earlier while sell-in runs above 1.1x sell-out.
+        health_score < 30 and secondary_trend_ratio < 0.8 and primary_secondary_ratio > 1.1 as is_flag_week_v2
     from scored
 )
 
@@ -183,6 +186,13 @@ select
         and lag(f.is_flag_week, 1) over (partition by c.distributor_id order by c.snapshot_date)
         and lag(f.is_flag_week, 2) over (partition by c.distributor_id order by c.snapshot_date),
         false
-    ) as is_at_risk
+    ) as is_at_risk,
+    coalesce(f.is_flag_week_v2, false) as is_flag_week_v2,
+    coalesce(
+        f.is_flag_week_v2
+        and lag(f.is_flag_week_v2, 1) over (partition by c.distributor_id order by c.snapshot_date)
+        and lag(f.is_flag_week_v2, 2) over (partition by c.distributor_id order by c.snapshot_date),
+        false
+    ) as is_at_risk_v2
 from components as c
 left join flagged as f on f.distributor_id = c.distributor_id and f.snapshot_date = c.snapshot_date

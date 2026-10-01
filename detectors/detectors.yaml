@@ -68,6 +68,37 @@ distributor_health:                 # distributor_health_score (§7): weekly, 0-
     normal, from flagging on overhang alone.
   min_history_weeks: 52             # year-on-year trend needs a year of history
 
+# ---------------------------------------------------------------- version 2 (decisions D46)
+# Developed on the seed of record (20260924), whose data had been inspected; frozen in this commit before the
+# holdout seed below is generated. Nobody has seen its data. Both versions are reported on both seeds, whichever way
+# they fall. The product keeps serving v1 until the owner decides.
+
+stuffing_v2:
+  per: [distributor_id, fiscal_quarter, category]
+  flag: >-
+    provisional, at the window's end: rate_ratio >= 2.0 (as v1) AND at least one scheme invoice in the window
+  confirmed: >-
+    once QE+60 is in the data: the provisional flag AND (daily primary units over QE+1..QE+30 < 1.0 x the baseline
+    daily rate OR mean channel days of stock over QE+1..QE+60 >= its pre-window median + 3)
+  why: >-
+    v1's false positives are lumpy orderers whose ordinary order lands in a 15-day window. A scheme order separates
+    the ordering that rides the scheme; the post-quarter dip and stock excess separate loading from demand.
+
+distributor_health_v2:
+  grain: [distributor_id, iso_week]
+  flag: >-
+    health_score < 30 AND secondary_trend_ratio < 0.8 (trailing-8-week secondary units / the same 8 weeks a year
+    earlier) AND primary_secondary_ratio > 1.1 (trailing-12-week sell-in / sell-out), each in 3 consecutive weeks
+  why: >-
+    v1's secondary gate is a percentile among region peers, which moves in coarse steps in a small region. An
+    absolute year-on-year fall with sell-in holding up is the churn signature itself.
+
+holdout:
+  seed: 20261002                    # fixed in this commit, before generation; never re-rolled to improve a result
+  database: a separate Compose project on port 5433, so the seed of record's database is never touched
+  ground_truth: the acceptance suite's stuffer rule (window units >= 1.8x the stuffing-off run); the churn account
+    is the generator's own pick for that seed, from its report
+
 # Case study only, not a product detector. This is the naive "raw monthly count" that the lot scan's lead time is measured against.
 case_study_comparator:
   series: monthly claim count per (plant, failure_mode), by claim_date month

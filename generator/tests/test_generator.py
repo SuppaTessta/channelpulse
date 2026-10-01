@@ -165,3 +165,14 @@ def test_stuffing_overhang_clears_by_quarter_end_plus_72():
     off.run()
     assert on.dos[qe + 30] - off.dos[qe + 30] >= 3
     assert abs(on.dos[qe + 72] - off.dos[qe + 72]) <= 1
+
+
+def test_a_holdout_seed_draws_different_data_and_never_touches_ground_truth(monkeypatch):
+    """D46: --seed reports its own picks; ground_truth.yaml keeps the seed of record's ids and is never written."""
+    holdout = {**GT, "seed": GT["seed"] + 1}
+    first, _ = run()
+    other, other_run = generate.build(CFG, holdout, AS_OF, frozenset(), SCALE)
+    assert rows(first["primary_invoices"]) != rows(other["primary_invoices"])
+    monkeypatch.setattr(generate.Path, "write_text", lambda *a, **k: pytest.fail("ground truth written"))
+    ids = generate.resolve_ids(holdout, other_run, may_write=True, of_record=False)
+    assert set(ids) == {"distributor_id", "installer_id"}

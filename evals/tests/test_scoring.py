@@ -361,3 +361,18 @@ def test_scorecard_keeps_ambiguous_questions_out_of_accuracy_and_checks_the_thre
     assert (card["needless_clarifications"], card["refused_before_model"]) == (["D"], ["E"])
     assert scoring.scorecard(results)["meets_threshold"] is None
     assert "Accuracy threshold 50.0% | NOT met" in scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})
+
+
+def test_confidently_wrong_is_split_into_its_three_failures_and_trap_refusals_into_router_and_model():
+    results = [
+        result("A", "simple_lookup", False),
+        {**result("C", scoring.CLARIFY, False), "confidently_wrong": True},
+        result("T1", "trap", False),  # answered
+        {**result("T2", "trap", True, refused=True), "confidence_note": "Refused before any model call (write)."},
+        result("T3", "trap", True, refused=True),
+    ]
+    card = scoring.scorecard(results)
+    assert card["confidently_wrong_by_kind"] == {"wrong_answer": ["A"], "ambiguous_answered": ["C"], "trap_answered": ["T1"]}
+    assert card["trap_refusals"] == {"router": 1, "model": 1, "model_of": 2}
+    shown = scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})
+    assert "| Traps answered | 1: T1 |" in shown and "1 before any model call / 1 of 2 by the model" in shown

@@ -229,6 +229,9 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
     accuracy = _share([r["correct"] for r in answerable])
     latencies = [r["latency_ms"] for r in ran if r["latency_ms"] is not None]
     cost = sum(r["cost_usd"] for r in ran)
+    wrong = [r for r in ran if r["confidently_wrong"]]
+    routed = {r["id"] for r in ran if (r.get("confidence_note") or "").startswith(ROUTED_NOTE)}
+    traps = [r for r in ran if r["category"] == TRAP]
     categories = dict.fromkeys(r["category"] for r in results)
     return {
         "questions": len(results),
@@ -247,7 +250,20 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
         "clarification_correctness": _share([r["correct"] for r in ran if r["category"] == CLARIFY]),
         "needless_clarifications": [r["id"] for r in ran if r.get("clarified") and r["category"] != CLARIFY],
         "label_accuracy": _share([r["label_correct"] for r in ran]),
-        "confidently_wrong": [r["id"] for r in ran if r["confidently_wrong"]],
+        "confidently_wrong": [r["id"] for r in wrong],
+        # Three different failures that "confidently wrong" lumps together: a wrong figure on an answerable
+        # question, an ambiguous question answered instead of asked, and a trap answered instead of refused.
+        "confidently_wrong_by_kind": {
+            "wrong_answer": [r["id"] for r in wrong if r["category"] not in (TRAP, CLARIFY)],
+            "ambiguous_answered": [r["id"] for r in wrong if r["category"] == CLARIFY],
+            "trap_answered": [r["id"] for r in wrong if r["category"] == TRAP],
+        },
+        # Traps refused by the router before any model call, and by the model itself on the traps the router lets by.
+        "trap_refusals": {
+            "router": sum(r["id"] in routed for r in traps),
+            "model": sum(r["refused"] and r["id"] not in routed for r in traps),
+            "model_of": sum(r["id"] not in routed for r in traps),
+        },
         "avg_latency_ms": round(sum(latencies) / len(latencies)) if latencies else None,
         "median_latency_ms": round(statistics.median(latencies)) if latencies else None,
         "p95_latency_ms": p95(latencies),
@@ -289,12 +305,14 @@ def markdown(card: dict, meta: dict) -> str:
             f"| Clarification asked on ambiguous questions | {_percent(card.get('clarification_correctness'))} "
             f"(needless elsewhere: {len(card.get('needless_clarifications', []))}) |"
         ),
-        f"| Refused before any model call (router) | {len(card.get('refused_before_model', []))} |",
+        *([(f"| Traps refused: router / model | {t['router']} before any model call / {t['model']} of "
+             f"{t['model_of']} by the model |")] if (t := card.get("trap_refusals")) else []),
         f"| Label correctness | {_percent(card['label_accuracy'])} |",
-        (
-            f"| Confidently wrong (review by hand) | {len(card['confidently_wrong'])}"
-            f"{': ' + ', '.join(card['confidently_wrong']) if card['confidently_wrong'] else ''} |"
-        ),
+        *(f"| {label} | {len(ids)}{': ' + ', '.join(ids) if ids else ''} |" for label, ids in (
+            ("Wrong answers (answerable questions)", card["confidently_wrong_by_kind"]["wrong_answer"]),
+            ("Ambiguous questions answered without asking", card["confidently_wrong_by_kind"]["ambiguous_answered"]),
+            ("Traps answered", card["confidently_wrong_by_kind"]["trap_answered"]),
+        ) if "confidently_wrong_by_kind" in card),
         f"| Latency median / p95 | {card['median_latency_ms']} ms / {card['p95_latency_ms']} ms |",
         (
             f"| Tokens per question (input / output) | {card['tokens_per_question']['input']:,} / "
@@ -313,3 +331,36 @@ def markdown(card: dict, meta: dict) -> str:
         f"| Questions scored / skipped / errors | {card['scored']} / {card['skipped']} / {card['errors']} |",
     ]
     return "\n".join(lines)
+
+
+# --- governed vs raw on the same questions -----------------------------------------------------------------------
+
+
+def mcnemar_exact(b: int, c: int) -> float:
+    """Two-sided exact McNemar p-value for b and c discordant pairs: a binomial test of b against n = b + c, p = 1/2."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    tail = sum(math.comb(n, k) for k in range(min(b, c) + 1)) / 2**n
+    return min(1.0, 2 * tail)
+
+
+def paired(governed: list[dict], raw: list[dict]) -> dict:
+    """Per-question outcome changes from raw to governed on the answerable questions both runs scored."""
+    def answerable(results):
+        return {r["id"]: r["correct"] for r in results
+                if not r.get("skipped") and r["category"] not in (TRAP, CLARIFY)}
+
+    g, r = answerable(governed), answerable(raw)
+    ids = sorted(g.keys() & r.keys())
+    fixed = [i for i in ids if g[i] and not r[i]]  # wrong in raw, right governed
+    broken = [i for i in ids if r[i] and not g[i]]  # right in raw, wrong governed
+    return {
+        "questions": len(ids),
+        "wrong_to_right": len(fixed),
+        "right_to_wrong": len(broken),
+        "both_right": sum(g[i] and r[i] for i in ids),
+        "both_wrong": sum(not g[i] and not r[i] for i in ids),
+        "right_to_wrong_ids": broken,
+        "mcnemar_p": mcnemar_exact(len(fixed), len(broken)),
+    }

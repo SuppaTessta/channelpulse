@@ -40,6 +40,8 @@ export type ReplayAnswer = {
   served_model: string | null;
   latency_ms: number;
   cost_usd: number;
+  /** Why this recorded answer may differ from the dashboard today, e.g. recorded under detector v1 (D48). */
+  note?: string | null;
 };
 export type Replay = { recording: Recording | null; answers: ReplayAnswer[]; withheld: boolean };
 

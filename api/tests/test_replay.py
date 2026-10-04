@@ -91,3 +91,14 @@ def test_a_recording_from_before_providers_counts_as_anthropic(tmp_path, monkeyp
     (tmp_path / "claude-opus-5-5.json").write_text(json.dumps(old), encoding="utf-8")
     monkeypatch.setattr(replay, "RECORDINGS", tmp_path)
     assert replay.summary(replay.load())["provider"] == "anthropic"
+
+
+def test_answers_recorded_under_detector_v1_say_so(api, recordings):
+    """D48: the five answers that read detector flags carry a note in a recording made before v2."""
+    rec = recording(recorded_at="2026-09-30T10:00:00+00:00")
+    rec["answers"].append({**rec["answers"][0], "id": "SL16"})
+    replay.RECORDINGS.joinpath("anthropic__m.json").write_text(json.dumps(rec), encoding="utf-8")
+    api.use_llm(None)
+    notes = {a["id"]: a["note"] for a in api.http.get("/api/ask/replay").json()["answers"]}
+    assert notes["SL01"] is None and "detector v1" in notes["SL16"]
+    assert replay.with_note({"id": "SL16"}, "2026-10-05T00:00:00+00:00")["note"] is None

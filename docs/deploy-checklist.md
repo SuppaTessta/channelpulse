@@ -10,6 +10,7 @@ The demo launches in **replay mode**: no model is ever called, and the Ask page 
 Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host region, `<render-url>` and `<vercel-url>` the two service URLs.
 
 ## 0. Before anything is public
+- [ ] **Secret scan** (D49): `docker run --rm -v "<repo>:/repo:ro" zricethezav/gitleaks:latest git /repo --redact --no-banner -v` must end "no leaks found". On Git Bash, prefix it with `MSYS_NO_PATHCONV=1`.
 - [ ] **Identifying-information check.** Put every term that must never appear, one per line, in `.identity-patterns` at the repo root. That means real names, employer and client names, email addresses and domains, and anything else that identifies you. The file is gitignored; keep it that way.
   - Run `make identity-check`. It searches tracked files at every commit, commit messages, and author and committer identities.
   - It must end `OK`. It never prints the terms, so its output is safe to share.
@@ -18,6 +19,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 
 ## 1. Supabase (database)
 - [ ] Create a project. A region near India, such as Mumbai, keeps latency down. Save the database password you choose: it's the admin password.
+- [ ] The free plan caps the database at 500 MB and goes read-only above it, which would stop the nightly refresh. The published `marts` measure about 356 MB (D49). Check Database → Reports → Database size now and then.
 - [ ] Copy the **Session pooler** connection string (Connect → Session pooler, port 5432).
   - Don't use the direct connection. On the free tier it's IPv6-only, and neither GitHub Actions nor Render can reach IPv6.
   - It looks like `postgresql://postgres.<ref>:<admin-password>@aws-0-<region>.pooler.supabase.com:5432/postgres`.
@@ -45,7 +47,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 - [ ] Keep `ASK_LIVE=0`, as the blueprint sets it: this is replay mode.
 - [ ] Check that `https://<render-url>/health` returns `{"status":"ok","db":"ok"}`.
 - [ ] Check that `https://<render-url>/api/ask/status` shows `"mode":"replay"`.
-- [ ] Expect the free plan to sleep after about 15 idle minutes. The first request after a quiet spell can take up to a minute to wake it, so the first page view may show panels with "The API didn't answer in time". Retry once it's awake.
+- [ ] Expect the free plan to sleep after about 15 idle minutes. The first request after a quiet spell can take up to a minute to wake it. The dashboard shows "The API is waking up" and re-runs the page by itself every 15 seconds (D49). Measured at the free instance's 0.1 CPU, a full page then takes about 20–25 seconds.
 
 ## 4. Vercel (dashboard)
 - [ ] Add a new project from the repository, with **Root Directory** `web`. The framework is detected as Next.js; choose Node 24 if asked.

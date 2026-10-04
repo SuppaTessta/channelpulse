@@ -187,6 +187,7 @@ class ReplayAnswer(BaseModel):
     served_model: str | None
     latency_ms: int
     cost_usd: float
+    note: str | None = None  # e.g. recorded under detector v1 (D48)
 
 
 class Replay(BaseModel):

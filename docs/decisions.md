@@ -127,7 +127,7 @@ Trade-offs:
 `fct_channel_inventory_daily` (PLAN §6) keeps the daily distributor × SKU detail: 6.5M rows.
 - It was slimmed from 1.16 GB to 723 MB: region and category come through joins, and the region RLS policy looks the distributor up.
 - Its last-day-of-period queries still took far longer than the API's 5 s budget. The governed inventory metrics are therefore served from `mart_channel_inventory_weekly`: 938k rows and 90 MB, holding each week's last available snapshot plus exact day counts, so `stockout_rate` and `overstock_rate` are still true "% of distributor-SKU-days". Days-of-stock by region dropped to about 0.9 s.
-- The deployed copy keeps 60 days of the daily detail (`inventory_history_days`). Local builds and CI keep full history.
+- The deployed copy keeps 60 days of the daily detail. Local builds and CI keep full history. *Amended (D49):* the trim now happens at publish time, after the models that read the detail were built on full history.
 
 **D25. Deployment topology (build prompt "ask me": where to host the API).**
 - **API on Render**, as a Docker web service from `render.yaml`. It bundles MetricFlow, its agent turns run 10–40 s, and it builds its semantic engine once per process. That's a poor fit for serverless Python function limits.
@@ -501,6 +501,29 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   SL05, FG18 and AC09 differ only by float4 noise (D41), well inside tolerance. No golden SQL was edited.
 - **Runs of record:** not re-run (owner decision). They were graded under v1, and each result keeps its golden. The README and the case study say so beside the scorecard. A future run grades against v2's answers.
 - **Replay:** the recordings keep their answers as served, so a recorded answer to MH10 or SL16 states v1's figure.
+
+**D49. Pre-deployment checks: size, memory, cold starts, secrets, and the v1-era replays (2026-10-04).**
+- **Database size against Supabase's free plan.** The plan allows 500 MB of data plus indexes, and goes read-only above it. The nightly job publishes only `marts`.
+  - Measured with the deployed 60-day inventory slice: **356 MB**, roughly 140 MB of headroom before Supabase's own schemas.
+  - The time series grow as the simulation advances a day each night, so the headroom shrinks over the coming months. The first lever is a shorter daily-inventory window.
+- **Bug found, fixed:** the 60-day trim was a dbt variable on `fct_channel_inventory_daily`. But `mart_channel_inventory_weekly`, which serves every governed inventory metric and the dashboard's stock panels, and the stuffing follow-through in `mart_scheme_quarterly` are both built from that table. So the deployed copy would have shown only about 9 weeks of stock history, and lost the confirmation evidence for older stuffing flags. Local and CI builds never set the variable, so it was never seen.
+  - Now `daily.yml` builds everything on full history, runs the detectors, then deletes the old daily rows just before `pg_dump`.
+  - The variable is removed from the model.
+- **Memory against Render's free plan** (512 MB RAM, 0.1 CPU, spins down after 15 idle minutes):
+  - **The deploy image, unconstrained:** 97 MiB idle after startup, 102 MiB after the first governed query, and a peak of 131 MiB under a dashboard burst of 21 governed queries plus replay, traces and the brief.
+  - **Throttled to 0.1 CPU and 512 MB:** a 136 MiB peak. The burst took 22 s in total, with the slowest call at 6.4 s, inside the dashboard's 20 s per-call limit. The brief took 10 s, and the container needed 44 s from start to healthy.
+  - **Vercel:** the Hobby plan's function limit is 300 s, so a slow page render isn't cut off.
+- **The "waking up" state.**
+  - **Detection:** when the API host sleeps (an `onrender.com` host, or `CHANNELPULSE_API_COLD_STARTS=1`), the dashboard reads a timeout, a refused connection, or an HTML answer where the API always sends JSON (a loading page, or a 502–504) as the API waking.
+  - **Display:** it shows a calm "The API is waking up" state in place of an error, and re-runs the page by itself every 15 s.
+  - **Short-circuit:** the first such answer marks the API as waking for 20 s, so a page's other calls don't each wait out a timeout. Calls skipped in that window don't extend it.
+  - **Tested:** a fault test proxies the API as an HTML 503, checks the state, then lets the API answer and checks that the page fills in without a click.
+  - **Isolation:** the two fault-injection tests now share one file, so they run one after the other. Two extra dashboards at once slowed the local API into timeouts of its own.
+- **Secrets and identity before going public.**
+  - gitleaks (Docker image) over the full history: 72 commits, about 19 MB, **no leaks found**.
+  - `make identity-check` needs the owner's `.identity-patterns` file, which doesn't exist yet. Run with explicit terms (the owner's email domain stem and local part, the tunnel host, the local Windows username and the Kaggle username), it found none of them. The only author identity in history is the project's pseudonymous one.
+  - Nothing was rewritten.
+- **The v1-era replays.** `/api/ask/replay` attaches a note to the five recorded answers that read detector flags (SL16, FG16, MH02, MH10, MH12), in any recording made before the switch (D48). The Ask page shows it with the answer, so a visitor never meets two different figures without the reason.
 
 ## Environment
 

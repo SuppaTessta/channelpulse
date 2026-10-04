@@ -192,7 +192,7 @@ export function ReplayPanel({
             title="No recorded answers yet"
             body={
               <>
-                A complete run of the 40-question evaluation (<code className="font-mono text-[13px] text-ink">make eval</code>, with an API key) records every answer here.
+                A complete run of the 102-question evaluation (<code className="font-mono text-[13px] text-ink">make eval</code>, with an API key) records every answer here.
                 Until then there is nothing to replay, and no answer is invented in its place.
               </>
             }
@@ -246,6 +246,11 @@ export function ReplayPanel({
             question={current.question}
             meta={`Recorded ${day(recording.recorded_at)} with ${current.served_model ?? recording.model}, viewing as ${regionName(recording.region as Region)}`}
           />
+          {current.note ? (
+            <p role="note" className="max-w-[70ch] rounded-control bg-adhoc-soft px-3 py-2 text-sm text-ink">
+              {current.note}
+            </p>
+          ) : null}
           <p className="px-1">
             <Verdict answer={current} long />
           </p>

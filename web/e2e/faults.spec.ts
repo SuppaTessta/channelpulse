@@ -5,61 +5,99 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { API } from "./env";
 
-// A failed API call degrades one panel, never the page. A second `next start` (same build) talks to the real API
-// through a proxy that breaks two metrics: channel_days_of_stock answers with the wrong shape, dso with HTTP 500.
-const PORT = 3101;
+// Fault injection. Each block starts a second `next start` (same build) that talks to the real API through a proxy
+// that misbehaves on purpose. The blocks share this file so they run one after the other, in one worker: two extra
+// dashboards loading full pages at once would slow the local API into timeouts of its own.
 const WEB = path.join(__dirname, "..");
-let proxy: http.Server;
-let server: ChildProcess;
 
 test.skip(!!process.env.SMOKE_REMOTE, "needs a local production build");
 
-test.beforeAll(async () => {
-  proxy = http.createServer(async (req, res) => {
-    const chunks: Buffer[] = [];
-    for await (const c of req) chunks.push(c as Buffer);
-    const body = Buffer.concat(chunks).toString();
+type Fault = (req: http.IncomingMessage, body: string, res: http.ServerResponse) => boolean;
+
+/** A proxy to the real API that lets `fault` answer instead, and a dashboard on `port` pointed at it. */
+function harness(port: number, fault: Fault, env: Record<string, string> = {}) {
+  let proxy: http.Server;
+  let server: ChildProcess;
+  test.beforeAll(async () => {
+    proxy = http.createServer(async (req, res) => {
+      const chunks: Buffer[] = [];
+      for await (const c of req) chunks.push(c as Buffer);
+      const body = Buffer.concat(chunks).toString();
+      if (fault(req, body, res)) return;
+      const headers = Object.fromEntries(Object.entries(req.headers).filter(([k]) => !["host", "content-length", "connection"].includes(k))) as Record<string, string>;
+      const upstream = await fetch(API + req.url, { method: req.method, headers, body: req.method === "GET" ? undefined : body });
+      res.writeHead(upstream.status, { "Content-Type": upstream.headers.get("content-type") ?? "application/json" }).end(Buffer.from(await upstream.arrayBuffer()));
+    });
+    await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve));
+    const proxyUrl = `http://127.0.0.1:${(proxy.address() as AddressInfo).port}`;
+    server = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "start", "-p", String(port)], {
+      cwd: WEB,
+      env: { ...process.env, CHANNELPULSE_API_URL: proxyUrl, ...env },
+      stdio: "ignore",
+    });
+    await expect.poll(async () => (await fetch(`http://127.0.0.1:${port}/ask`).catch(() => null))?.status ?? 0, { timeout: 30_000 }).toBe(200);
+  });
+  test.afterAll(async () => {
+    server?.kill();
+    await new Promise((resolve) => proxy?.close(resolve));
+  });
+}
+
+test.describe("a failed API call degrades one panel, never the page", () => {
+  // channel_days_of_stock answers with the wrong shape, dso with HTTP 500.
+  harness(3101, (req, body, res) => {
     if (req.url === "/api/metrics/query" && body.includes('"metric_name":"channel_days_of_stock"')) {
       res.writeHead(200, { "Content-Type": "application/json" }).end('{"unexpected":true}');
-      return;
+      return true;
     }
     if (req.url === "/api/metrics/query" && body.includes('"metric_name":"dso"')) {
       res.writeHead(500, { "Content-Type": "application/json" }).end('{"detail":"injected failure"}');
-      return;
+      return true;
     }
-    const headers = Object.fromEntries(Object.entries(req.headers).filter(([k]) => !["host", "content-length", "connection"].includes(k))) as Record<string, string>;
-    const upstream = await fetch(API + req.url, { method: req.method, headers, body: req.method === "GET" ? undefined : body });
-    res.writeHead(upstream.status, { "Content-Type": upstream.headers.get("content-type") ?? "application/json" }).end(Buffer.from(await upstream.arrayBuffer()));
+    return false;
   });
-  await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve));
-  const proxyUrl = `http://127.0.0.1:${(proxy.address() as AddressInfo).port}`;
 
-  server = spawn(process.execPath, [require.resolve("next/dist/bin/next"), "start", "-p", String(PORT)], {
-    cwd: WEB,
-    env: { ...process.env, CHANNELPULSE_API_URL: proxyUrl },
-    stdio: "ignore",
+  test("broken metrics degrade their own panels only", async ({ page }) => {
+    const uncaught: string[] = [];
+    page.on("pageerror", (e) => uncaught.push(e.message));
+    await page.goto("http://127.0.0.1:3101/");
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+
+    const panel = (id: string) => page.locator(`section[aria-labelledby="${id}"]`);
+    await expect(panel("stock").locator("[data-panel-error]")).toContainText("can't read");
+    await expect(panel("dso").locator("[data-panel-error]")).toContainText("Retry");
+    // The neighbours still draw.
+    await expect(panel("sales").locator("[data-panel-error]")).toHaveCount(0);
+    await expect(panel("sales").locator(".cp-plot svg")).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Stock-out and overstock by region" })).toBeVisible();
+    expect(uncaught).toEqual([]);
+    await page.screenshot({ path: test.info().outputPath("degraded.png"), fullPage: true });
   });
-  await expect.poll(async () => (await fetch(`http://127.0.0.1:${PORT}/ask`).catch(() => null))?.status ?? 0, { timeout: 30_000 }).toBe(200);
 });
 
-test.afterAll(async () => {
-  server?.kill();
-  await new Promise((resolve) => proxy?.close(resolve));
-});
+test.describe("a sleeping free-tier API shows a waking-up state (D49)", () => {
+  // While it wakes, the host answers with an HTML 503 instead of the API's JSON.
+  let asleep = true;
+  harness(3102, (_req, _body, res) => {
+    if (!asleep) return false;
+    res.writeHead(503, { "Content-Type": "text/html" }).end("<html><body>Service waking up</body></html>");
+    return true;
+  }, { CHANNELPULSE_API_COLD_STARTS: "1" });
 
-test("broken metrics degrade their own panels only", async ({ page }) => {
-  const uncaught: string[] = [];
-  page.on("pageerror", (e) => uncaught.push(e.message));
-  await page.goto(`http://127.0.0.1:${PORT}/`);
-  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  test("the page says the API is waking up, then fills in on its own", async ({ page }) => {
+    test.setTimeout(120_000);
+    const uncaught: string[] = [];
+    page.on("pageerror", (e) => uncaught.push(e.message));
+    await page.goto("http://127.0.0.1:3102/");
+    // The page's first call (the data window) already meets the sleeping host, so the whole page says so, calmly.
+    await expect(page.locator("[data-panel-error]").first()).toContainText("The API is waking up");
+    await expect(page.getByText("The API didn't answer in time")).toHaveCount(0);
+    await page.screenshot({ path: test.info().outputPath("waking.png"), fullPage: true });
 
-  const panel = (id: string) => page.locator(`section[aria-labelledby="${id}"]`);
-  await expect(panel("stock").locator("[data-panel-error]")).toContainText("can't read");
-  await expect(panel("dso").locator("[data-panel-error]")).toContainText("Retry");
-  // The neighbours still draw.
-  await expect(panel("sales").locator("[data-panel-error]")).toHaveCount(0);
-  await expect(panel("sales").locator(".cp-plot svg")).toHaveCount(1);
-  await expect(page.getByRole("heading", { name: "Stock-out and overstock by region" })).toBeVisible();
-  expect(uncaught).toEqual([]);
-  await page.screenshot({ path: test.info().outputPath("degraded.png"), fullPage: true });
+    asleep = false; // the API is up: no click, the page retries by itself
+    const sales = page.locator('section[aria-labelledby="sales"]');
+    await expect(sales.locator(".cp-plot svg")).toHaveCount(1, { timeout: 90_000 });
+    await expect(sales.locator("[data-panel-error]")).toHaveCount(0);
+    expect(uncaught).toEqual([]);
+  });
 });

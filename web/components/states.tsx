@@ -1,6 +1,7 @@
 import { Database, Hourglass, PlugsConnected, Warning, WarningOctagon } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import type { ApiError } from "@/lib/api";
+import { AutoRefresh } from "./auto-refresh";
 import { RetryButton } from "./retry-button";
 import { cx, ICON } from "./ui";
 
@@ -12,6 +13,13 @@ export function describeError(error: ApiError): { title: string; body: string; i
       title: "Can't reach the ChannelPulse API",
       body: "The dashboard couldn't connect to the API server. Check that it's running, then retry. The address it tried is under Technical detail.",
       icon: icon(PlugsConnected),
+    };
+  }
+  if (error.kind === "waking") {
+    return {
+      title: "The API is waking up",
+      body: "The demo's API sleeps after 15 idle minutes on its free plan and takes about a minute to start. This panel retries on its own.",
+      icon: icon(Hourglass),
     };
   }
   if (error.kind === "timeout") {
@@ -77,6 +85,7 @@ export function FailureMessage({
   body,
   actions,
   compact = false,
+  calm = false,
   className,
 }: {
   icon: ReactNode;
@@ -84,12 +93,14 @@ export function FailureMessage({
   body: ReactNode;
   actions: ReactNode;
   compact?: boolean;
+  /** An expected, self-resolving state (the API waking up): neutral, not the danger colour. */
+  calm?: boolean;
   className?: string;
 }) {
   return (
     <div role="status" data-panel-error="" className={cx("flex flex-col items-start gap-3 text-left", compact ? "py-2" : "py-8", className)}>
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-danger">{icon}</span>
+        <span className={cx("mt-0.5", calm ? "text-muted" : "text-danger")}>{icon}</span>
         <div className="max-w-[60ch]">
           <p className="text-[15px]/6 font-medium text-ink">{title}</p>
           <p className="mt-1 text-sm text-muted">{body}</p>
@@ -108,9 +119,11 @@ export function ErrorState({ error, compact = false, className }: { error: ApiEr
       title={title}
       body={body}
       compact={compact}
+      calm={error.kind === "waking"}
       className={className}
       actions={
         <>
+          {error.kind === "waking" ? <AutoRefresh /> : null}
           <RetryButton />
           <ErrorDetail error={error} />
         </>

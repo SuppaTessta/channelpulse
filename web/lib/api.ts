@@ -29,7 +29,7 @@ export type Metric = {
   dimensions: string[];
   glossary: boolean;
 };
-export type ApiError = { kind: "unreachable" | "timeout" | "http" | "empty" | "shape"; status?: number; detail: string; endpoint: string };
+export type ApiError = { kind: "unreachable" | "timeout" | "waking" | "http" | "empty" | "shape"; status?: number; detail: string; endpoint: string };
 export type Result<T> = { ok: true; value: T } | { ok: false; error: ApiError };
 /** A governed query together with the request that produced it, for the Definition and SQL disclosure. */
 export type Query = { request: MetricQuery; region: Region; result: Governed };
@@ -39,6 +39,19 @@ const TIMEOUT_MS = 20_000;
 // Server-side calls may use a different base than the browser's baked-in NEXT_PUBLIC_API_URL: read at run time, so
 // one build can be pointed elsewhere (the smoke test's fault-injection proxy, or a private URL in deployment).
 const SERVER_API_URL = (process.env.CHANNELPULSE_API_URL || API_URL).replace(/\/+$/, "");
+
+// A free Render service sleeps after 15 idle minutes and takes about a minute to wake (D49). Meanwhile its proxy
+// times out, refuses, or answers with an HTML page (a loading page, or a 502-504) where the API always sends JSON.
+// That is "waking", not a failure. The first such answer marks the API as waking for WAKING_MS, so the rest of the
+// page's calls don't each wait out a timeout.
+const COLD_STARTS = process.env.CHANNELPULSE_API_COLD_STARTS === "1" || /\.onrender\.com$/.test(new URL(SERVER_API_URL).hostname);
+const WAKING_MS = 20_000;
+let wakingUntil = 0;
+
+function waking<T>(endpoint: string, detail: string): Result<T> {
+  wakingUntil = Date.now() + WAKING_MS;
+  return { ok: false, error: { kind: "waking", detail, endpoint } };
+}
 
 type Check<T> = (value: unknown) => value is T;
 /** fetch options, plus a longer time limit for the few endpoints that run many queries per call (the brief). */
@@ -105,12 +118,16 @@ function callOnce<T>(endpoint: string, init: Init, region: Region, check: Check<
 }
 
 async function send<T>(endpoint: string, { timeoutMs = TIMEOUT_MS, headers, ...init }: Init, region: Region, check: Check<T>): Promise<Result<T>> {
+  // Skipped calls don't extend the window: only a real answer from the sleeping host does.
+  if (COLD_STARTS && Date.now() < wakingUntil) return { ok: false, error: { kind: "waking", detail: "The API was still waking up a moment ago.", endpoint } };
   try {
     const res = await fetch(`${SERVER_API_URL}${endpoint}`, {
       ...init,
       headers: { "Content-Type": "application/json", "X-Demo-Region": region, ...headers },
       signal: AbortSignal.timeout(timeoutMs),
     });
+    const fromApi = (res.headers.get("content-type") ?? "").includes("json");
+    if (COLD_STARTS && !fromApi && (res.ok || res.status >= 502)) return waking(endpoint, `HTTP ${res.status} from the host, not the API.`);
     if (!res.ok) return { ok: false, error: { kind: "http", status: res.status, detail: await errorDetail(res), endpoint } };
     const body: unknown = await res.json().catch(() => undefined);
     if (!check(body)) {
@@ -120,6 +137,7 @@ async function send<T>(endpoint: string, { timeoutMs = TIMEOUT_MS, headers, ...i
   } catch (e) {
     const timedOut = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
     const cause = (e as { cause?: { code?: string } })?.cause?.code;
+    if (COLD_STARTS) return waking(endpoint, timedOut ? `No response within ${timeoutMs / 1000} seconds.` : `Couldn't connect${cause ? ` (${cause})` : ""}.`);
     return {
       ok: false,
       error: {

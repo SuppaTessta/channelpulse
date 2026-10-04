@@ -39,11 +39,17 @@ jobs:
       - run: python -m venv .venv && .venv/bin/python -m pip install -q -r requirements.txt
       - name: Generate through yesterday (IST)
         run: .venv/bin/python generator/generate.py --as-of "$(TZ=Asia/Kolkata date -d yesterday +%F)"
-      - name: Build the warehouse (deployed copy keeps 60 days of daily channel-inventory detail, decisions D24)
-        run: |
-          .venv/bin/dbt build --no-partial-parse --project-dir warehouse --profiles-dir warehouse \
-            --vars '{"inventory_history_days": 60}'
+      - name: Build the warehouse on full history
+        run: .venv/bin/dbt build --no-partial-parse --project-dir warehouse --profiles-dir warehouse
       - run: .venv/bin/python -m detectors.run
+      # The deployed copy keeps 60 days of the daily channel-inventory detail (decisions D24, D49). It is trimmed
+      # here, after every model that reads it (the weekly inventory mart, the stuffing follow-through) was built on
+      # full history, so only the detail table itself is shortened.
+      - name: Trim the daily inventory detail to 60 days for publishing
+        run: |
+          docker run --rm --network host -e PGPASSWORD=channelpulse postgres:17-alpine \
+            psql -h 127.0.0.1 -U channelpulse -d channelpulse -v ON_ERROR_STOP=1 -c \
+            "delete from marts.fct_channel_inventory_daily where date_day <= (select max(date_day) from marts.dim_date) - 60"
       - name: Publish marts to Supabase
         if: env.SUPABASE_DB_URL != ''
         run: |

@@ -90,7 +90,3 @@ select
     r.stock_units / r.avg_daily_secondary_units > {{ var('dos_overstock_above') }} as is_overstock
 from rated as r
 where (r.stock_units <> 0 or r.avg_daily_secondary_units is not null)
-{%- if var('inventory_history_days', none) %}
-    -- deployed copy only (decisions D24): keep the trailing window; local and CI builds keep full history
-    and r.date_day > (select as_of_date from {{ ref('stg_generation_run') }}) - {{ var('inventory_history_days') }}
-{%- endif %}

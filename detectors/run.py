@@ -7,7 +7,7 @@ Interpretations of rules the spec leaves open are listed in detectors/README.md.
 """
 
 import json
-import os
+import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -17,6 +17,9 @@ import psycopg
 import yaml
 from psycopg.types.json import Jsonb
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "api"))
+
+from app.db import db_conninfo
 from detectors.stats import (
     bonferroni_alpha,
     bucket_unit_days,
@@ -41,15 +44,6 @@ CUSUM_FIRST_MONTH = 17
 
 COLUMNS = ("detector", "entity_type", "entity_id", "failure_mode", "region", "snapshot_date", "first_flag_date",
            "effect_size", "p_value", "details")
-
-
-def connect() -> psycopg.Connection:
-    env = os.environ.get
-    return psycopg.connect(
-        host=env("POSTGRES_HOST", "127.0.0.1"), port=env("POSTGRES_PORT", "5432"),
-        user=env("POSTGRES_USER", "channelpulse"), password=env("POSTGRES_PASSWORD", "channelpulse"),
-        dbname=env("POSTGRES_DB", "channelpulse"), connect_timeout=10, autocommit=True,
-    )
 
 
 def fetch(conn, sql: str, params=None) -> list[tuple]:
@@ -381,7 +375,7 @@ def lead_times(lot_flags, alarms, as_of):
 
 def main():
     started = time.perf_counter()
-    with connect() as conn:
+    with psycopg.connect(db_conninfo(), connect_timeout=10, autocommit=True) as conn:
         as_of = fetch(conn, "select as_of_date from raw.generation_run order by generated_at desc limit 1")[0][0]
         snaps = sundays(SPEC["point_in_time"]["first_snapshot"], as_of)
         origin = WINDOW_START

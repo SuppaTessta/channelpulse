@@ -15,7 +15,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import re
 import statistics
 import subprocess
@@ -28,6 +27,11 @@ import psycopg
 import yaml
 
 HERE = Path(__file__).resolve().parent
+# The API's admin connection; the generate.py subprocesses inherit the same environment and connect the same way.
+sys.path.insert(0, str(HERE.parent / "api"))
+
+from app.db import db_conninfo
+
 GT = yaml.safe_load((HERE / "ground_truth.yaml").read_text(encoding="utf-8"))
 CFG = yaml.safe_load((HERE / "config.yaml").read_text(encoding="utf-8"))
 DETECTORS = yaml.safe_load((HERE.parent / "detectors" / "detectors.yaml").read_text(encoding="utf-8"))
@@ -51,13 +55,6 @@ SCHEMAS = {
     "raw_cf_installer_decoy": ["--disable", "installer_decoy"],
     "raw_repeat": [],
     "raw_asof": ["--as-of", AS_OF_ALT.isoformat()],
-}
-PG = {
-    "host": os.environ.get("POSTGRES_HOST", "127.0.0.1"),  # not localhost: IPv6-first stalls on Windows
-    "port": os.environ.get("POSTGRES_PORT", "5432"),
-    "user": os.environ.get("POSTGRES_USER", "channelpulse"),
-    "password": os.environ.get("POSTGRES_PASSWORD", "channelpulse"),
-    "dbname": os.environ.get("POSTGRES_DB", "channelpulse"),
 }
 TELL_WORDS = ["bad", "defect", "anomal", "decoy", "stuff", "churn", "fraud", "planted", "fake", "synthetic", "inject",
               "dummy", "suspicious", "outlier", "faulty", "contaminat", "recall", "counterfactual", "hazard", "multiplier",
@@ -141,8 +138,6 @@ def columns(db, table, exclude=()):
 # ---------------------------------------------------------------- generation
 
 def ensure_schemas(db, regenerate):
-    env = {**os.environ, "POSTGRES_HOST": PG["host"], "POSTGRES_PORT": PG["port"], "POSTGRES_USER": PG["user"],
-           "POSTGRES_PASSWORD": PG["password"], "POSTGRES_DB": PG["dbname"]}
     log = {}
     for s, args in SCHEMAS.items():
         if schema_ready(db, s) and (s == "raw" or not regenerate):
@@ -151,7 +146,7 @@ def ensure_schemas(db, regenerate):
         print(f"generating {s} {' '.join(args)} ...", flush=True)
         t0 = time.perf_counter()
         cmd = [sys.executable, str(HERE / "generate.py"), "--schema", s, *args]
-        proc = subprocess.run(cmd, env=env, capture_output=True, text=True, check=False)
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if proc.returncode:
             sys.exit(f"generation of {s} failed ({proc.returncode}):\n{proc.stdout[-2000:]}\n{proc.stderr[-2000:]}")
         log[s] = {"generated_this_run": True, "seconds": round(time.perf_counter() - t0, 1)}
@@ -1038,7 +1033,7 @@ def main():
     ap.add_argument("--checks", default="", help="comma-separated check groups to run, e.g. G1,R2 (default: all)")
     args = ap.parse_args()
     t0 = time.perf_counter()
-    with psycopg.connect(**PG, autocommit=True) as db:
+    with psycopg.connect(db_conninfo(), autocommit=True) as db:
         gen = ensure_schemas(db, args.regenerate)
         t_gen = time.perf_counter() - t0
         results, timings = run_checks(db, {c.strip() for c in args.checks.split(",") if c.strip()})

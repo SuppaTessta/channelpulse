@@ -1,24 +1,18 @@
 """Load raw tables into Postgres: one transaction (drop, create, schema.sql, COPY, run row), then ANALYZE."""
 
-import os
 import re
+import sys
 from pathlib import Path
 
 import psycopg
 from psycopg import sql
-from psycopg.conninfo import make_conninfo
+
+# The API's admin connection: DATABASE_URL, else the POSTGRES_* vars and defaults of warehouse/profiles.yml.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "api"))
+
+from app.db import db_conninfo
 
 SCHEMA_SQL = Path(__file__).with_name("schema.sql")
-
-
-def conninfo() -> str:
-    """DATABASE_URL wins; otherwise the same POSTGRES_* vars and defaults as warehouse/profiles.yml (as api/app/main.py)."""
-    if url := os.environ.get("DATABASE_URL"):
-        return url
-    env = os.environ.get
-    return make_conninfo(host=env("POSTGRES_HOST", "localhost"), port=env("POSTGRES_PORT", "5432"),
-                         user=env("POSTGRES_USER", "channelpulse"), password=env("POSTGRES_PASSWORD", "channelpulse"),
-                         dbname=env("POSTGRES_DB", "channelpulse"))
 
 
 def tsv(columns: dict) -> str:
@@ -33,7 +27,7 @@ def load(tables: dict, schema: str, as_of, anchor_date, seed: int) -> int:
         raise ValueError(f"invalid schema name: {schema!r}")
     ddl = re.sub(r"\braw\.", f"{schema}.", SCHEMA_SQL.read_text(encoding="utf-8"))
     ident = sql.Identifier(schema)
-    with psycopg.connect(conninfo()) as conn:
+    with psycopg.connect(db_conninfo()) as conn:
         with conn.transaction():
             conn.execute(sql.SQL("drop schema if exists {} cascade").format(ident))
             conn.execute(sql.SQL("create schema {}").format(ident))

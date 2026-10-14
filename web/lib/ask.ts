@@ -1,10 +1,11 @@
 // POST /api/ask: response types and the chart built from chart_spec, checked against the returned columns.
-// No React or server imports: the Ask panel (client) and the dev fixture story both use it.
+// No React or server imports: the Ask panel (client) uses it.
 import type { BarSeries } from "@/components/charts/bar-list";
 import type { Bucket, ChartSeries } from "@/components/charts/time-chart";
 import { toISODate, weekStart } from "./dates";
-import { fmtDate, fmtDayMonth, fmtMonth, fmtMonthShort, type Kind } from "./format";
+import type { Kind } from "./format";
 import { metricKind } from "./metrics";
+import { bucketText } from "./series";
 import { num, type Table } from "./table";
 
 export type AskLabel = "governed_metric" | "ad_hoc_sql_verify" | "refused" | "needs_clarification";
@@ -30,7 +31,7 @@ export type Recording = {
   git_commit: string | null;
   count: number;
 };
-export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; provider: string; model: string | null; recording: Recording | null };
+export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; model: string | null; recording: Recording | null };
 export type ReplayAnswer = {
   id: string;
   category: string;
@@ -52,21 +53,8 @@ const MAX_SERIES = 8;
 const MAX_CATEGORIES = 30;
 
 function dateBuckets(dates: string[]): { buckets: Bucket[]; grain: string } {
-  const monthly = dates.every((d) => d.endsWith("-01"));
-  const weekly = !monthly && dates.every((d) => weekStart(d) === d);
-  return {
-    grain: monthly ? "month" : weekly ? "week" : "day",
-    buckets: dates.map((d) => ({
-      start: d,
-      end: d,
-      year: d.slice(0, 4),
-      partial: null,
-      provisional: false,
-      label: monthly ? fmtMonth(d) : weekly ? `Week of ${fmtDate(d)}` : fmtDate(d),
-      tick: monthly ? fmtMonthShort(d) : fmtDayMonth(d),
-      tickYear: monthly ? fmtMonth(d) : `${fmtDayMonth(d)} ${d.slice(0, 4)}`,
-    })),
-  };
+  const grain = dates.every((d) => d.endsWith("-01")) ? "month" : dates.every((d) => weekStart(d) === d) ? "week" : "day";
+  return { grain, buckets: dates.map((d) => ({ start: d, end: d, year: d.slice(0, 4), partial: null, provisional: false, ...bucketText(grain, d) })) };
 }
 
 /**

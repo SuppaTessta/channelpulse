@@ -187,7 +187,7 @@ Superseded on the model by D50.
   - `GET /api/ask/replay` serves the configured model's recording, or else the newest.
   - Answers are withheld under any region claim other than the one they were recorded with (the eval asks as ALL), because they could show rows that claim may not see.
   - The Ask page shows replay whenever it isn't live, with the verdict on every answer, including wrong ones, shown as recorded. Before any recording exists it shows an honest empty state.
-  - Fixtures for the replay view live only in the dev-only story `web/app/dev/replay-fixture`, and are never written to `recordings/`.
+  - Replay fixtures are never written to `recordings/`. (The dev-only story page that showed them was removed in the 2026-10-14 cleanup.)
 - **`make eval` spends only on a yes:** it prints an estimate before any model call and waits for a typed yes. `YES=1` (`--yes`) skips the question. A non-interactive run without it stops with exit 3.
   - The estimate is the measured mean cost of a previous run of the same model, or else a token profile (4 calls, a 14k cached prefix, 3k fresh input and 1.5k output per call) at list prices, both with a 25% margin.
   - Windows reports `NUL` as a terminal, so end-of-input also counts as no.

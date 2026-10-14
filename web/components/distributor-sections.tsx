@@ -2,7 +2,7 @@ import { WarningDiamond } from "@phosphor-icons/react/dist/ssr";
 import { query, queryAll, type Anomaly, type DataWindow, type Filter, type Metric, type Result } from "@/lib/api";
 import type { Region } from "@/lib/config";
 import { fmtDate, fmtRange, formatValue } from "@/lib/format";
-import { fallbackMetric, metricKind, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
+import { metricKind, metricOf, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
 import type { Period } from "@/lib/params";
 import { alignSeries, coverageText, timeBuckets } from "@/lib/series";
 import { num, records, scalar, str } from "@/lib/table";
@@ -15,9 +15,8 @@ import { EmptyState, ErrorState } from "./states";
 import { Badge, Figure, ICON } from "./ui";
 
 type Ctx = { period: Period; win: DataWindow; region: Region; catalog: Result<Record<string, Metric>>; filters: Filter[] };
-const metricOf = (catalog: Ctx["catalog"], name: string) => (catalog.ok ? catalog.value[name] : undefined) ?? fallbackMetric(name);
 
-export const HEALTH = "distributor_health_score";
+const HEALTH = "distributor_health_score";
 const COMPONENTS = ["health_secondary_trend_score", "health_gap_score", "health_stock_score", "health_dso_score", "health_visit_score"];
 
 /** The at-risk score line, read from the governed at_risk_distributors definition ("score < 30 ..."), if it states one. */

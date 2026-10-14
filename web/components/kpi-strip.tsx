@@ -11,7 +11,7 @@ import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { Sparkline } from "./sparkline";
 import { describeError, ErrorState } from "./states";
-import { cx, Figure, ICON, Sheet, Skeleton } from "./ui";
+import { cx, Figure, ICON, Sheet, Skeleton, TYPE } from "./ui";
 
 const KPI_METRICS = ["primary_sales_value", "secondary_sales_value", "channel_days_of_stock", "claims_per_1000_units", "dso"];
 
@@ -82,7 +82,7 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
       {head}
       <div className="grid grid-cols-[1fr_minmax(96px,38%)] items-end gap-x-4 gap-y-3 md:grid-cols-1">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <Figure text={formatValue(kind, value)} className="text-[28px]/9 font-semibold tracking-[-0.03em] text-ink md:text-[32px]/10" />
+          <Figure text={formatValue(kind, value)} className={TYPE.figureHero} />
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
             {delta ? (
               <span className={cx("inline-flex items-center gap-0.5 font-semibold", tone)}>

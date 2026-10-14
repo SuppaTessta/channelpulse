@@ -8,7 +8,7 @@ import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { MobileNav } from "./nav";
 import { ParamSelect } from "./param-select";
-import { ICON } from "./ui";
+import { cx, ICON, TYPE } from "./ui";
 
 function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<Record<string, Metric>> }) {
   if (!win.ok) return <p className="text-xs text-muted">Data as of: unavailable</p>;
@@ -74,7 +74,7 @@ export function TopBar({
         <MobileNav />
         <div className="min-w-0 flex-1 py-1">
           {children ? <div className="text-xs text-muted">{children}</div> : null}
-          <h1 className="truncate text-[17px]/6 font-semibold tracking-[-0.015em] text-ink md:text-xl/7">{title}</h1>
+          <h1 className={cx(TYPE.pageTitle, "truncate")}>{title}</h1>
         </div>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-5 gap-y-1 lg:w-auto lg:flex-nowrap lg:justify-end">
           <ParamSelect

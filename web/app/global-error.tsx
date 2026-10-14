@@ -1,7 +1,10 @@
 "use client";
 
-import { GeistSans } from "geist/font/sans";
+import { Newsreader, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+
+const display = Newsreader({ subsets: ["latin", "latin-ext"], axes: ["opsz"], variable: "--font-newsreader", display: "swap" });
+const sans = Plus_Jakarta_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-jakarta", display: "swap" });
 
 /**
  * Last line of defence: a failure in the root layout itself (the rail, the providers). It replaces the layout, so it
@@ -10,7 +13,7 @@ import "./globals.css";
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const stale = error.name === "ChunkLoadError" || /loading (css )?chunk/i.test(error.message);
   return (
-    <html lang="en-IN" className={GeistSans.variable}>
+    <html lang="en-IN" data-theme="dark" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-dvh bg-canvas font-sans text-ink">
         <main className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
           <section role="alert" data-panel-error="" className="max-w-[68ch] rounded-panel border border-line bg-surface p-5">

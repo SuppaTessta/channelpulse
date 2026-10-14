@@ -50,3 +50,19 @@ for (const theme of ["dark", "light"] as const) {
     expect(failures).toEqual([]);
   });
 }
+
+test("the three families load, and the title and KPI figures are set in the display serif", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  const loaded = await page.evaluate(async () => {
+    await document.fonts.ready;
+    return [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family);
+  });
+  for (const family of ["Newsreader", "Plus Jakarta Sans", "JetBrains Mono"]) {
+    expect(loaded.some((f) => f.includes(family)), `${family} loaded`).toBe(true);
+  }
+  const titleFont = await page.locator("h1").first().evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(titleFont).toContain("Newsreader");
+  const figureFont = await page.locator("[data-figure]").first().evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(figureFont).toContain("Newsreader");
+});

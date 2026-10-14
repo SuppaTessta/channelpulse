@@ -5,6 +5,19 @@ export const cx = (...parts: (string | false | null | undefined)[]) => parts.fil
 /** One stroke weight for every Phosphor icon (DESIGN.md): the precise light line (high-end-visual-design). */
 export const ICON = { weight: "light" } as const;
 
+/** The type scale (DESIGN.md): Newsreader for titles and figures, Plus Jakarta Sans for the interface. */
+export const TYPE = {
+  pageTitle: "font-display text-[30px]/9 font-normal tracking-[-0.02em] text-ink md:text-[40px]/[46px]",
+  panelTitle: "font-display text-[19px]/7 font-medium tracking-[-0.01em] text-ink",
+  stateTitle: "font-display text-[22px]/7 font-normal tracking-[-0.01em] text-ink",
+  question: "font-display text-[22px]/8 font-normal tracking-[-0.01em] text-pretty text-ink",
+  subhead: "text-[13px]/5 font-semibold text-ink",
+  figureHero: "font-display text-[36px]/10 font-normal tracking-[-0.025em] text-ink md:text-[42px]/[46px]",
+  figureLg: "font-display text-[30px]/9 font-normal tracking-[-0.02em] text-ink",
+  figureMd: "font-display text-[24px]/8 font-normal tracking-[-0.015em]",
+  micro: "text-[10.5px]/4 font-semibold uppercase tracking-[0.12em] text-subtle",
+} as const;
+
 const BUTTON_BASE =
   "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control font-medium " +
   "transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:translate-y-px " +
@@ -69,10 +82,10 @@ export function Figure({ text, className }: { text: string; className?: string }
   if (!m) return <span className={cx(className, "text-muted")}>{text}</span>;
   const [, currency, digits, unit] = m;
   return (
-    <span className={cx("tabular-nums", className)}>
-      {currency ? <span className="mr-[0.06em] text-[0.8em] font-medium text-muted">{currency}</span> : null}
+    <span data-figure="" className={cx("tabular-nums", className)}>
+      {currency ? <span className="mr-[0.08em] align-[0.12em] text-[0.62em] font-medium text-muted">{currency}</span> : null}
       {digits}
-      {unit ? <span className={cx("text-[0.6em] font-medium tracking-normal text-muted", unit === "%" || unit === "×" ? "ml-[0.04em]" : "ml-[0.22em]")}>{unit}</span> : null}
+      {unit ? <span className={cx("text-[0.5em] font-medium tracking-normal text-muted", unit === "%" || unit === "×" ? "ml-[0.04em]" : "ml-[0.22em]")}>{unit}</span> : null}
     </span>
   );
 }

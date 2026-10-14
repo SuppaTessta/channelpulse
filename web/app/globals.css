@@ -152,8 +152,9 @@
   --color-refused-edge: var(--refused-edge);
   --color-refused-soft: var(--refused-soft);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-control: 6px;
   --radius-panel: 10px;
@@ -176,7 +177,8 @@
   }
   body {
     font-size: 14px;
-    line-height: 20px;
+    line-height: 21px;
+    letter-spacing: -0.003em;
     /* DESIGN.md: every figure uses tabular-nums. */
     font-variant-numeric: tabular-nums;
   }
@@ -212,6 +214,11 @@
   h2,
   h3 {
     text-wrap: balance;
+  }
+  /* Newsreader figures line up in columns and count without jitter (DESIGN.md type). */
+  .font-display {
+    font-variant-numeric: lining-nums tabular-nums;
+    font-optical-sizing: auto;
   }
 }
 

@@ -38,7 +38,7 @@ export function niceScale(values: number[], count = 4, fixed?: [number, number],
   return { domain: [lo, hi], ticks };
 }
 
-/** Pixel width of a tick label in 12px Geist, near enough to size the margin that holds it. */
+/** Pixel width of a tick label in 12px Plus Jakarta Sans, near enough to size the margin that holds it. */
 export const labelWidth = (text: string) => Math.ceil(text.length * 7.1);
 
 /** Measures the container and re-renders on resize; charts redraw at the real width, never a scaled SVG. */

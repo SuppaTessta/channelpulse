@@ -10,15 +10,15 @@ env = os.environ.get
 MODEL = env("CHANNELPULSE_MODEL", "claude-sonnet-5-5")
 EFFORT = env("CHANNELPULSE_EFFORT", "medium")
 MAX_TOKENS = 16_000
-MAX_TOOL_ROUNDS = int(env("AGENT_MAX_TOOL_ROUNDS", "8"))
-AGENT_TIMEOUT_S = float(env("AGENT_TIMEOUT_S", "120"))
+MAX_TOOL_ROUNDS = 8
+AGENT_TIMEOUT_S = 120.0
 
-ROW_CAP = int(env("AGENT_ROW_CAP", "500"))  # rows any query returns; the API response carries all of them
+ROW_CAP = 500  # rows any query returns; the API response carries all of them
 MODEL_ROWS = 50  # rows of each tool result shown to the model
-STATEMENT_TIMEOUT_MS = int(env("AGENT_STATEMENT_TIMEOUT_MS", "10000"))
+STATEMENT_TIMEOUT_MS = 10_000
 
 ASK_RATE_PER_MIN = float(env("ASK_RATE_PER_MIN", "6"))
-ASK_RATE_BURST = int(env("ASK_RATE_BURST", "3"))
+ASK_RATE_BURST = 3
 TRUST_PROXY = env("TRUST_PROXY") == "1"
 # Sale dates newer than this are still filling in (decisions D12; dbt var secondary_horizon_days).
 PROVISIONAL_DAYS = 17

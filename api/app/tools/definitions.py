@@ -3,6 +3,8 @@
 from app import config
 from app.semantic import FILTER_OPS
 
+DETECTORS = ("lot_scan", "installer_scan", "stuffing", "distributor_health")
+
 
 def _object(properties: dict) -> dict:
     return {"type": "object", "properties": properties, "required": list(properties), "additionalProperties": False}
@@ -111,7 +113,7 @@ _TOOLS = [
             }),
             "detector": _nullable({
                 "type": "string",
-                "enum": ["lot_scan", "installer_scan", "stuffing", "distributor_health"],
+                "enum": list(DETECTORS),
                 "description": "Only this detector's flags; null for all four.",
             }),
             "failure_mode": _nullable({

@@ -19,6 +19,7 @@ from app.guardrails.rate_limit import enforce_spend_cap, limit_ask_rate
 from app.guardrails.readonly_db import QueryError
 from app.guardrails.region import ALL_REGIONS, REGIONS, region_claim
 from app.tools import handlers
+from app.tools.definitions import DETECTORS
 
 log = logging.getLogger("channelpulse.api")
 
@@ -113,7 +114,7 @@ def query_metric(body: MetricQuery, region: Region) -> dict:
     return _governed(handlers.query_metric, body.model_dump(mode="json"), region)
 
 
-Detector = Literal["lot_scan", "installer_scan", "stuffing", "distributor_health"]
+Detector = Literal[DETECTORS]
 
 
 @app.get("/api/anomalies", response_model=GovernedResult)

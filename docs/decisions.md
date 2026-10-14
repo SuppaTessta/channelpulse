@@ -413,6 +413,16 @@ Superseded on the model by D50.
 - **Replay** serves the configured model's recording (Sonnet 5.5 by default); Haiku 5.5's is shipped too.
 - **Not changed after seeing the results:** no rubric, golden answer or prompt. Governed mode's ambiguity gap is the next thing to fix, and it goes through the owner first.
 
+**D52. Second cleanup pass: everything the review and audit found, by tier (owner decision, 2026-10-14).**
+- **Inputs:** a ponytail review of the Claude-only change, a ponytail audit of the whole repo, and the codebase-cleanup method. The baseline was clean: 800 tests, ruff and eslint with no warnings, dbt parse and the web build.
+- **Deleted:** the dev-only story pages under `web/app/dev/` (owner's call) and `web/lib/check.mjs`, which nothing ran and which no longer ran.
+- **Removed as dead:** single-provider leftovers (the Provider Protocol, fence stripping, the status response's constant `provider`), write-only fields, the web's branches for response shapes the API never sends, eval flags and scorecard keys nothing used, and five settings read from the environment but set nowhere.
+- **Consolidated:** one Postgres connection definition (`app.db.db_conninfo`), one role-password mapping, one percent formatter, one `metricOf`, one bucket-label formatter, the detector names, and the text the two system prompts repeated (byte-identical afterwards). `compile_query` returns the SQL.
+- **Replaced:** the detectors' incomplete-gamma code with a short pmf sum (`math.lgamma`), within the tests' 1e-12 tolerance.
+- **Fixed on the way:** the trace drawer's failed-call count never showed, and `generator/load.py` defaulted to `localhost`.
+- **Kept:** `toDefMetric`, because passing a whole `Metric` to the client-side definition drawer would ship its dimensions to the browser; the two `month_add` copies, because merging them would couple the black-box acceptance suite to the detectors; `/api/meta`, which the smoke test uses to detect a stale API process (D28).
+- **Verified:** after each change. At the end: 800 tests, ruff, eslint, typecheck, dbt parse and the production build, plus the Ask, traces and brief pages against the live API.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

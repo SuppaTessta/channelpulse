@@ -1,7 +1,7 @@
 """Golden-set eval of the Ask agent (PLAN §10). Writes evals/results/latest.json and prints a markdown scorecard.
 
-    python evals/run_eval.py [--provider gemini|ollama|anthropic] [--mode governed|raw] [--model M] [--effort E]
-                             [--limit N] [--only SL01,MH02] [--fresh] [--budget-usd 5] [--yes] [--require-llm]
+    python evals/run_eval.py [--mode governed|raw] [--model M] [--effort E] [--limit N] [--only SL01,MH02]
+                             [--fresh] [--budget-usd 5] [--yes] [--require-llm]
 
 1. Validates the question set and computes every golden answer from its hand-written SQL on marts.* (read-only),
    failing loudly on any error. Golden answers never come from the agent or the generator's answer key.
@@ -10,19 +10,17 @@
    without --yes stops there). Then asks each question in-process through run_agent with region ALL, stopping once
    --budget-usd is spent, and scores the answers (evals/scoring.py). Everything but the model is deterministic.
 4. A complete governed run over the whole set also records every answer as served, for the Ask page's replay mode
-   (api/app/recordings/<provider>__<model>.json, decisions D29).
+   (api/app/recordings/anthropic__<model>.json, decisions D29).
 
-Runs are resumable (decisions D32): each (provider, mode, model) run keeps its progress in
-evals/results/runs/<provider>__<mode>__<model>.json, saved after every question. A run stops (exit 4) instead of
-scoring anything when the day's quota is spent or the server stays unreachable, and the next invocation picks up at
-the first unanswered question. --fresh starts over. Raw mode is the text-to-SQL baseline: only run_readonly_sql and
-the mart schema.
+Runs are resumable: each (mode, model) run keeps its progress in evals/results/runs/anthropic__<mode>__<model>.json,
+saved after every question. A run stops (exit 4) instead of scoring anything when the API is unreachable, overloaded,
+rate-limited or out of credit, and the next invocation picks up at the first unanswered question (decisions D50).
+--fresh starts over. Raw mode is the text-to-SQL baseline: only run_readonly_sql and the mart schema.
 """
 
 import argparse
 import datetime as dt
 import json
-import os
 import re
 import subprocess
 import sys
@@ -38,22 +36,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / "api")]
 
 from app import config
-from app.agent.providers import ProviderError, ollama_show
+from app.agent.providers import ProviderError
 from app.db import db_conninfo
 from app.guardrails.readonly_db import json_safe
 from app.guardrails.sql_validator import validate
 from evals import scoring
-from evals.throttle import Limits, RunPaused, ThrottledProvider
 
 QUESTIONS = ROOT / "evals" / "questions.yaml"
 RESULTS = ROOT / "evals" / "results" / "latest.json"
 RECORDINGS = ROOT / "api" / "app" / "recordings"
 RUNS = ROOT / "evals" / "results" / "runs"
-# Gemini free-tier quota for the owner's key on gemini-3.5-flash-lite (AI Studio, Rate limits, 2026-09-29); the
-# throttle keeps to 80% of these (D33). GEMINI_RPM / GEMINI_TPM / GEMINI_RPD in .env override them.
-GEMINI_QUOTA_DEFAULTS = {"GEMINI_RPM": 15, "GEMINI_TPM": 250_000, "GEMINI_RPD": 500}
-# Whole-question time budgets: one request at a time on a 27B model over a tunnel is slow (D32).
-AGENT_TIMEOUTS = {"gemini": 300, "ollama": 1800, "anthropic": 120}
 CATEGORIES = ("simple_lookup", "filtered_grouped", "time_comparison", "multi_hop_why", "trap", scoring.CLARIFY)
 MIN_PER_CATEGORY = 12
 MIN_QUESTIONS = 100
@@ -77,6 +69,19 @@ ESTIMATE_MARGIN = 1.25
 
 class GoldenError(Exception):
     pass
+
+
+class RunPaused(Exception):
+    """Stop the run here; progress is saved and the run resumes where it stopped."""
+
+
+def service_failure(e: Exception) -> bool:
+    """The API or the account failed, not the model: unreachable, rate-limited, overloaded (5xx, 529) or out of
+    credit. Scoring that as a wrong answer would grade the service, so the run pauses instead."""
+    if isinstance(e, anthropic.APIConnectionError):
+        return True
+    return isinstance(e, anthropic.APIStatusError) and (
+        e.status_code in (402, 429) or e.status_code >= 500 or "credit balance" in str(e).lower())
 
 
 # --- question set and golden answers ----------------------------------------------------------------------------
@@ -254,7 +259,6 @@ def ask_all(provider, questions: list[dict], goldens: dict, budget_usd: float, *
 
     tools, system = (RAW_TOOLS, prompt.raw_system_prompt()) if mode == "raw" else (TOOLS, prompt.system_prompt())
     done = done or {}
-    stats = getattr(provider, "stats", None)
 
     # response["data"] is only the primary result, so every tool result is recorded here to score the rest of the
     # evidence (a comparison answered with one query per period).
@@ -278,13 +282,14 @@ def ask_all(provider, questions: list[dict], goldens: dict, budget_usd: float, *
                 continue
             recorded.clear()
             trace = Trace(question=q["question"], region_claim=REGION, model=provider.model, provider=provider.name)
-            before = dict(stats) if stats else {}
             asked_at = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
             started = time.monotonic()
             response = error = None
             try:
                 response = loop.run_agent(provider, q["question"], REGION, trace, tools=tools, system=system)
             except (loop.AgentError, anthropic.APIError, ProviderError) as e:  # as /api/ask does; a bug still stops
+                if service_failure(e):
+                    raise RunPaused(f"{type(e).__name__}: {e}") from e
                 error = f"{type(e).__name__}: {e}"
             latency_ms = round((time.monotonic() - started) * 1000)
             spent += trace.est_cost_usd
@@ -292,9 +297,7 @@ def ask_all(provider, questions: list[dict], goldens: dict, budget_usd: float, *
             evidence = _evidence(response, recorded)
             verdict = scoring.score_question(q, goldens.get(q["id"]), response, tools_used, evidence, mode)
             result = {**_result(q, goldens.get(q["id"]), response, trace, verdict, latency_ms, error),
-                      "provider": provider.name, "mode": mode, "asked_at": asked_at, "response": response,
-                      **{k: (stats or {}).get(k, 0) - before.get(k, 0)
-                         for k in ("requests", "infra_retries", "rate_limit_waits")}}
+                      "provider": provider.name, "mode": mode, "asked_at": asked_at, "response": response}
             results.append(result)
             if on_result:
                 on_result(result)
@@ -416,13 +419,10 @@ def _short(value) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ChannelPulse golden-set eval")
-    parser.add_argument("--provider", choices=["gemini", "ollama", "anthropic"],
-                        help="model provider (default: CHANNELPULSE_PROVIDER, else gemini)")
     parser.add_argument("--mode", choices=["governed", "raw"], default="governed",
                         help="governed: the agent as built; raw: a text-to-SQL baseline with only run_readonly_sql")
     parser.add_argument("--fresh", action="store_true", help="discard this run's saved progress and start over")
-    parser.add_argument("--model", help="model id for the chosen provider (default: CHANNELPULSE_MODEL for "
-                                         "anthropic, GEMINI_MODEL / OLLAMA_MODEL otherwise)")
+    parser.add_argument("--model", help="model id (default: CHANNELPULSE_MODEL, else claude-sonnet-5-5)")
     parser.add_argument("--effort", default=config.EFFORT, help="output effort (default: CHANNELPULSE_EFFORT)")
     parser.add_argument("--limit", type=int, help="ask only the first N selected questions")
     parser.add_argument("--only", help="comma-separated question ids")
@@ -452,16 +452,9 @@ def main(argv: list[str] | None = None) -> int:
         selected = [q for q in questions if q["id"] in wanted]
     selected = selected[: args.limit] if args.limit is not None else selected
 
-    if args.provider:
-        config.PROVIDER = args.provider
-    if args.model:  # a per-run override of the provider's own model setting
-        {"gemini": lambda: os.environ.__setitem__("GEMINI_MODEL", args.model),
-         "ollama": lambda: os.environ.__setitem__("OLLAMA_MODEL", args.model)}.get(config.PROVIDER, lambda: None)()
-    config.MODEL, config.EFFORT = (args.model if config.PROVIDER == "anthropic" and args.model else config.MODEL), args.effort
-    if "AGENT_TIMEOUT_S" not in os.environ:
-        config.AGENT_TIMEOUT_S = AGENT_TIMEOUTS.get(config.PROVIDER, config.AGENT_TIMEOUT_S)
+    config.MODEL, config.EFFORT = args.model or config.MODEL, args.effort
     meta = {
-        "provider": config.PROVIDER,
+        "provider": "anthropic",
         "mode": args.mode,
         "model": config.MODEL,
         "effort": args.effort,
@@ -477,38 +470,29 @@ def main(argv: list[str] | None = None) -> int:
     }
     provider = llm_provider()
     if provider is None:
-        reason = f"The {config.PROVIDER} provider isn't configured (no credentials or endpoint); agent not run."
+        reason = "No Anthropic credentials are configured; agent not run."
         write({"status": "not_run", "reason": reason, **meta, "goldens": goldens})
         print(f"\nnot_run: {reason}\nGolden answers are validated; results written to {RESULTS.relative_to(ROOT)}.")
         return 2 if args.require_llm else 0
 
     settings = provider.settings()
-    if provider.name == "ollama":  # what the server itself says it serves, not what we assume (D32)
-        try:
-            settings |= ollama_show(os.environ["OLLAMA_BASE_URL"], provider.model, os.environ.get("OLLAMA_API_TOKEN"))
-        except ProviderError as e:
-            print(f"Paused before any question: {e} Restart the server session, update OLLAMA_BASE_URL, and rerun.")
-            return 4
-    effort = args.effort if provider.name == "anthropic" else settings.get("reasoning_effort")
-    meta |= {"provider": provider.name, "model": provider.model, "effort": effort, "settings": settings,
-             "agent_timeout_s": config.AGENT_TIMEOUT_S}
-    if provider.name == "anthropic":  # the only paid provider: nothing is spent without a yes
-        estimate = estimate_usd(provider.model, len(selected), previous_results())
-        print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {args.effort}). "
-              f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
-        if estimate > args.budget_usd:
-            print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded "
-                  "for replay. Raise --budget-usd (make eval BUDGET=...) to ask every question.")
-        if not confirm_spend(min(estimate, args.budget_usd), args.yes):
-            print("Cancelled before any model call.")
-            return 3
+    meta |= {"model": provider.model, "settings": settings, "agent_timeout_s": config.AGENT_TIMEOUT_S}
+    # Every call is paid: nothing is spent without a yes.
+    estimate = estimate_usd(provider.model, len(selected), previous_results())
+    print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {args.effort}). "
+          f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
+    if estimate > args.budget_usd:
+        print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded "
+              "for replay. Raise --budget-usd (make eval BUDGET=...) to ask every question.")
+    if not confirm_spend(min(estimate, args.budget_usd), args.yes):
+        print("Cancelled before any model call.")
+        return 3
 
     path = RUNS / f"{run_key(provider.name, args.mode, provider.model)}.json"
     if args.fresh and path.exists():
         path.unlink()
-    progress = load_progress(path) or {"throttle_state": {}, "results": {}}
+    progress = load_progress(path) or {"results": {}}
     progress["meta"] = meta  # the latest invocation's settings; each result carries its own asked_at
-    throttled = ThrottledProvider(provider, limits_for(provider.name), progress["throttle_state"])
     done = {qid: r for qid, r in progress["results"].items() if qid in meta["selected"]}
     print(f"\n{provider.name} / {provider.model}, {args.mode} mode: {len(done)} of {len(selected)} already answered; "
           f"settings {json.dumps({k: v for k, v in settings.items()}, default=str)}")
@@ -518,7 +502,7 @@ def main(argv: list[str] | None = None) -> int:
         save_progress(path, progress)
 
     try:
-        results = ask_all(throttled, selected, goldens, args.budget_usd, mode=args.mode, done=done, on_result=save)
+        results = ask_all(provider, selected, goldens, args.budget_usd, mode=args.mode, done=done, on_result=save)
     except RunPaused as e:
         save_progress(path, progress)
         answered = sum(qid in progress["results"] for qid in meta["selected"])
@@ -549,13 +533,6 @@ def main(argv: list[str] | None = None) -> int:
 
 def run_key(provider: str, mode: str | None, model: str) -> str:
     return "__".join(part for part in (provider, mode, re.sub(r"[^A-Za-z0-9.-]+", "-", model)) if part)
-
-
-def limits_for(provider: str) -> Limits:
-    if provider != "gemini":
-        return Limits()  # Ollama is paced by one request at a time; Anthropic by the budget
-    quota = {k: int(os.environ.get(k) or default) for k, default in GEMINI_QUOTA_DEFAULTS.items()}
-    return Limits.from_quota(quota["GEMINI_RPM"], quota["GEMINI_TPM"], quota["GEMINI_RPD"])
 
 
 def load_progress(path: Path) -> dict | None:

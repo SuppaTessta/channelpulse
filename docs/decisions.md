@@ -173,11 +173,12 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
 - `web/e2e/faults.spec.ts` proves the containment against the real API. A proxy breaks two metrics, one with the wrong shape and one with HTTP 500. Exactly those panels show errors, and the rest of the page draws.
 
 **D29. The agent's model, live mode and replay (Phase 2, A3; owner-approved 2026-09-27).**
+Superseded on the model by D50.
 - **Model:** `claude-opus-5-5` by default (`CHANNELPULSE_MODEL`), with no separate routing model.
   - It was chosen from Anthropic's models and pricing pages on 2026-09-27. Opus 5.5 is the docs' recommended default, at $4 / $20 per million input/output tokens with cache reads at $0.20. The old default, `claude-opus-5`, is $5 / $25 / $0.50 and now legacy. Sonnet 5 is $2 / $10 / $0.20.
   - Haiku 4.5 was ruled out: its retirement can come as soon as 2026-10-15.
-  - A routing model was ruled out because it adds a call and a second prompt cache to every question, and the routing is already enforced in code. Part B's two-model eval shows whether a cheaper model is enough on its own.
-- **Effort:** `medium` (`CHANNELPULSE_EFFORT`). It is Opus 5.5's own API default, and Anthropic reports Opus 5.5 at `medium` beating Opus 5 at `high` on analysis work. This is a default, not a measured choice; Part B can compare levels.
+  - A routing model was ruled out because it adds a call and a second prompt cache to every question, and the routing is already enforced in code. A two-model eval shows whether a cheaper model is enough on its own.
+- **Effort:** `medium` (`CHANNELPULSE_EFFORT`). It is Opus 5.5's own API default, and Anthropic reports Opus 5.5 at `medium` beating Opus 5 at `high` on analysis work. This is a default, not a measured choice; the eval can compare levels.
 - **Compatibility:** the loop already fits Opus 5.5's breaking changes. It uses adaptive thinking and never forces `tool_choice` (only `none` on the last round). Its history is append-only, with fallback turns echoed as documented.
 - **Pricing fix:** trace costs, and so the daily spend cap, now use each model's own cache-read price. They had priced every cache read at 0.1x input, which is wrong for Opus 5.5 (0.05x).
 - **Live mode is opt-in:** `/api/ask` calls the model only when credentials resolve *and* `ASK_LIVE=1`. With either missing it answers 503 and nothing is sent. `GET /api/ask/status` says which case applies.
@@ -198,7 +199,7 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
   1. The first nightly publish must run before the API can answer, and it is also what creates the roles.
   2. Render's `CORS_ORIGINS` can only be set once the Vercel URL exists.
   3. A replay recording should be committed before deploying.
-- **The public demo starts in replay mode.** `render.yaml` pins `ASK_LIVE=0` and `CHANNELPULSE_MODEL`. Live mode needs a key *and* `ASK_LIVE=1`, and then the per-IP rate limit and the daily spend cap (00:00 UTC reset) apply to every question.
+- **The public demo starts in replay mode.** `render.yaml` pins `ASK_LIVE=0`. Live mode needs a key *and* `ASK_LIVE=1`, and then the per-IP rate limit and the daily spend cap (00:00 UTC reset) apply to every question.
 - **A model key is never a repository secret.** The README had listed it as one.
 - **A repeatable identifying-information check,** `make identity-check` (`scripts/identity_check.py`):
   - It searches tracked files at every commit, commit messages, and author and committer identities.
@@ -211,103 +212,21 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
   - The nightly republish can interrupt queries for a few seconds.
   - Vercel's function duration may need raising.
 
-**D31. A swappable model provider; Gemini by default (Phase 2, Part B as revised by the owner on 2026-09-29).**
-The owner won't pay for model usage, so the agent is evaluated on free providers: the Gemini API free tier, and Ollama serving an open-weight model on a self-hosted GPU session. The guardrails, the labelling and the semantic layer never depended on the model, and making the model swappable is how that gets proven and measured.
-- **Interface** (`api/app/agent/providers.py`): the loop sends a system prompt, a provider-neutral transcript and the tool definitions. A provider returns one `Turn`: final text, tool calls, token usage, the model that served it, and a stop reason (`tool_use`, `end_turn`, `max_tokens`, `refusal`, `pause`). Failures raise `ProviderError` with a kind, so the eval never scores a dead server as a wrong answer:
-  - `infrastructure`: unreachable, timed out, 5xx, or a proxy's error page;
-  - `rate_limited`: 429, with its retry delay;
-  - `rejected`: other 4xx.
-- **Adapters, all hand-rolled; no agent framework, LangChain or LiteLLM:**
-  - `AnthropicProvider` sends exactly the requests the loop sent before, and all its request-shape tests pass unchanged. It is unit-tested but was **not evaluated live**, because there is no Anthropic key.
-  - `OpenAICompatProvider` speaks `/chat/completions` over `httpx2` (already installed) for both Gemini (Google's OpenAI-compatible endpoint) and Ollama (`/v1`).
-    - The final answer arrives as a call to a `final_answer` tool whose parameters are the final-answer schema, because tool calling is the one capability both share. On the last round it's the only tool offered, and it's required.
-    - Each assistant message is echoed back exactly as received, so Gemini's thought signatures survive, whatever field the compatibility layer puts them in.
-    - `<think>` blocks are stripped.
-    - Malformed tool arguments go back to the model as a tool error rather than crashing the loop.
-    - Missing tool-call ids are filled in, on the echoed message too.
-    - A final answer sent alongside other calls is refused back to the model.
-- **Provider-neutral loop changes:**
-  - A turn that ends without a readable final answer gets one nudge before it becomes an error. Weaker models often reply in prose.
-  - A final answer inside a code fence is accepted.
-  - A partial `chart_hint` is normalised.
-- **Configuration:**
-  - `CHANNELPULSE_PROVIDER` is `gemini` (default), `ollama` or `anthropic`.
-  - Gemini reads `GEMINI_API_KEY` and `GEMINI_MODEL`. Ollama reads `OLLAMA_BASE_URL` and `OLLAMA_MODEL`, plus an optional `OLLAMA_API_TOKEN` sent as a bearer header.
-  - `CHANNELPULSE_TEMPERATURE` defaults to 0.
-  - An optional `*_REASONING_EFFORT` is sent as `reasoning_effort`.
-  - The Ollama URL is treated as a secret: error messages never include it.
-- **Cost:** traces and the spend cap price only Anthropic turns. Free-tier turns cost $0 and are reported in tokens. Traces gain a `provider` column.
-- **Automation:** the CI guard now fails if any workflow references an Anthropic, Gemini, Google, Ollama or OpenAI variable. CI makes no model calls of any kind.
-- **The public demo stays replay-only** (`render.yaml`: `ASK_LIVE=0`, provider `gemini`, key empty). Gemini's free tier may use prompts to improve Google's products; that's acceptable only because every row here is synthetic.
-- **Adapter tests** (`api/tests/test_providers.py`, 33 tests) run on response fixtures through `httpx2.MockTransport`, and nothing reaches a model. The fixtures were hand-written in each provider's wire format before any live call; responses captured in the smoke run are added alongside them. Two deliberate breaks, dropping the thought signature and leaking the URL into an error, each made a test fail.
-
-**D32. The eval runs on free tiers: pacing, resumable runs, and a raw text-to-SQL baseline (Part B).**
-- **Modes:**
-  - `--mode governed` is the agent as built.
-  - `--mode raw` is the baseline a plain text-to-SQL agent gets: only `run_readonly_sql` and the mart schema. There is no metric glossary, semantic layer or anomaly detectors, but the same company prompt, the same refusal rules, the same final-answer format, the same SQL validator and the same row-level security.
-  - The difference between the two modes, on the same model, is the measured lift from the semantic layer.
-- **Raw-mode scoring:**
-  - A multi-hop rubric's `evidence_tools` requirement is dropped: raw mode can't call `query_metric` or `get_anomalies`, so it's judged on what its answer says.
-  - Every answer is expected to be `ad_hoc_sql_verify`, and traps refused.
-  - Both rules make the comparison conservative: any measured lift is, if anything, understated.
-- **Pacing** (`evals/throttle.py`):
-  - Calls stay under 80% of the key's per-minute requests and tokens, and per-day requests.
-  - A 429 is backed off using the server's `retryDelay`. A 429 on a per-day quota pauses the run at once.
-  - Infrastructure failures are retried up to five times with growing waits, then the run pauses: unreachable, timed out, 5xx, or a tunnel's error page. A 5xx that says the prompt exceeds the served context is the question's own failure instead, since it would recur.
-- **Resumable runs:**
-  - Each (provider, mode, model) run saves its progress after every question in `evals/results/runs/<provider>__<mode>__<model>.json`. A paused run exits with code 4, and rerunning the same command picks up at the first unanswered question. `--fresh` starts over.
-  - Nothing infrastructural is ever scored. Retries and rate-limit waits are counted per question and shown separately on the scorecard.
-- **Recorded per question:** provider, mode, served model, input and output tokens (Gemini's thinking tokens counted as output), latency, `asked_at`, and the number of requests including retries.
-- **Recorded per run:** the provider's settings. For Ollama that includes the server's `/api/show` facts (D35).
-- **Cost:** free tiers cost $0, so the scorecard reports tokens per question rather than a made-up price. Only Anthropic turns are priced.
-- **The spend gate stays:** only the paid provider asks for confirmation before spending. CI still makes no model calls of any kind.
-
-**D33. The Gemini model is `gemini-3.5-flash-lite`, not 3.8 Flash (Part B, owner's decision 2026-09-29).**
-- **Why:**
-  - `gemini-3.8-flash` was approved first, but the owner's free tier gives it 5 RPM, 250K TPM and only **20 requests per day**. Google's 429 says so in its QuotaFailure: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20. The owner reports that every Gemini Flash model on the key has the same daily cap.
-  - A governed question takes several model calls, so 40 questions in two modes would need weeks at 20 a day.
-  - `gemini-3.5-flash-lite` (version `3.5-flash-lite-07-2026`, from the models-list endpoint) gets 15 RPM, 250K TPM and **500 RPD** on the owner's key.
-  - The eval throttles to 80% of those limits (12 RPM, 200K TPM, 400 RPD). They are the runner's defaults, and `GEMINI_RPM` / `GEMINI_TPM` / `GEMINI_RPD` override them.
-- **Thinking:** left at the model's default, which Google's thinking docs give as "On (minimal)". It supports minimal, low, medium and high, and can't be turned off. Every run records it.
-- **Tool calling verified:** a single tool-calling request through the OpenAI-compatible endpoint returned a proper `query_metric` call with valid arguments and a thought signature.
-- **Discarded, not mixed:**
-  - Two smoke questions had run on 3.8 Flash (SL01 and FG01, both scored correct) before the daily quota ran out. Their run file was deleted and is kept only in git history. No scorecard, case-study figure or recording uses them.
-  - The 3.8 Flash reply captured as a test fixture stays: it tests the adapter's wire format, not the eval.
-- **The API key was replaced** by the owner. It lives only in `.env`.
-- **Two runner fixes came out of this:**
-  - A 429 on a per-day quota now pauses the run at once. Before, it retried against the 23-second `retryDelay` that Google attaches even to daily limits.
-  - Every model request, retries included, is counted per question. That count is what the day-budget estimate uses.
-
-**D34. `get_anomalies` gets filters and view-aware ordering (Part B, owner-approved 2026-09-29, before the scored run).**
-- **Found in the Gemini smoke run:** MH01 ("why did base-crack claims rise at Durgapur?") failed because the model never named the planted resin lot.
+**D34. `get_anomalies` gets filters and view-aware ordering (Part B, owner-approved 2026-09-29).**
+- **The problem:**
   - `get_anomalies` returned every detector's flags, 500 rows, ordered by detector name, and the model sees only the first 50 rows of any tool result.
-  - The first 50 all came from `distributor_health`, so the lot-scan flag it needed was out of view.
+  - The first 50 all came from `distributor_health`, so no lot-scan flag was in view.
   - The API endpoint already had a `detector` filter, but the agent's tool didn't expose it.
 - **Change:**
   - The tool takes optional `detector` and `failure_mode` filters.
   - Unfiltered rows are ranked by effect size within each detector and interleaved across detectors, so the first rows hold every detector's strongest flags.
   - The tool description says the model sees only the first 50 rows.
 - **On the real marts:** all four detectors appear in the first 50 unfiltered rows, and the planted lot is row 3. Filtered to `lot_scan` and `base_crack`, it is the only row.
-- **What didn't change:** no detector rule, flag, metric or ground-truth parameter. This changes which rows reach the model, not what the detectors found. The smoke results were produced before the change and are reported as such; the scored runs come after it.
-
-**D35. Qwen on Kaggle: what the server reports, and how thinking is really switched off (Part B, 2026-09-30).**
-- **The model is served** by Ollama on a Kaggle GPU session (2x T4), behind a Cloudflare quick tunnel. The tunnel has no authentication, so there is no API key. Its URL changes every session and lives only in `.env`: it is never committed, logged or printed.
-- **From the server's own `/api/show`, recorded with every run:**
-  - tag `qwen3.8-27b-64k`, family `qwen35`, 27.3B parameters;
-  - `Q4_K_M` quantization;
-  - `num_ctx 65536`, where the model was trained for 262,144;
-  - server-side temperature 0;
-  - speculative decoding (MTP) with `draft_num_predict 2`;
-  - thinking levels `false` / `low` / `medium` / `xhigh`, default `medium`.
-- **Thinking off, as the owner decided.** Verified live: Ollama's OpenAI-compatible `/v1` **ignores `think: false`**, since the reply still carried a `reasoning` field, but honours `reasoning_effort: "none"`. With that, the `reasoning` field is gone and completion tokens drop from 180 to 99. So `OLLAMA_THINKING=off` sends `reasoning_effort: "none"`, and the run records `thinking: off (reasoning_effort=none)`. The eval uses temperature 0.
-- **Tool calling verified** through `/v1`: a proper `query_metric` call with valid JSON arguments and a `call_...` id.
-- **Smoke run** (5 questions, governed, before D36): 5 of 5 correct, including the trap refusal and correct labels. Median latency 43 s, p95 83 s, 34.8k input tokens per question, 0 infrastructure retries.
-- **An earlier failure was infrastructure, not the model.** `.env` held a previous session's tunnel URL. First its hostname didn't resolve, then Cloudflare answered 530 (origin unreachable). Neither was scored.
+- **What didn't change:** no detector rule, flag, metric or ground-truth parameter. This changes which rows reach the model, not what the detectors found.
 
 **D36. The Indian fiscal year is a time grain in the semantic layer (Part B, owner-approved 2026-09-30).**
 - **Why:**
-  - Three of the four governed failures in Gemini's first scored run (TC01, TC05, TC07) asked about fiscal years.
-  - The semantic layer offered only calendar grains, so the model grouped by `metric_time__year` (January to December) and either called calendar years fiscal ones or added quarters up itself.
+  - The semantic layer offered only calendar grains. Its year, `metric_time__year`, runs January to December, so a fiscal-year question left the model to add quarters up itself.
   - This is a gap in the governed layer, not a model quirk: a business that reports April to March needs its fiscal year to be governed.
 - **Change:**
   - `dim_date`, the MetricFlow time spine, declares two custom granularities: `fiscal_quarter` (from `fiscal_quarter_label`, e.g. FY27 Q1) and `fiscal_year` (from `fiscal_year_label`, e.g. FY26 = April 2025 to March 2026). Both columns get `not_null` tests.
@@ -319,38 +238,20 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - base-crack claims by plant give DGP 538 / 755, GHY 592 / 709 and HWH 1,113 / 1,341 (TC05).
 
   Every offered dimension still compiles for all 50 metrics.
-- **Not changed:** no mart data, metric formula, detector or ground-truth parameter. Fiscal grains are for grouping; filters on them aren't supported, and date ranges do that job.
-- **Reporting:** Gemini's governed run from before this change stays on record as the "before D36" result. A governed re-run after it is reported separately, and so are Qwen's governed runs, which use the fiscal grain from the start. Raw mode never uses the semantic layer, so it is unaffected.
+- **Not changed:** no mart data, metric formula, detector or ground-truth parameter. Fiscal grains are for grouping; filters on them aren't supported, and date ranges do that job. Raw mode never uses the semantic layer, so it is unaffected.
 
 **D37. Filters on two-hop dimensions were broken; fixed (Part B, 2026-09-30).**
-- **Found in Gemini's governed re-run.** SL06 and FG04 filtered `claims_per_1000_units` by `batch__product__category` ("tanks"). Both calls errored, and the model fell back to its own SQL, with a different definition, and got the numbers wrong.
 - **Root cause,** in `api/app/semantic.py`, the code that renders filters: it passed a multi-hop name straight into MetricFlow's filter syntax, `{{ Dimension('batch__product__category') }}`. MetricFlow can't parse that: the extra hop must be an entity path, as in `{{ Dimension('product__category', entity_path=['batch']) }}`.
-- **It predates D36:** the same filter fails on the pre-D36 manifest. It had simply not been triggered in the earlier run.
+- **It predates D36:** the same filter fails on the pre-D36 manifest.
 - **Scope:** every offered two-hop dimension, 41 metric-and-dimension pairs, failed as a filter. Group-bys were never affected; they go through a different path.
 - **Fix:** multi-hop names are rendered with `entity_path`. A new test compiles all 41 pairs as filters: all 41 fail with the fix disabled and pass with it.
-- **Effect on results:** Gemini's two governed runs (before and after D36) and Qwen's governed run all ran with this bug, and are reported as run. A governed re-run after D37 would be a separate, labelled result.
-
-**D38. Part B results: the semantic layer's lift on two free providers (2026-09-30).**
-- **Runs of record:**
-  - one governed and one raw run per provider, all after D37: `gemini-3.5-flash-lite`, and `qwen3.8-27b-64k` with thinking off;
-  - earlier governed runs are kept as superseded rows (`__before-D36`, `__after-D36-pre-D37`) in `evals/results/runs/`;
-  - the README table is generated from these files by `make scorecard`, never typed by hand.
-- **Headline:** governed vs raw on the same model is 93.8% vs 71.9% for Gemini (+21.9 points) and 93.8% vs 56.2% for Qwen (+37.5 points). Confidently wrong falls from 11 to 3 and from 11 to 2, and refusal correctness is 97.5% governed on both. Each failure is diagnosed in the case study, section 5.
-- **Replay:** the public demo's Ask page serves the Gemini governed run of record (provider `gemini` by default). The Qwen run's answers are recorded too (`api/app/recordings/ollama__qwen3.8-27b-64k.json`).
-- **Not evaluated:** Claude. The Anthropic adapter is unit-tested only, and wherever the docs used to imply otherwise they were corrected.
-- **Infrastructure during the runs, never scored:**
-  - Gemini 503 "high demand";
-  - two dead Kaggle sessions, where the tunnel returned 530;
-  - a Docker restart that stopped Postgres.
-
-  Each time, the run paused, saved its progress, and resumed at the next question.
 
 **D39. Golden set v2: 102 questions, a clarification category, and a free tier in CI (Part C 1, 2026-09-30).**
 - **The set** (`evals/questions.yaml`) grew from 40 to 102 questions: 18 simple lookups, 18 filtered or grouped, 18 time comparisons, 14 multi-hop "why" questions, 18 traps, and a sixth category, 16 **ambiguous** questions whose right answer is a question back.
   - Every golden answer is still hand-written SQL on the marts.
   - An ambiguous question carries two or three *readings* (sell-in or sell-out, calendar or fiscal Q1, which of two reps named Sharma), each with its own golden SQL. The eval fails unless the readings give different answers, so each question is ambiguous in fact, not just in wording.
 - **`needs_clarification`, a fourth answer label.** The final-answer schema gains `clarifying_question`, and the prompt tells the model to ask when a question could mean two things with different answers. Code turns that into a response with no figures and the question back. It's scored correct only on ambiguous questions, and never counts as confidently wrong. It's carried through the API, `ops.agent_traces` and the web badge.
-- **Model-free refusal routing** (`app/guardrails/refusal_routing.py`). Four narrow patterns are refused before any model call: SQL writes, raw/staging/system tables, prompt injection, and "don't show the SQL". The rest, forecasts, personal data and off-topic questions included, stays the model's call. This fixes TR06, the "no SQL" trap both models answered in Part B.
+- **Model-free refusal routing** (`app/guardrails/refusal_routing.py`). Four narrow patterns are refused before any model call: SQL writes, raw/staging/system tables, prompt injection, and "don't show the SQL". The rest, forecasts, personal data and off-topic questions included, stays the model's call.
 - **Two tiers:**
   - **Free and deterministic** (`evals/tests/test_free_tier.py`, `make eval-free`, run by `make test` in CI on every PR). No model is involved:
     - **Semantic layer:** each of the 47 governed scalar and keyed questions has a hand-written `governed_call`, the `query_metric` call(s) a correct answer makes. Its results must reproduce the golden under the eval's own scorer. This checks the metric definitions against independent SQL.
@@ -359,12 +260,11 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
     - **Goldens:** every golden validates, and every ambiguous question's readings disagree.
   - **Full model suite:** manual only (`make eval`). It reports execution accuracy on the 68 answerable questions against a threshold of 85% (exit 5 below it), plus refusal and clarification correctness and the number of router refusals. CI never holds a model credential (a test enforces it).
 - **Found by the free tier:**
-  - **A fiscal-grain query timed out.** Since D36, `primary_sales_value` grouped by `metric_time__fiscal_year` took 10 s and hit the statement timeout. That's why TC01 logged timeouts in every governed run since. Under the RLS filter and MetricFlow's `date_trunc` predicates, the planner estimated the fact table at 2 rows and nested a loop over the time spine. `readonly_db` now sets `enable_nestloop = off` per transaction, and the query takes 0.15 s. Index scans still serve filters.
+  - **A fiscal-grain query timed out.** Since D36, `primary_sales_value` grouped by `metric_time__fiscal_year` took 10 s and hit the statement timeout. Under the RLS filter and MetricFlow's `date_trunc` predicates, the planner estimated the fact table at 2 rows and nested a loop over the time spine. `readonly_db` now sets `enable_nestloop = off` per transaction, and the query takes 0.15 s. Index scans still serve filters.
   - **`channel_stock_units` isn't total stock.** It counts only distributor-SKU rows with a days-of-stock value, so it's about 40% below all units held at the latest snapshot. It's a building block of `channel_days_of_stock`, where that filter is right, but its label ("Channel stock (units)") suggests all stock. Changing a metric definition needs the owner's approval, so it's unchanged. FG18 asks about days of stock instead, and the finding is open.
-- **v1's runs of record** are kept as `__v1-40q` rows, and the scorecard gains a Questions column, so the 40- and 102-question sets are never compared as if they were one.
-- **Scoring rules were not changed mid-evaluation.** Some misses are strict by design and stay misses:
-  - TC14 queried every quarter, not just FY26's, where extra keys aren't allowed;
-  - SL16 and FG16 counted or summed result rows themselves, which rule 4 forbids, so their figures aren't in the evidence.
+- **Scoring rules are not changed mid-evaluation.** Some are strict by design and stay strict:
+  - extra keys aren't allowed where a question allows none;
+  - a figure the model counted or summed from result rows itself, which rule 4 forbids, isn't in the evidence.
 
 **D40. Agent traces view: recorded traces for anyone, live ones behind a token (Part C 2, 2026-09-30).**
 - **Two sources, one shape:**
@@ -386,36 +286,6 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Known ceiling:** like the Ask tracer, it skips bare single digits and years, so a wrong "3 flags" isn't caught. Figures with a unit or a thousands separator are.
 - **Found while building it:** sums over the float4 column `avg_daily_secondary_units` vary in the fifth significant digit between runs, because parallel workers add in a different order (days of stock 43.654685 vs 43.654642). Re-executed floats compare within 1e-5 relative. The column type is a warehouse choice, so it's left as is and noted here.
 
-**D42. Ollama replies are streamed, because the quick tunnel cuts silent responses at 100 s (Part C 1, 2026-10-01).**
-- **What happened:** Qwen's governed v2 run paused at question 24 (FG06). Five attempts in a row came back as HTTP 524 from Cloudflare: a quick tunnel closes any response that sends no byte for 100 s. The calls weren't streamed, so a long generation sent nothing until it finished. It was classified as infrastructure, as it should be, so nothing was scored.
-- **Fix:** `OpenAICompatProvider` gains `stream`, on for Ollama by default (`OLLAMA_STREAM=0` turns it off). Tokens flow as they're generated, and the reply is rebuilt into the non-streamed shape, so parsing, the transcript echo and token usage are unchanged. An error sent inside the stream is classified like an error status: unparseable tool-call markup fails the question; anything else is infrastructure.
-- **Unchanged:** the model, its settings, the prompts and scoring. Gemini doesn't stream. The 23 governed answers before the change stand; streaming changes transport, not answers.
-- **Ceiling:** a prompt whose prefill alone takes over 100 s would still get a 524, because no token comes before prefill ends. The governed prompts are about 27–60k tokens, and Ollama reuses their cached prefix.
-
-**D43. Part C 1 results: golden set v2 on two free providers (2026-10-01).**
-- **Runs of record:** one governed and one raw run per provider on the 102 questions. The v1 runs stay as `__v1-40q`. The README tables are generated from the run files by `make scorecard`, never typed by hand.
-- **Headline,** execution accuracy on the 68 answerable questions, governed vs raw:
-  - Gemini: 88.2% vs 72.1%, +16.2 points;
-  - Qwen: 97.1% vs 69.1%, +27.9 points.
-
-  Both governed runs meet the 85% threshold, and neither raw run does.
-- **Paired on the same 68 questions** (raw to governed): Gemini 15 wrong to right and 4 right to wrong, McNemar exact p = 0.019; Qwen 20 and 1, p = 0.00002. Each is one run at temperature 0.
-- **"Confidently wrong" split into its three failures** (wrong answers / ambiguous answered without asking / traps answered):
-  - Gemini: governed 8 / 12 / 0, raw 19 / 14 / 1;
-  - Qwen: governed 2 / 8 / 2, raw 20 / 6 / 0.
-
-  The card now reports these separately, because one combined number read as wrong figures.
-- **Trap refusals:** the router refuses 9 of 18 before any model call, in every run. Of the other 9, the model refuses 9 (Gemini governed), 8 (Gemini raw), 7 (Qwen governed) and 9 (Qwen raw).
-  - Qwen governed's two misses, TR01 and TR12, are forecasts. It said it can't forecast, then showed governed context without refusing.
-  - They're scored as answered, under the rubric as written. The rubric is not changed after seeing results, and the case study describes the partial behaviour.
-- **Ambiguous questions** are the weakest category everywhere: clarification asked on 4, 2, 8 and 10 of 16. Qwen asked more in raw than in governed.
-- **Infrastructure, never scored:**
-  - Qwen governed paused once on Cloudflare 524s, which led to D42;
-  - Gemini raw paused once on the daily quota and resumed the next day;
-  - Gemini raw logged one infrastructure retry.
-
-  The Qwen runs used one Kaggle session, stopped when they finished.
-
 **D44. Cleanup audit: deletions only, refactors deferred (owner decision, 2026-10-02).**
 - **Audit (2026-10-01).** Searches for defined-but-unused code, plus ruff and eslint; no new tools were installed. Baseline: build, 850 tests and lint all passing.
 - **Found:**
@@ -424,7 +294,7 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **Also applied in that pass, before this decision:** both are behaviour-neutral and verified by the type check, build, tests and smoke run.
   - `response._traced` became public `traced`, since the Brief uses it (84ef0e5).
   - 31 web names lost an unneeded `export` (f30d2a5).
-- **Decision:** no larger refactors now. The scored runs and their recordings must stay reproducible from the current code, and deployment comes next. Only deletions that are provably dead and covered by passing tests are applied. The refactor candidates are listed as future work in the README's known limitations.
+- **Decision:** no larger refactors now; deployment comes next. Only deletions that are provably dead and covered by passing tests are applied. The refactor candidates are listed as future work in the README's known limitations.
 
 **D45. `channel_stock_units` counts all stock; days of stock keeps its own numerator (owner-approved, 2026-10-02).**
 - **The finding (D39):** "Channel stock (units)" summed stock only on distributor-SKU pairs with a days-of-stock value. Every excluded pair at the latest snapshot holds stock with no sell-out in the trailing 30 days: idle stock. At the week of 14 September 2026 it reported 1,555,029 units against 2,471,122 held, leaving out 37%. The share is seasonal: about 18–21% each March, about 36–37% each September.
@@ -436,7 +306,6 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
 - **What depends on it:** nothing scored.
   - No golden question's governed call uses `channel_stock_units`, and no dashboard panel or the Brief does either.
   - The stuffing flag (window rate ratio on primary units) and the health score compute their own stock in dbt.
-  - Three recorded model answers called the metric: AC09 for Gemini and Qwen governed, and Qwen's MH04. None of the three verdicts depends on its value: AC09 is scored on asking, and MH04 on the stated cause and tools. No question is re-run, and the recordings keep those answers as served, with the old figure.
 - **Also:** `api/app/admin.py` now imports psycopg only for `roles`, so `make semantic` needs no database driver, as its docstring already said.
 
 **D46. Detector v2: pre-registered on the seed of record, frozen before the holdout seed (owner-approved, 2026-10-02).**
@@ -463,7 +332,7 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - The thresholds are round, but they were chosen by looking at this seed.
   - The churn gate's 0.8 sits close to D0084's signal: at 0.75 the rule misses the account entirely.
   - The holdout seed is the test of both.
-- **Product:** `mart_anomaly_flags` and `get_anomalies` keep serving v1 until the owner decides. The new mart columns aren't in the semantic layer, so the agent's metric glossary is unchanged. The marts' column list in the system prompt grows, but no scored run is re-run.
+- **Product:** `mart_anomaly_flags` and `get_anomalies` keep serving v1 until the owner decides. The new mart columns aren't in the semantic layer, so the agent's metric glossary is unchanged. The marts' column list in the system prompt grows.
 - **Generator:** `--seed` runs a holdout seed. It never asserts against, or writes back into, `ground_truth.yaml`, which records only the seed of record.
 
 **D47. Detector v2 results on both seeds, reported as they fell (2026-10-02).**
@@ -484,14 +353,14 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   On the holdout, v2 is slightly worse than v1 on the stuffer measure. Both versions fail acceptance C7's under-5% target on both seeds.
 - **Status:** the product keeps serving v1 (`mart_anomaly_flags`, `get_anomalies`) until the owner decides whether to switch. The results are in `detectors/results/evaluation_20260924.json` and `evaluation_20261002.json`.
 
-**D48. Detector v2 in production; the eval's runs of record stay graded under v1 (owner decision, 2026-10-02).**
+**D48. Detector v2 in production (owner decision, 2026-10-02).**
 - **Switch:** the marts' unversioned flag columns now carry v2, and v1 stays on record as `*_v1`:
   - `mart_scheme_quarterly.is_stuffing_flag` (provisional) and `is_stuffing_confirmed`;
   - `mart_distributor_health_weekly.is_flag_week` and `is_at_risk`.
 
   So everything that reads them moved together: `mart_anomaly_flags` and `get_anomalies`, the governed metrics `at_risk_distributors` and `stuffing_flags` (descriptions updated, manifest regenerated), the Weekly Brief and the dashboard. `detectors/evaluate.py` reproduces the frozen D47 numbers exactly under the new names.
 - **Point-in-time:** a stuffing flag writes a provisional row dated at the window's end and, if confirmed, a second row dated QE+60, when its post-quarter evidence exists. On the seed of record that's 1,445 provisional and 979 confirmed rows. An as-of read never sees later data.
-- **Golden answers that moved** (recomputed against the runs' stored goldens):
+- **Golden answers that moved** from v1 to v2:
   - SL16: at-risk distributors in the week of 14 September, 6 to 3;
   - FG16: FY26 stuffing flags by region, e.g. Bihar & Jharkhand 201 to 150;
   - MH02: the clearest channel-stress distributor, D0246 to D0080;
@@ -499,10 +368,9 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - MH12: the region with the most at-risk distributors, Bihar & Jharkhand to South Bengal.
 
   SL05, FG18 and AC09 differ only by float4 noise (D41), well inside tolerance. No golden SQL was edited.
-- **Runs of record:** not re-run (owner decision). They were graded under v1, and each result keeps its golden. The README and the case study say so beside the scorecard. A future run grades against v2's answers.
-- **Replay:** the recordings keep their answers as served, so a recorded answer to MH10 or SL16 states v1's figure.
+- **Eval:** a future run grades against v2's answers.
 
-**D49. Pre-deployment checks: size, memory, cold starts, secrets, and the v1-era replays (2026-10-04).**
+**D49. Pre-deployment checks: size, memory, cold starts and secrets (2026-10-04).**
 - **Database size against Supabase's free plan.** The plan allows 500 MB of data plus indexes, and goes read-only above it. The nightly job publishes only `marts`.
   - Measured with the deployed 60-day inventory slice: **356 MB**, roughly 140 MB of headroom before Supabase's own schemas.
   - The time series grow as the simulation advances a day each night, so the headroom shrinks over the coming months. The first lever is a shorter daily-inventory window.
@@ -521,9 +389,17 @@ The owner won't pay for model usage, so the agent is evaluated on free providers
   - **Isolation:** the two fault-injection tests now share one file, so they run one after the other. Two extra dashboards at once slowed the local API into timeouts of its own.
 - **Secrets and identity before going public.**
   - gitleaks (Docker image) over the full history: 72 commits, about 19 MB, **no leaks found**.
-  - `make identity-check` needs the owner's `.identity-patterns` file, which doesn't exist yet. Run with explicit terms (the owner's email domain stem and local part, the tunnel host, the local Windows username and the Kaggle username), it found none of them. The only author identity in history is the project's pseudonymous one.
+  - `make identity-check` needs the owner's `.identity-patterns` file, which doesn't exist yet. Run with explicit terms (the owner's email domain stem and local part, and the local Windows username), it found none of them. The only author identity in history is the project's pseudonymous one.
   - Nothing was rewritten.
-- **The v1-era replays.** `/api/ask/replay` attaches a note to the five recorded answers that read detector flags (SL16, FG16, MH02, MH10, MH12), in any recording made before the switch (D48). The Ask page shows it with the answer, so a visitor never meets two different figures without the reason.
+
+**D50. Claude only: Gemini and Qwen removed, with everything they produced; Sonnet 5.5 by default, Haiku 5.5 to compare (owner decision, 2026-10-14).**
+- The owner moved the project to Anthropic's API under a $20 spend limit and asked for everything tied to the Gemini key and the Ollama endpoint on Kaggle to be deleted, including the data and the write-ups made with them.
+- Removed: the OpenAI-compatible provider (Gemini, Ollama) and its settings; the eval's quota pacing (`evals/throttle.py`); every run file in `evals/results/runs/`, both replay recordings, the agent traces they wrote, and the scorecards, results and case-study findings built on them. Decisions D31–D33, D35, D38, D42 and D43 described only those providers and their runs, so they are deleted and the numbering keeps the gaps.
+- Kept from that work: the provider interface between the loop and the model, resumable runs (progress is saved after every question; rerunning the same command resumes), and the raw text-to-SQL baseline mode.
+- A run now stops with its progress saved (exit 4) when the API is unreachable, overloaded, rate-limited or out of credit, instead of scoring those questions as model failures.
+- Model: `claude-sonnet-5-5` at `medium` effort by default, superseding D29's Opus 5.5, which the owner ruled out on cost. `claude-haiku-5-5` is the comparison model. Haiku 5.5 has no server-side refusal fallback, so its requests don't send `fallbacks`.
+- Replay serves the newest recording; with one provider there is no longer a provider's own recording to prefer.
+- Until the first Claude run, the scorecard is empty and the Ask page's replay says no eval has run yet.
 
 ## Environment
 

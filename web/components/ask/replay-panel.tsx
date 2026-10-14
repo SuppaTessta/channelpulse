@@ -246,11 +246,6 @@ export function ReplayPanel({
             question={current.question}
             meta={`Recorded ${day(recording.recorded_at)} with ${current.served_model ?? recording.model}, viewing as ${regionName(recording.region as Region)}`}
           />
-          {current.note ? (
-            <p role="note" className="max-w-[70ch] rounded-control bg-adhoc-soft px-3 py-2 text-sm text-ink">
-              {current.note}
-            </p>
-          ) : null}
           <p className="px-1">
             <Verdict answer={current} long />
           </p>

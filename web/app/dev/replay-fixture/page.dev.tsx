@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Replay fixtures (development only)" 
 
 // FIXTURE VALUES: invented for layout testing, not taken from the warehouse or from any eval run.
 const RECORDING: Recording = {
-  model: "claude-opus-5-5", effort: "medium", recorded_at: "2026-09-28T10:00:00+00:00", as_of: "2026-09-23",
+  model: "claude-sonnet-5-5", effort: "medium", recorded_at: "2026-09-28T10:00:00+00:00", as_of: "2026-09-23",
   region: "ALL", status: "complete", git_commit: "fixture", count: 3,
 };
 const governed: AskResponse = {
@@ -31,7 +31,7 @@ const ANSWERS = [
   answer("TC01", "time_comparison", "FIXTURE: How did DSO change against last year?", governed, false),
   answer("TR01", "trap", "FIXTURE: Forecast next quarter's sales.", refused, true),
 ];
-const STATUS: AskStatus = { mode: "replay", reason: "no_credentials", provider: "gemini", model: RECORDING.model, recording: RECORDING };
+const STATUS: AskStatus = { mode: "replay", reason: "no_credentials", provider: "anthropic", model: RECORDING.model, recording: RECORDING };
 const STATES: Record<string, { status: AskStatus; replay: Replay }> = {
   recorded: { status: STATUS, replay: { recording: RECORDING, answers: ANSWERS, withheld: false } },
   withheld: { status: STATUS, replay: { recording: RECORDING, answers: [], withheld: true } },

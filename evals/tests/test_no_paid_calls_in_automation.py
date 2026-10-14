@@ -1,5 +1,5 @@
-"""No model calls from automation, paid or free (decisions D29, D31): no workflow, scheduled or not, may hand the
-runner any provider's credential or endpoint."""
+"""No model calls from automation (decisions D29): no workflow, scheduled or not, may hand the runner a model
+service's credential or endpoint, Anthropic's or any other vendor's."""
 
 import re
 from pathlib import Path
@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 WORKFLOWS = sorted((Path(__file__).parents[2] / ".github" / "workflows").glob("*.yml"))
-# Every variable that could reach a model: Anthropic, Gemini (and Google's generic key name), Ollama, OpenAI.
+# Every variable that could reach a model service, by the names the common vendors' SDKs read.
 PROVIDER_VARS = re.compile(r"ANTHROPIC|GEMINI|GOOGLE_API_KEY|OLLAMA|OPENAI", re.IGNORECASE)
 
 
@@ -21,7 +21,7 @@ def test_workflows_found():
     assert WORKFLOWS
 
 
-@pytest.mark.parametrize("line", ["GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}", "OLLAMA_BASE_URL: x",
-                                  "ANTHROPIC_API_KEY: x", "GOOGLE_API_KEY: x", "OPENAI_API_KEY: x"])
+@pytest.mark.parametrize("line", ["ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}", "ANTHROPIC_AUTH_TOKEN: x",
+                                  "GOOGLE_API_KEY: x", "OPENAI_API_KEY: x"])
 def test_the_pattern_catches_each_provider(line):
     assert PROVIDER_VARS.search(line)

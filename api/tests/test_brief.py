@@ -89,7 +89,7 @@ def test_without_live_mode_the_model_is_never_called(fake_facts, monkeypatch):
 
 def test_an_unusable_narration_falls_back_to_the_template(fake_facts, monkeypatch):
     monkeypatch.setattr(config, "ASK_LIVE", True)
-    b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(error=ProviderError("down", kind="infrastructure")))
+    b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(error=ProviderError("down")))
     assert b["narration"]["by"] == "template" and b["narration"]["blocked"] and b["status"] == "verified"
 
 

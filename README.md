@@ -4,7 +4,7 @@ ChannelPulse is a portfolio project with four parts:
 - a synthetic but realistic Indian building-products manufacturer;
 - a dbt-modelled Postgres warehouse;
 - a KPI dashboard;
-- an "ask your data" analyst behind a swappable model provider (Gemini, a self-hosted open-weight model via Ollama, or Claude).
+- an "ask your data" analyst running on Anthropic's Claude (Sonnet 5.5 by default, Haiku 5.5 as the comparison model).
 
 The analyst answers through a governed semantic layer, cites the SQL behind every answer, refuses what it can't answer, and is scored by a published evaluation harness. The point is trust engineering, not a chatbot: the project is deliberately built to look nothing like a thin "LLM writes SQL against raw tables" wrapper. It holds the same standard as the rest of the portfolio: it ships in Docker, has tests, runs in CI, and has no notebooks as deliverables.
 
@@ -26,7 +26,7 @@ See [docs/architecture.md](docs/architecture.md) for the full diagram and trust 
 generator/ (rules-based simulator) -> raw -> dbt staging -> intermediate -> marts (RLS)
                                                           semantic_models/ -> MetricFlow (compile-only, in the API)
 detectors/ (pre-registered scans) -> marts.mart_anomaly_flags
-api/ (FastAPI): governed query_metric | guarded run_readonly_sql | get_anomalies | hand-rolled tool-use loop over any provider
+api/ (FastAPI): governed query_metric | guarded run_readonly_sql | get_anomalies | hand-rolled tool-use loop on Anthropic's Messages API
 web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · Ask ChannelPulse · Weekly Brief · Agent traces
 ```
 
@@ -35,7 +35,7 @@ web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · 
 | Data | 36 months, 2023-10-01 to 2026-09-23, 1.84M raw rows. It's a simulator, not a CSV: four anomalies emerge from its rules. |
 | Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 125 tests (schema plus business logic). |
 | Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 51 metrics, including the 12 below, with calendar and Indian fiscal (April–March) time grains. MetricFlow compiles the SQL at query time. |
-| Agent | A hand-rolled tool-use loop with five tools behind a thin provider interface (D31): Gemini by default (`gemini-3.5-flash-lite`, free tier), Ollama for a self-hosted open-weight model, or Anthropic's Claude, switched by `CHANNELPULSE_PROVIDER`. The Anthropic adapter is unit-tested but was **not evaluated live**; the scorecard below is Gemini and Qwen. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
+| Agent | A hand-rolled tool-use loop with five tools on Anthropic's Messages API (D50): `claude-sonnet-5-5` at `medium` effort by default (`CHANNELPULSE_MODEL`, `CHANNELPULSE_EFFORT`), and `claude-haiku-5-5` as the comparison model. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
 | Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, a daily spend cap, and a trace of every question. |
 
 ## Quickstart
@@ -50,14 +50,14 @@ make dbt               # build + test the warehouse, run the detectors, apply th
 make api               # FastAPI on :$API_PORT (default 8000)
 make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
 make web-start         # or: production build, then serve it (restart it after every rebuild)
-make test lint         # 850 Python tests (incl. the eval's free tier), ruff, dbt parse, eslint
+make test lint         # 800 Python tests (incl. the eval's free tier), ruff, dbt parse, eslint
 make smoke             # browser smoke test of every page against the running API and dashboard (SMOKE_URL if not :3000)
-make eval              # golden-set eval; with a key it prints an estimate and asks before spending (MODEL= BUDGET= YES=1)
+make eval              # golden-set eval on Claude; prints an estimated cost and asks before spending (MODE= MODEL= BUDGET= YES=1)
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
 make down
 ```
 
-All Python runs from the repo-root `.venv`. Nothing needs a model key. Without a configured provider (or without `ASK_LIVE=1`), the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists.
+All Python runs from the repo-root `.venv`. Nothing needs a model key except `make eval` and live mode. Without both `ANTHROPIC_API_KEY` and `ASK_LIVE=1`, the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists. No Claude run has been recorded yet, so for now it's the empty state.
 
 Timings are from a clean clone on the Windows build machine (decisions E2); the sequence above was run end to end there, finishing with `make smoke`.
 
@@ -147,70 +147,22 @@ Golden answers come from hand-written SQL against the marts, never from the agen
 - **Free tier** (`make eval-free`, in CI on every PR, no model). Every governed question's hand-written `query_metric` call must reproduce its golden. Every trap's attack SQL must be rejected by the validator. The model-free refusal router must refuse exactly the marked traps.
 - **Model suite** (`make eval`, manual only). It reports execution accuracy on the 68 answerable questions against an 85% threshold. "Confidently wrong" is split into its three failures: wrong answers, ambiguous questions answered without asking, and traps answered. Trap refusals are split into those the router makes before any model call and those the model makes itself. Label correctness, latency and tokens are reported too.
 
-**Two providers, two modes.** The same 102 questions ran on two free providers, each in two modes (D31, D32):
-- **Governed** is the agent as built: the semantic layer, the anomaly detectors and the SQL fallback.
-- **Raw** is a plain text-to-SQL baseline on the same model. It gets only `run_readonly_sql` and the mart schema, with the same prompt rules, refusal rules, SQL validator and row-level security.
+The model suite runs in two modes on the same model. **Governed** is the agent as built: the semantic layer, the anomaly detectors and the SQL fallback. **Raw** is a plain text-to-SQL baseline that gets only `run_readonly_sql` and the mart schema, with the same prompt rules, refusal rules, SQL validator and row-level security. The gap between the two modes is what the semantic layer is worth.
 
-The gap between the two modes on one model is what the semantic layer is worth.
-
-| Provider | Model | Served as |
-|---|---|---|
-| Gemini API, free tier | `gemini-3.5-flash-lite`, thinking at its default (minimal), temperature 0 | Google's OpenAI-compatible endpoint (D33) |
-| Ollama on a Kaggle GPU session (2x T4) | `qwen3.8-27b-64k`: Qwen3.8 27B, `Q4_K_M`, 64K context, thinking off, temperature 0 | a Cloudflare quick tunnel; the server's facts are read from `/api/show` and recorded (D35) |
-
-Every row below comes from a committed run file in [`evals/results/runs/`](evals/results/runs); `make scorecard` regenerates the block. Free tiers cost $0, so cost is shown as tokens per question. Infrastructure retries (a dead tunnel, a 503) are counted, never scored. **Each result is a single run at temperature 0**, which doesn't make a model deterministic, so read small differences with care.
-
-The current rows are golden set v2. **They were graded under detector v1.** On 2026-10-02 the product switched to detector v2 (D48), and five golden answers that read detector flags moved with it: SL16, FG16, MH02, MH10 and MH12. Each run file keeps the golden it was graded against, and the rows are not re-run.
-
-Labelled rows are earlier runs kept on record:
-- **`v1-40q`** is the first 40-question set;
-- **before D36** and **after-D36-pre-D37** are governed runs from before the layer gained the fiscal-year grain (D36) and before filters on two-hop dimensions were fixed (D37).
+**No scored run yet.** The Claude runs come next, Sonnet 5.5 and Haiku 5.5, governed and raw, on the same 102 questions, and their results will appear in the block below.
 
 <!-- scorecard:start -->
 <!-- generated by `make scorecard` from evals/results/runs; don't edit by hand -->
-| Provider / model | Mode | Run | Questions | Execution accuracy | Wrong answers | Ambiguous answered without asking | Traps answered | Traps refused: router + model | Latency median / p95 | Tokens / question (in / out) | Infra retries | Date |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| gemini / `gemini-3.5-flash-lite` | governed | current | 102 | 88.2% | 8 | 12 of 16 | 0 | 9 + 9 of 9 | 12.4 s / 50.3 s | 46,326 / 302 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | raw | current | 102 | 72.1% | 19 | 14 of 16 | 1 | 9 + 8 of 9 | 8.1 s / 44.7 s | 10,899 / 393 | 1 | 2026-10-01 |
-| ollama / `qwen3.8-27b-64k` | governed | current | 102 | 97.1% | 2 | 8 of 16 | 2 | 9 + 7 of 9 | 62.9 s / 220.4 s | 32,172 / 985 | 0 | 2026-09-30 |
-| ollama / `qwen3.8-27b-64k` | raw | current | 102 | 69.1% | 20 | 6 of 16 | 0 | 9 + 9 of 9 | 59.1 s / 212.0 s | 7,970 / 973 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | governed | after-D36-pre-D37 | 40 | 84.4% | 5 | n/a | 1 | 0 + 7 of 8 | 7.1 s / 36.1 s | 43,921 / 310 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | governed | before-D36 | 40 | 87.5% | 4 | n/a | 0 | 0 + 8 of 8 | 9.0 s / 44.5 s | 40,670 / 304 | 1 | 2026-09-29 |
-| gemini / `gemini-3.5-flash-lite` | governed | v1-40q | 40 | 93.8% | 2 | n/a | 1 | 0 + 7 of 8 | 5.8 s / 52.3 s | 52,079 / 356 | 0 | 2026-09-30 |
-| gemini / `gemini-3.5-flash-lite` | raw | v1-40q | 40 | 71.9% | 9 | n/a | 2 | 0 + 6 of 8 | 7.5 s / 52.9 s | 11,865 / 481 | 0 | 2026-09-30 |
-| ollama / `qwen3.8-27b-64k` | governed | v1-40q | 40 | 93.8% | 1 | n/a | 1 | 0 + 7 of 8 | 25.9 s / 146.0 s | 39,926 / 453 | 0 | 2026-09-30 |
-| ollama / `qwen3.8-27b-64k` | raw | v1-40q | 40 | 56.2% | 10 | n/a | 1 | 0 + 7 of 8 | 25.5 s / 182.8 s | 14,482 / 622 | 0 | 2026-09-30 |
-
-Execution accuracy by category:
-
-| Run | ambiguous_clarify | filtered_grouped | multi_hop_why | simple_lookup | time_comparison | trap |
-|---|---|---|---|---|---|---|
-| gemini governed (current) | 25.0% | 94.4% | 71.4% | 88.9% | 94.4% | 100.0% |
-| gemini raw (current) | 12.5% | 66.7% | 71.4% | 83.3% | 66.7% | 94.4% |
-| ollama governed (current) | 50.0% | 100.0% | 92.9% | 94.4% | 100.0% | 88.9% |
-| ollama raw (current) | 62.5% | 72.2% | 71.4% | 77.8% | 55.6% | 100.0% |
-| gemini governed (after-D36-pre-D37) | n/a | 87.5% | 75.0% | 87.5% | 87.5% | 87.5% |
-| gemini governed (before-D36) | n/a | 100.0% | 87.5% | 100.0% | 62.5% | 100.0% |
-| gemini governed (v1-40q) | n/a | 100.0% | 75.0% | 100.0% | 100.0% | 87.5% |
-| gemini raw (v1-40q) | n/a | 62.5% | 87.5% | 75.0% | 62.5% | 75.0% |
-| ollama governed (v1-40q) | n/a | 100.0% | 87.5% | 100.0% | 87.5% | 87.5% |
-| ollama raw (v1-40q) | n/a | 62.5% | 50.0% | 62.5% | 50.0% | 87.5% |
-
-Governed against raw on the same model, question by question (answerable questions; each result is a single run at temperature 0):
-
-| Model | Answerable questions | Wrong to right | Right to wrong | Both right | Both wrong | McNemar exact p |
-|---|---|---|---|---|---|---|
-| gemini / `gemini-3.5-flash-lite` | 68 | 15 | 4 (MH04, SL11, SL16, TC14) | 45 | 4 | 0.019 |
-| ollama / `qwen3.8-27b-64k` | 68 | 20 | 1 (SL10) | 46 | 1 | 2.1e-05 |
+No complete eval run yet.
 <!-- scorecard:end -->
 
-To run it yourself: `make eval PROVIDER=gemini MODE=governed` (or `raw`; `PROVIDER=ollama`, `ONLY=SL01,TC01`, `FRESH=1`). Runs are paced to 80% of the key's quota, save after every question, and resume where they stopped when a daily quota or a server runs out (exit 4). The Anthropic provider asks for confirmation before spending (`BUDGET=`, `YES=1`). CI runs the eval without any model credential (a test enforces it), so there it only validates the golden answers.
+To run it yourself: `make eval MODE=governed` (or `MODE=raw`; `MODEL=claude-haiku-5-5` for the comparison model; `ONLY=SL01,TC01`, `FRESH=1`, `THRESHOLD=`). `make eval` prints an estimated cost and asks before spending; `BUDGET=` (USD) stops a run once it's spent, and `YES=1` skips the question. Runs save after every question and resume when the same command is rerun. A run stops with its progress saved (exit 4) when the API is unreachable, overloaded, rate-limited or out of credit. CI runs the eval without any model credential (a test enforces it), so there it only validates the golden answers.
 
 ## Anomaly detection
 The data contains planted anomalies, and the pre-registered detectors look for them blind. The full story, including the detectors' false positives and the one detector that fired late, is in the [case study](docs/case-study.md). It contains spoilers, so read the dashboard first if you want to find them yourself.
 
 ## Cost
-- **Per Ask question:** $0 on the free tiers used for the scorecard; the table gives the measured tokens per question. On Claude, the only paid provider, `make eval` prints an estimate and asks before spending; no Claude run has been made.
+- **Per eval run:** the harness estimates one full run of 102 questions in one mode at about $10 on Sonnet 5.5 and about $0.50 on Haiku 5.5, before its 1.25x safety margin. These are the harness's estimates, not measurements: no Claude run has been made.
 - **Guardrails on spend:** a per-IP rate limit (6/minute) and a daily spend cap ($5 default, $2 in `render.yaml`), computed from the traced cost.
 - **Infrastructure:** free tiers. Render (API), Vercel (web), Supabase (marts only, about 400 MB), and GitHub Actions (CI plus the daily refresh).
 
@@ -228,7 +180,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 ## Deployment
 - **Topology** (decisions D25): the web app on Vercel from `web/`; the API on Render from [`render.yaml`](render.yaml); Supabase holding only the `marts` schema, reached through its Session pooler.
 - **The daily job** ([`daily.yml`](.github/workflows/daily.yml)) regenerates the simulation through yesterday in a throwaway CI Postgres, rebuilds and tests it, runs the detectors, and publishes `marts`. This keeps the demo current and the Supabase project awake.
-- **Replay by default:** the public demo never calls a model unless you set both a provider key (e.g. `GEMINI_API_KEY`) and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
+- **Replay by default:** the public demo never calls a model unless you set both `ANTHROPIC_API_KEY` and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
 - **Not deployed yet.** The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
   - The repository needs three secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`.
   - A model key never goes into GitHub: a test fails if any workflow references one.
@@ -238,7 +190,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
 - **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The v1 stuffing rule is loose, and the v1 health rule flagged the churning account late. Detector v2 (D46, D47) improves both on the seed of record and on a holdout seed nobody had inspected, and it's in production since D48. The holdout churn flag lands only 6 days before its target, and stuffers in their overhang still cross the health flag more often than the acceptance target allows.
-- **Refactors deferred, deliberately (D44).** The scored eval runs and their replay recordings must stay reproducible from the code that made them, and deployment comes first. These are future work:
+- **Refactors deferred, deliberately (D44).** Deployment comes first. These are future work:
   - `evals/run_eval.py`'s `main()`, 131 lines, could split into setup, run and report;
   - `generator/acceptance.py`, about 1,000 lines, and a few long generator functions (`tables.build_tables`, `fates.serial_fates`);
   - `web/components/quality-sections.tsx`, about 540 lines, could split by section;

@@ -27,12 +27,12 @@ flowchart LR
         mf[MetricFlow engine<br/>compile-only]
         val[sqlglot validator]
         loop[hand-rolled<br/>tool-use loop]
-        prov[provider adapters<br/>Gemini · Ollama · Anthropic]
+        prov[provider interface<br/>Anthropic Messages API]
         tools[list_metrics · query_metric ·<br/>run_readonly_sql · get_anomalies ·<br/>explain_metric]
     end
 
     web[web/ Next.js 15<br/>4 dashboard pages]
-    llm([model provider<br/>Gemini free tier · Qwen on Ollama<br/>Claude: tested, not evaluated live])
+    llm([Claude<br/>Sonnet 5.5 by default · Haiku 5.5 to compare])
 
     sim -- COPY --> raw
     raw --> stg --> int --> marts

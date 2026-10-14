@@ -50,7 +50,7 @@ create table if not exists ops.agent_traces (
     error              text
 );
 create index if not exists agent_traces_created_at_idx on ops.agent_traces (created_at);  -- daily spend cap
--- Added with the provider layer (decisions D31); rows from before it were all Anthropic.
+-- Which provider served the trace; Anthropic is the only one (decisions D50).
 alter table ops.agent_traces add column if not exists provider text not null default 'anthropic';
 -- needs_clarification added with the ambiguous-question category (decisions D39).
 alter table ops.agent_traces drop constraint if exists agent_traces_label_check;

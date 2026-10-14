@@ -117,7 +117,7 @@ class FakeAnthropic:
         return BetaMessage.model_validate(self._responses.pop(0))
 
 
-def _message(*content, stop_reason="end_turn", model="claude-opus-5", usage=None, **extra) -> dict:
+def _message(*content, stop_reason="end_turn", model="claude-sonnet-5-5", usage=None, **extra) -> dict:
     tokens = {"input_tokens": 1000, "output_tokens": 200, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
     return {
         "id": "msg_test", "type": "message", "role": "assistant", "model": model, "content": list(content),

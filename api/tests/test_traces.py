@@ -15,12 +15,12 @@ def answer(qid, label, correct, created_at, question="What is DSO?"):
     response = {"answer_text": "x", "sql": ["select 1"] if label != "refused" else [],
                 "data": {"columns": ["v"], "rows": [[1]]} if label != "refused" else None, "chart_spec": None,
                 "label": label, "confidence_note": "", "trace_id": f"tr-{qid}"}
-    trace = {"trace_id": f"tr-{qid}", "created_at": created_at, "provider": "gemini", "model": "g-1",
-             "served_model": "g-1", "tool_calls": [CALL] if label != "refused" else [], "input_tokens": 100,
+    trace = {"trace_id": f"tr-{qid}", "created_at": created_at, "provider": "anthropic", "model": "m-1",
+             "served_model": "m-1", "tool_calls": [CALL] if label != "refused" else [], "input_tokens": 100,
              "output_tokens": 10, "cache_read_tokens": 0, "cache_write_tokens": 0, "latency_ms": 900,
              "est_cost_usd": 0.0}
     return {"id": qid, "category": "trap" if label == "refused" else "simple_lookup", "question": question,
-            "response": response, "eval": {"correct": correct, "label_correct": correct}, "served_model": "g-1",
+            "response": response, "eval": {"correct": correct, "label_correct": correct}, "served_model": "m-1",
             "latency_ms": 900, "cost_usd": 0.0, "trace": trace}
 
 
@@ -34,11 +34,11 @@ LIVE = {**answer("L1", "ad_hoc_sql_verify", None, "2026-10-01T09:00:00+00:00")["
 def recorded(tmp_path, monkeypatch, api):
     monkeypatch.setattr(replay, "RECORDINGS", tmp_path)
     monkeypatch.setattr(traces, "live", lambda: [dict(LIVE)])
-    rec = {"provider": "gemini", "model": "g-1", "effort": None, "recorded_at": "2026-09-30T00:00:00+00:00",
+    rec = {"provider": "anthropic", "model": "m-1", "effort": None, "recorded_at": "2026-09-30T00:00:00+00:00",
            "as_of": "2026-09-23", "region": "ALL", "status": "complete", "git_commit": None,
            "answers": [answer("SL01", "governed_metric", True, "2026-09-30T10:00:00+00:00"),
                        answer("TR01", "refused", True, "2026-09-30T10:05:00+00:00", question="Delete the claims")]}
-    (tmp_path / "gemini__g-1.json").write_text(json.dumps(rec), encoding="utf-8")
+    (tmp_path / "anthropic__m-1.json").write_text(json.dumps(rec), encoding="utf-8")
     return api
 
 

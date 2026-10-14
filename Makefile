@@ -51,8 +51,8 @@ semantic:  ## re-parse warehouse/semantic_models into the API's shipped semantic
 acceptance:  ## black-box check of the planted anomalies against generator/ground_truth.yaml (slow: extra seeds)
 	$(PY) generator/acceptance.py
 
-eval:  ## full (model) suite, manual only, resumable. PROVIDER=gemini|ollama|anthropic MODE=governed|raw MODEL= ONLY=id,id FRESH=1 THRESHOLD=0.85 (anthropic: BUDGET= YES=1)
-	$(PY) evals/run_eval.py $(if $(PROVIDER),--provider $(PROVIDER)) $(if $(MODE),--mode $(MODE)) $(if $(MODEL),--model $(MODEL)) $(if $(ONLY),--only $(ONLY)) $(if $(filter 1,$(FRESH)),--fresh) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes) $(if $(THRESHOLD),--threshold $(THRESHOLD))
+eval:  ## full (model) suite, paid, manual only, resumable. MODE=governed|raw MODEL=claude-haiku-5-5 ONLY=id,id FRESH=1 THRESHOLD=0.85 BUDGET= YES=1
+	$(PY) evals/run_eval.py $(if $(MODE),--mode $(MODE)) $(if $(MODEL),--model $(MODEL)) $(if $(ONLY),--only $(ONLY)) $(if $(filter 1,$(FRESH)),--fresh) $(if $(BUDGET),--budget-usd $(BUDGET)) $(if $(filter 1,$(YES)),--yes) $(if $(THRESHOLD),--threshold $(THRESHOLD))
 
 eval-free:  ## the eval's free tier: goldens, semantic-layer calls, SQL validator, refusal routing. No model; CI runs it in make test
 	$(PY) -m pytest evals/tests/test_free_tier.py

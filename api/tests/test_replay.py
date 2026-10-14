@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app import config, replay
+from app import replay
 
 QUESTION = {"question": "How has DSO moved this year?"}
 ANSWER = {
@@ -13,7 +13,7 @@ ANSWER = {
 }
 
 
-def recording(model="claude-opus-5-5", recorded_at="2026-09-28T10:00:00+00:00", region="ALL", provider="anthropic",
+def recording(model="claude-sonnet-5-5", recorded_at="2026-09-28T10:00:00+00:00", region="ALL", provider="anthropic",
               **extra):
     return {
         "provider": provider, "model": model, "effort": "medium", "recorded_at": recorded_at, "as_of": "2026-09-23", "region": region,
@@ -47,7 +47,7 @@ def test_credentials_alone_do_not_make_the_agent_live(api, claude, recordings):
 def test_status_says_why_the_agent_is_not_live(api, claude, recordings):
     api.use_llm(None)
     assert api.http.get("/api/ask/status").json() == {
-        "mode": "replay", "reason": "no_credentials", "provider": config.PROVIDER, "model": None, "recording": None}
+        "mode": "replay", "reason": "no_credentials", "provider": "anthropic", "model": None, "recording": None}
     api.use_llm(claude.client(), live=False)
     assert api.http.get("/api/ask/status").json()["reason"] == "live_off"
     api.use_llm(claude.client(), live=True)
@@ -63,7 +63,7 @@ def test_replay_serves_the_recorded_answers_with_their_provenance(api, recording
     recordings()
     api.use_llm(None)
     body = api.http.get("/api/ask/replay").json()
-    assert body["recording"]["model"] == "claude-opus-5-5" and body["recording"]["recorded_at"].startswith("2026-09-28")
+    assert body["recording"]["model"] == "claude-sonnet-5-5" and body["recording"]["recorded_at"].startswith("2026-09-28")
     assert body["recording"]["count"] == 1 and not body["withheld"]
     assert body["answers"][0]["response"] == ANSWER and body["answers"][0]["eval"]["correct"] is True
 
@@ -75,30 +75,8 @@ def test_replay_withholds_answers_recorded_under_another_region_claim(api, recor
     assert (body["answers"], body["withheld"], body["recording"]["region"]) == ([], True, "ALL")
 
 
-def test_replay_prefers_the_configured_providers_newest_recording(api, recordings, monkeypatch):
-    recordings(provider="gemini", model="gemini-3.8-flash", recorded_at="2026-09-28T10:00:00+00:00")
-    recordings(provider="ollama", model="qwen3.8-27b-64k", recorded_at="2026-09-29T10:00:00+00:00")
+def test_replay_serves_the_newest_recording(api, recordings):
+    recordings(model="claude-haiku-5-5", recorded_at="2026-10-16T10:00:00+00:00")
+    recordings(model="claude-sonnet-5-5", recorded_at="2026-10-15T10:00:00+00:00")
     api.use_llm(None)
-    monkeypatch.setattr(config, "PROVIDER", "gemini")
-    assert api.http.get("/api/ask/replay").json()["recording"]["provider"] == "gemini"
-    monkeypatch.setattr(config, "PROVIDER", "anthropic")  # no recording of its own: the newest one
-    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "qwen3.8-27b-64k"
-
-
-def test_a_recording_from_before_providers_counts_as_anthropic(tmp_path, monkeypatch):
-    old = recording()
-    del old["provider"]
-    (tmp_path / "claude-opus-5-5.json").write_text(json.dumps(old), encoding="utf-8")
-    monkeypatch.setattr(replay, "RECORDINGS", tmp_path)
-    assert replay.summary(replay.load())["provider"] == "anthropic"
-
-
-def test_answers_recorded_under_detector_v1_say_so(api, recordings):
-    """D48: the five answers that read detector flags carry a note in a recording made before v2."""
-    rec = recording(recorded_at="2026-09-30T10:00:00+00:00")
-    rec["answers"].append({**rec["answers"][0], "id": "SL16"})
-    replay.RECORDINGS.joinpath("anthropic__m.json").write_text(json.dumps(rec), encoding="utf-8")
-    api.use_llm(None)
-    notes = {a["id"]: a["note"] for a in api.http.get("/api/ask/replay").json()["answers"]}
-    assert notes["SL01"] is None and "detector v1" in notes["SL16"]
-    assert replay.with_note({"id": "SL16"}, "2026-10-05T00:00:00+00:00")["note"] is None
+    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "claude-haiku-5-5"

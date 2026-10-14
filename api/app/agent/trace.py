@@ -40,8 +40,7 @@ class Trace:
 
     def add_usage(self, turn, provider: str) -> None:
         """Add one model turn. Its usage covers the attempt that produced it, priced at the model that served it
-        (after a refusal fallback, the fallback model). Only Anthropic bills here: the free tiers cost $0, and
-        their token counts are what the eval reports."""
+        (after a refusal fallback, the fallback model)."""
         usage = turn.usage
         self.provider = provider
         self.input_tokens += usage.input_tokens
@@ -49,8 +48,6 @@ class Trace:
         self.cache_read_tokens += usage.cache_read_tokens
         self.cache_write_tokens += usage.cache_write_tokens
         self.served_model = turn.model
-        if provider != "anthropic":
-            return
         input_price, output_price, cache_read_price = price(turn.model)
         self.est_cost_usd += (
             (usage.input_tokens + usage.cache_write_tokens * config.CACHE_WRITE_MULTIPLIER) * input_price

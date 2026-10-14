@@ -15,7 +15,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - Run `make identity-check`. It searches tracked files at every commit, commit messages, and author and committer identities.
   - It must end `OK`. It never prints the terms, so its output is safe to share.
 - [ ] `git log --all --format='%an <%ae>' | sort -u` shows only the identity you mean to publish.
-- [ ] Optional, but it gives replay mode something to show: run the eval (Part B) and commit `api/app/recordings/<model>.json`. Without it, the Ask page shows an honest "no recorded answers yet" state.
+- [ ] Optional, but it gives replay mode something to show: run the eval (`make eval`, see the README) and commit `api/app/recordings/anthropic__<model>.json`. Without it, the Ask page shows an honest "no recorded answers yet" state.
 
 ## 1. Supabase (database)
 - [ ] Create a project. A region near India, such as Mumbai, keeps latency down. Save the database password you choose: it's the admin password.
@@ -31,7 +31,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - `SUPABASE_DB_URL`: the Session pooler string from step 1, with the admin user;
   - `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`: the two passwords from step 1.
 
-  Do **not** add any model key (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) or an Ollama URL: no workflow may ever hold a model credential (a test enforces it).
+  Do **not** add a model key (`ANTHROPIC_API_KEY`): no workflow may ever hold a model credential (a test enforces it).
 - [ ] Run the refresh once by hand: Actions → daily → Run workflow. It builds the warehouse through yesterday (IST) in a throwaway Postgres, then publishes `marts` to Supabase and creates the two roles with your passwords. The "Freshness check" step must pass, showing the published date equal to yesterday.
 - [ ] Note that GitHub turns off scheduled workflows in public repos after 60 days without activity. A commit or a manual run resets the clock.
 
@@ -41,10 +41,9 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
   - `AGENT_DATABASE_URL`: `postgresql://channelpulse_agent.<ref>:<AGENT_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
   - `DATABASE_URL`: the same agent string. It's used only by `/health`, so it never needs admin rights.
   - `OPS_DATABASE_URL`: `postgresql://channelpulse_ops.<ref>:<OPS_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
-  - `GEMINI_API_KEY`: leave it empty for replay only.
   - `CORS_ORIGINS`: leave it empty for now, and fill it in after step 4.
   - `ADMIN_TOKEN`: optional, and best left empty. Set, it lets the Agent traces page list live `/api/ask` traces, which are visitors' own questions, to a request carrying it (D40). Empty, the page shows only the eval's recorded traces.
-- [ ] Keep `ASK_LIVE=0`, as the blueprint sets it: this is replay mode.
+- [ ] Keep `ASK_LIVE=0`, as the blueprint sets it: this is replay mode. No model key goes on Render.
 - [ ] Check that `https://<render-url>/health` returns `{"status":"ok","db":"ok"}`.
 - [ ] Check that `https://<render-url>/api/ask/status` shows `"mode":"replay"`.
 - [ ] Expect the free plan to sleep after about 15 idle minutes. The first request after a quiet spell can take up to a minute to wake it. The dashboard shows "The API is waking up" and re-runs the page by itself every 15 seconds (D49). Measured at the free instance's 0.1 CPU, a full page then takes about 20–25 seconds.
@@ -68,11 +67,9 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 - [ ] Open all six pages (the four dashboards, Weekly Brief and Agent traces) in "All regions" and one single region. The Ask page must show replay mode, or "no recorded answers yet", and never an error.
 - [ ] The nightly refresh republishes `marts` around 00:30 IST. Queries during those few seconds can fail, and Retry fixes them.
 
-## 6. Live mode (optional, later, costs money)
-Live mode only turns on when you set both variables below.
-- [ ] Pick the provider. The default is Gemini's free tier: set `GEMINI_API_KEY` (and `GEMINI_MODEL` if it isn't `gemini-3.5-flash-lite`). The free tier may use prompts to improve Google's products; that's acceptable here only because every row is synthetic. For Claude, set `CHANNELPULSE_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, and set a monthly spend limit in the Anthropic Console as a second fence.
-- [ ] On Render, set that key, then `ASK_LIVE=1`.
-- [ ] Two limits in `render.yaml` then apply to every live question:
-  - a per-IP rate limit, `ASK_RATE_PER_MIN=4`, with the client IP taken from `X-Forwarded-For` (`TRUST_PROXY=1`);
-  - a daily spend cap, `DAILY_SPEND_CAP_USD=2.00`, computed from each question's traced cost. Past it, `/api/ask` answers 503 until the next UTC day.
-- [ ] To go back to replay, set `ASK_LIVE=0`. No redeploy of the dashboard is needed.
+## 6. Live mode (not part of this deploy)
+The public demo stays replay-only, so nothing in this checklist puts a model key on Render. For reference only: live mode costs money and turns on only with both `ANTHROPIC_API_KEY` and `ASK_LIVE=1` (D29). It calls `claude-sonnet-5-5` unless `CHANNELPULSE_MODEL` says otherwise, and a monthly spend limit in the Anthropic Console is a second fence. Two limits in `render.yaml` then apply to every live question:
+- a per-IP rate limit, `ASK_RATE_PER_MIN=4`, with the client IP taken from `X-Forwarded-For` (`TRUST_PROXY=1`);
+- a daily spend cap, `DAILY_SPEND_CAP_USD=2.00`, computed from each question's traced cost. Past it, `/api/ask` answers 503 until the next UTC day.
+
+Setting `ASK_LIVE=0` goes back to replay, with no redeploy of the dashboard.

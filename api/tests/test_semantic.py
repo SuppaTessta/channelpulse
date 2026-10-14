@@ -337,8 +337,7 @@ def test_fiscal_year_claims_by_plant_match_the_eval_golden_answer():
 
 
 def test_a_filter_on_a_two_hop_dimension_compiles_and_filters():
-    # D37: MetricFlow rejects Dimension('batch__product__category'); the extra hop has to be an entity_path. Found in
-    # Gemini's governed run, where claims per 1,000 units filtered to tanks errored and the model fell back to SQL.
+    # D37: MetricFlow rejects Dimension('batch__product__category'); the extra hop has to be an entity_path.
     tanks = [{"dimension": "batch__product__category", "op": "=", "value": "tank"}]
     sql = compile_sql("claims_per_1000_units", ["batch__plant_id"], tanks)
     assert "'tank'" in sql and "category" in sql

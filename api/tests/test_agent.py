@@ -5,7 +5,7 @@ import httpx2
 import pytest
 
 from app import config
-from app.agent.loop import FALLBACK_BETA, AgentError, run_agent
+from app.agent.loop import FALLBACK_BETA, FINAL_NUDGE, AgentError, run_agent
 from app.agent.prompt import FINAL_SCHEMA
 from app.agent.providers import AnthropicProvider
 from app.agent.trace import Trace
@@ -114,17 +114,17 @@ def test_a_classifier_refusal_is_handled_before_reading_content(claude):
 
 
 def test_a_server_side_fallback_turn_is_echoed_without_its_switch_marker(claude):
-    switch = {"type": "fallback", "from": {"model": "claude-opus-5"}, "to": {"model": "claude-opus-4-8"},
+    switch = {"type": "fallback", "from": {"model": "claude-sonnet-5-5"}, "to": {"model": "claude-sonnet-5"},
               "trigger": {"type": "refusal"}}
     llm = claude.client(
         claude.message(switch, claude.tool_use("t1", "list_metrics", {}), stop_reason="tool_use",
-                       model="claude-opus-4-8"),
+                       model="claude-sonnet-5"),
         claude.message(claude.answer(answer_text="There are two governed metrics.", evidence_tool_use_ids=["t1"]),
-                       model="claude-opus-4-8"),
+                       model="claude-sonnet-5"),
     )
     response, trace = ask(llm)
     assert [block.type for block in llm.requests[1]["messages"][1]["content"]] == ["tool_use"]
-    assert (response["label"], trace.served_model) == ("governed_metric", "claude-opus-4-8")
+    assert (response["label"], trace.served_model) == ("governed_metric", "claude-sonnet-5")
 
 
 def test_a_rejected_statement_goes_back_as_a_tool_error_and_never_runs(claude, fake_db):
@@ -213,3 +213,27 @@ def test_a_blank_clarifying_question_is_an_ordinary_answer(claude):
     )
     response, _ = ask(llm)
     assert response["label"] == "governed_metric"
+
+
+def test_haiku_requests_send_no_fallback_because_it_has_none(claude, monkeypatch):
+    monkeypatch.setattr(config, "MODEL", "claude-haiku-5-5")
+    llm = claude.client(claude.message(claude.answer(refused=True, answer_text="No.")))
+    ask(llm)
+    assert "fallbacks" not in llm.requests[0] and "betas" not in llm.requests[0]
+    assert AnthropicProvider(llm).settings()["fallbacks"] == "none"
+
+
+def test_an_unreadable_ending_gets_one_nudge_then_the_answer_counts(claude):
+    llm = claude.client(
+        claude.message({"type": "text", "text": "DSO went up."}),
+        claude.message(claude.answer(refused=True, answer_text="No.")),
+    )
+    response, _ = ask(llm)
+    assert llm.requests[1]["messages"][-1] == {"role": "user", "content": FINAL_NUDGE}
+    assert response["label"] == "refused"
+
+
+def test_two_unreadable_endings_are_an_agent_error_not_an_answer(claude):
+    llm = claude.client(claude.message({"type": "text", "text": "Hmm."}), claude.message({"type": "text", "text": ""}))
+    with pytest.raises(AgentError, match="without a final answer"):
+        ask(llm)

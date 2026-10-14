@@ -1,33 +1,19 @@
-"""Model providers behind one small interface (decisions D31): the loop sends a system prompt, a provider-neutral
-transcript and the tool definitions; a provider returns one Turn (text, tool calls, token usage, stop reason).
-
-Two wire formats cover every provider this project uses, both hand-rolled:
-- AnthropicProvider: the Messages API through the official SDK (refusal fallback, adaptive thinking, structured
-  final answer). Its requests are exactly what the loop sent before providers existed.
-- OpenAICompatProvider: /chat/completions over HTTP, for Gemini (Google's OpenAI-compatible endpoint) and Ollama
-  (/v1). The final answer arrives as a call to a `final_answer` tool whose parameters are the final-answer schema,
-  because tool calling is the one capability both have. Each assistant message is echoed back exactly as received,
-  so provider extras such as Gemini's thought signatures survive the next round.
+"""The model behind one small interface: the loop sends a system prompt, a transcript and the tool definitions; the
+provider returns one Turn (text, tool calls, token usage, stop reason). AnthropicProvider is the Messages API through
+the official SDK (refusal fallback, adaptive thinking, structured final answer); tests script the same interface.
 
 Transcript items: {"role": "user", "content": str}, {"role": "assistant", "turn": Turn} and
 {"role": "tool", "results": [{"tool_use_id", "content", "is_error"}]}.
 """
 
-import copy
-import json
-import os
-import re
-import uuid
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
-
-import httpx2
 
 from app import config
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
-FINAL_TOOL = "final_answer"
-GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+# Models with no server-side refusal fallback: their requests don't send `fallbacks` (decisions D50).
+NO_FALLBACK = frozenset({"claude-haiku-5-5"})
 
 Stop = Literal["tool_use", "end_turn", "max_tokens", "refusal", "pause"]
 
@@ -44,8 +30,7 @@ class Usage:
 class ToolUse:
     id: str
     name: str
-    input: dict | None  # None when the model's arguments weren't a JSON object
-    error: str | None = None
+    input: dict
 
 
 @dataclass
@@ -60,15 +45,7 @@ class Turn:
 
 
 class ProviderError(Exception):
-    """A call that produced no turn. `kind` separates the model's service from the model:
-    infrastructure (unreachable, timed out, 5xx, a proxy's error page), rate_limited (429) or rejected (4xx).
-    Messages never carry the base URL or a key."""
-
-    def __init__(self, message: str, kind: Literal["infrastructure", "rate_limited", "rejected"],
-                 status: int | None = None, retry_after: float | None = None, quota_id: str | None = None):
-        super().__init__(message)
-        self.kind, self.status, self.retry_after = kind, status, retry_after
-        self.quota_id = quota_id  # which quota a 429 hit, when the server says (Google's QuotaFailure)
+    """A call that produced no usable turn (the SDK's own errors are anthropic.APIError)."""
 
 
 class Provider(Protocol):
@@ -96,16 +73,17 @@ class AnthropicProvider:
         return self._model or config.MODEL
 
     def settings(self) -> dict:
-        return {"effort": self._effort or config.EFFORT, "thinking": "adaptive", "fallbacks": "default"}
+        return {"effort": self._effort or config.EFFORT, "thinking": "adaptive",
+                "fallbacks": "none" if self.model in NO_FALLBACK else "default"}
 
     def complete(self, system, transcript, tools, *, final_only, timeout):
         from app.agent.prompt import FINAL_SCHEMA
 
+        fallback = {} if self.model in NO_FALLBACK else {"betas": [FALLBACK_BETA], "fallbacks": "default"}
         response = self.client.beta.messages.create(
             model=self.model,
             max_tokens=config.MAX_TOKENS,
-            betas=[FALLBACK_BETA],
-            fallbacks="default",
+            **fallback,
             thinking={"type": "adaptive"},
             output_config={"effort": self._effort or config.EFFORT, "format": {"type": "json_schema", "schema": FINAL_SCHEMA}},
             cache_control={"type": "ephemeral"},  # automatic breakpoint on the growing conversation tail
@@ -129,7 +107,7 @@ class AnthropicProvider:
             texts = [block.text for block in response.content if block.type == "text"]
             return Turn("end_turn", texts[-1] if texts else "", [], **base)
         if response.stop_reason != "tool_use":
-            raise ProviderError(f"Unexpected stop reason {response.stop_reason!r}.", "rejected")
+            raise ProviderError(f"Unexpected stop reason {response.stop_reason!r}.")
         uses = [ToolUse(b.id, b.name, b.input) for b in response.content if b.type == "tool_use"]
         return Turn("tool_use", "", uses, **base)
 
@@ -153,282 +131,3 @@ def _echoable(content: list) -> list:
     switch = max((i for i, block in enumerate(content) if block.type == "fallback"), default=-1)
     return [block for i, block in enumerate(content) if i > switch or (i < switch and block.type == "text")]
 
-
-# --- OpenAI-compatible (Gemini, Ollama) ---------------------------------------------------------------------------
-
-FINAL_INSTRUCTION = (
-    f"\nDeliver that JSON object by calling the {FINAL_TOOL} tool, on its own, once you have the tool results you "
-    "need. Each tool result carries its tool_use_id: cite those ids in evidence_tool_use_ids."
-)
-_THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
-_CLOUDFLARE_DOWN = {520, 521, 522, 523, 524, 525, 526, 527, 530}
-# 5xx bodies that describe the model's own request or output, not a broken server: they recur on every retry at
-# temperature 0, so they fail the question instead of pausing the run (a prompt beyond the served context, or
-# tool-call markup the server couldn't parse).
-_QUESTION_FAILURE = re.compile(r"context (length|window)|too long|exceeds|syntax error|failed to parse|tool call",
-                               re.IGNORECASE)
-
-
-class OpenAICompatProvider:
-    def __init__(self, name: str, base_url: str, model: str, api_key: str | None = None, *,
-                 temperature: float | None = 0.0, reasoning_effort: str | None = None, extra: dict | None = None,
-                 http: httpx2.Client | None = None, record: dict | None = None, call_timeout: float = 120.0,
-                 stream: bool = False):
-        self.name, self.model = name, model
-        self._url = base_url.rstrip("/") + "/chat/completions"
-        self._headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        self._temperature, self._reasoning = temperature, reasoning_effort
-        self._extra = extra or {}
-        self._http = http or httpx2.Client()
-        self._record = record or {}  # facts about the serving setup, reported with every eval run
-        self._call_timeout = call_timeout  # one model call; the loop's own budget covers the whole question
-        # Stream the reply. A Cloudflare quick tunnel (Ollama on Kaggle, D35) cuts any response that sends no byte
-        # for 100 s with a 524, so a long generation must send its tokens as they come (D42).
-        self._stream = stream
-
-    def settings(self) -> dict:
-        return {"temperature": self._temperature, "reasoning_effort": self._reasoning or "provider default",
-                **self._record}
-
-    def complete(self, system, transcript, tools, *, final_only, timeout):
-        from app.agent.prompt import FINAL_SCHEMA
-
-        final = {"type": "function", "function": {
-            "name": FINAL_TOOL, "description": "Deliver the final answer. Call it alone, as the last step.",
-            "parameters": FINAL_SCHEMA}}
-        body: dict[str, Any] = {
-            "model": self.model,
-            "messages": [{"role": "system", "content": system + FINAL_INSTRUCTION}, *self._messages(transcript)],
-            "tools": [final] if final_only else [*map(_function, tools), final],
-            "tool_choice": "required" if final_only else "auto",
-            "max_tokens": config.MAX_TOKENS,
-            **self._extra,
-        }
-        if self._temperature is not None:
-            body["temperature"] = self._temperature
-        if self._reasoning:
-            body["reasoning_effort"] = self._reasoning
-        if self._stream:
-            body |= {"stream": True, "stream_options": {"include_usage": True}}
-        return self._turn(self._post(body, min(timeout, self._call_timeout)))
-
-    def _post(self, body: dict, timeout: float) -> dict:
-        try:
-            if not self._stream:
-                return self._payload(self._http.post(self._url, json=body, headers=self._headers, timeout=timeout))
-            with self._http.stream("POST", self._url, json=body, headers=self._headers, timeout=timeout) as res:
-                if res.status_code >= 400:
-                    res.read()
-                    return self._payload(res)  # raises: every error status is handled there
-                return self._assemble(res.iter_lines())
-        except httpx2.TimeoutException:
-            raise ProviderError(f"{self.name}: no response within {timeout:.0f} s.", "infrastructure") from None
-        except httpx2.HTTPError as e:  # connection refused, DNS, reset: the message would carry the URL, so it's dropped
-            raise ProviderError(f"{self.name}: couldn't connect ({type(e).__name__}).", "infrastructure") from None
-
-    def _assemble(self, lines) -> dict:
-        """A streamed reply (server-sent events) rebuilt into the non-streamed shape _turn reads."""
-        content, calls, finish, usage, model = [], {}, None, None, None
-        for line in lines:
-            if not line.startswith("data:") or (data := line[5:].strip()) == "[DONE]":
-                continue
-            try:
-                chunk = json.loads(data)
-            except ValueError:
-                raise ProviderError(f"{self.name}: a streamed chunk wasn't JSON.", "infrastructure") from None
-            if "error" in chunk:  # a failure after the 200, such as unparseable tool-call markup
-                reason = str((chunk["error"] or {}).get("message") if isinstance(chunk["error"], dict) else chunk["error"])[:300]
-                kind = "rejected" if _QUESTION_FAILURE.search(reason) else "infrastructure"
-                raise ProviderError(f"{self.name}: server error in the stream: {reason}", kind)
-            model, usage = chunk.get("model") or model, chunk.get("usage") or usage
-            for choice in chunk.get("choices") or []:
-                delta = choice.get("delta") or {}
-                content.append(delta.get("content") or "")
-                for call in delta.get("tool_calls") or []:
-                    slot = calls.setdefault(call.get("index", len(calls)),
-                                            {"id": None, "type": "function", "function": {"name": "", "arguments": ""}})
-                    slot["id"] = call.get("id") or slot["id"]
-                    fn = call.get("function") or {}
-                    slot["function"]["name"] += fn.get("name") or ""
-                    args = fn.get("arguments")
-                    slot["function"]["arguments"] += args if isinstance(args, str) else json.dumps(args) if args else ""
-                finish = choice.get("finish_reason") or finish
-        message = {"role": "assistant", "content": "".join(content)}
-        if calls:
-            message["tool_calls"] = [calls[i] for i in sorted(calls)]
-        return {"model": model, "usage": usage, "choices": [{"message": message, "finish_reason": finish}]}
-
-    def _payload(self, res: httpx2.Response) -> dict:
-        if res.status_code == 429:
-            raise ProviderError(f"{self.name}: rate limited.", "rate_limited", 429, _retry_after(res), _quota_id(res))
-        if res.status_code >= 500 or res.status_code in _CLOUDFLARE_DOWN:
-            reason = _error_text(res) if "json" in res.headers.get("content-type", "") else ""
-            kind = "rejected" if _QUESTION_FAILURE.search(reason) else "infrastructure"
-            raise ProviderError(f"{self.name}: server error {res.status_code}{': ' + reason if reason else '.'}", kind,
-                                res.status_code)
-        if res.status_code >= 400:
-            raise ProviderError(f"{self.name}: request rejected ({res.status_code}): {_error_text(res)}", "rejected",
-                                res.status_code)
-        try:
-            payload = res.json()
-        except ValueError:  # e.g. an HTML page from a proxy in front of a dead server
-            raise ProviderError(f"{self.name}: the reply wasn't JSON.", "infrastructure", res.status_code) from None
-        if not isinstance(payload, dict):
-            raise ProviderError(f"{self.name}: the reply wasn't a JSON object.", "infrastructure", res.status_code)
-        return payload
-
-    def _turn(self, payload: dict) -> Turn:
-        raw = payload.get("usage") or {}
-        prompt, completion = int(raw.get("prompt_tokens") or 0), int(raw.get("completion_tokens") or 0)
-        # Gemini leaves thinking tokens out of completion_tokens but counts them in total_tokens: they're output.
-        output = max(completion, int(raw.get("total_tokens") or 0) - prompt)
-        usage = Usage(prompt, output, int((raw.get("prompt_tokens_details") or {}).get("cached_tokens") or 0))
-        model = payload.get("model") or self.model
-        choices = payload.get("choices") or []
-        if not choices or not isinstance(choices[0], dict):  # an empty reply: the loop asks once more for an answer
-            return Turn("end_turn", "", [], usage, model, native={"role": "assistant", "content": ""})
-        choice = choices[0]
-        message = copy.deepcopy(choice.get("message") or {"role": "assistant", "content": ""})
-        message.setdefault("role", "assistant")
-        text = _THINK.sub("", message.get("content") or "").strip()
-        finish = choice.get("finish_reason")
-        if finish == "content_filter":
-            return Turn("refusal", "", [], usage, model, native=message, refusal_category="content_filter")
-        calls = message.get("tool_calls") or []
-        uses = []
-        for call in calls:
-            call.setdefault("type", "function")
-            if not call.get("id"):  # some servers omit ids; the echoed message must carry the same ones
-                call["id"] = f"call_{uuid.uuid4().hex[:12]}"
-            fn = call.get("function") or {}
-            uses.append(_tool_use(call["id"], fn.get("name") or "", fn.get("arguments")))
-        finals = [u for u in uses if u.name == FINAL_TOOL]
-        if finals and len(uses) == 1:
-            answer = finals[0]
-            return Turn("end_turn", json.dumps(answer.input) if answer.input is not None else answer.error or "", [],
-                        usage, model, native=message)
-        if uses:
-            for u in finals:  # an answer given alongside other calls is premature: the model gets a note instead
-                u.error = f"Call {FINAL_TOOL} on its own, after reading the results of your other tool calls."
-            return Turn("tool_use", "", uses, usage, model, native=message)
-        if finish == "length":
-            return Turn("max_tokens", "", [], usage, model, native=message)
-        return Turn("end_turn", text, [], usage, model, native=message)
-
-    @staticmethod
-    def _messages(transcript: list[dict]) -> list[dict]:
-        out = []
-        for item in transcript:
-            if item["role"] == "user":
-                out.append({"role": "user", "content": item["content"]})
-            elif item["role"] == "assistant":
-                out.append(item["turn"].native)
-            else:
-                out += [{"role": "tool", "tool_call_id": r["tool_use_id"], "content": r["content"]} for r in item["results"]]
-        return out
-
-
-def _function(tool: dict) -> dict:
-    return {"type": "function",
-            "function": {"name": tool["name"], "description": tool["description"], "parameters": tool["input_schema"]}}
-
-
-def _tool_use(call_id: str, name: str, arguments: Any) -> ToolUse:
-    if isinstance(arguments, dict):  # some servers send an object rather than a JSON string
-        return ToolUse(call_id, name, arguments)
-    try:
-        parsed = json.loads(arguments or "{}")
-    except (TypeError, ValueError):
-        parsed = None
-    if not isinstance(parsed, dict):
-        return ToolUse(call_id, name, None, error=f"The arguments for {name or 'this call'} weren't a JSON object; "
-                                                   "call it again with valid JSON.")
-    return ToolUse(call_id, name, parsed)
-
-
-def _retry_after(res: httpx2.Response) -> float | None:
-    if (header := res.headers.get("retry-after")) and header.replace(".", "", 1).isdigit():
-        return float(header)
-    match = re.search(r'"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"', res.text)  # Google's RetryInfo in the error body
-    return float(match.group(1)) if match else None
-
-
-def _quota_id(res: httpx2.Response) -> str | None:
-    match = re.search(r'"quotaId"\s*:\s*"([^"]+)"', res.text)
-    return match.group(1) if match else None
-
-
-def _error_text(res: httpx2.Response) -> str:
-    try:
-        body = res.json()
-        error = body[0].get("error") if isinstance(body, list) else body.get("error", body)
-        message = error.get("message") if isinstance(error, dict) else error
-        return str(message)[:300]
-    except (ValueError, AttributeError, IndexError):
-        return res.text[:300]
-
-
-# --- configuration ------------------------------------------------------------------------------------------------
-
-
-def from_env(anthropic_client=None) -> Provider | None:
-    """The configured provider (CHANNELPULSE_PROVIDER, default gemini), or None when its credentials or endpoint
-    aren't set. `anthropic_client` is the resolved SDK client for the anthropic provider."""
-    env = os.environ.get
-    name = config.PROVIDER
-    temperature = float(env("CHANNELPULSE_TEMPERATURE", "0"))
-    if name == "anthropic":
-        return AnthropicProvider(anthropic_client) if anthropic_client is not None else None
-    if name == "gemini":
-        key = env("GEMINI_API_KEY")
-        if not key:
-            return None
-        model = env("GEMINI_MODEL", config.GEMINI_MODEL)
-        reasoning = env("GEMINI_REASONING_EFFORT") or None
-        default = config.GEMINI_DEFAULT_THINKING.get(model, "unknown")
-        return OpenAICompatProvider("gemini", GEMINI_BASE_URL, model, key, temperature=temperature,
-                                    reasoning_effort=reasoning,
-                                    record={"thinking": reasoning or f"provider default ({default})"})
-    if name == "ollama":
-        base, model = env("OLLAMA_BASE_URL"), env("OLLAMA_MODEL")
-        if not base or not model:
-            return None
-        # Ollama's /v1 ignores `think: false` but honours reasoning_effort "none" (verified live, D35).
-        thinking_off = env("OLLAMA_THINKING", "").lower() in ("off", "false", "0", "none")
-        reasoning = env("OLLAMA_REASONING_EFFORT") or ("none" if thinking_off else None)
-        record = {"thinking": f"off (reasoning_effort={reasoning})" if reasoning == "none"
-                  else (reasoning or "server default")}
-        return OpenAICompatProvider("ollama", base.rstrip("/") + "/v1", model, env("OLLAMA_API_TOKEN") or None,
-                                    temperature=temperature, reasoning_effort=reasoning, record=record,
-                                    call_timeout=float(env("OLLAMA_CALL_TIMEOUT_S", "300")),
-                                    stream=env("OLLAMA_STREAM", "1") != "0")
-    raise ValueError(f"Unknown CHANNELPULSE_PROVIDER {name!r}: use gemini, ollama or anthropic.")
-
-
-
-def ollama_show(base_url: str, model: str, token: str | None = None, http: httpx2.Client | None = None) -> dict:
-    """What the Ollama server itself reports for `model` (POST /api/show): quantization, context length, family and
-    size. Recorded with every eval run instead of assuming them. Errors never carry the URL."""
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    try:
-        res = (http or httpx2.Client()).post(base_url.rstrip("/") + "/api/show", json={"model": model},
-                                             headers=headers, timeout=60)
-        res.raise_for_status()
-        info = res.json()
-    except (httpx2.HTTPError, ValueError) as e:
-        raise ProviderError(f"ollama: /api/show failed ({type(e).__name__}).", "infrastructure") from None
-    details, model_info = info.get("details") or {}, info.get("model_info") or {}
-    trained = next((v for k, v in model_info.items() if k.endswith(".context_length")), None)
-    parameters = dict(line.split(None, 1) for line in (info.get("parameters") or "").splitlines() if line.strip())
-    parameters = {k: v.strip() for k, v in parameters.items()}
-    num_ctx = int(parameters["num_ctx"]) if parameters.get("num_ctx", "").isdigit() else None
-    return {
-        "quantization": details.get("quantization_level"),
-        "context_length": num_ctx or trained,  # num_ctx is what the served tag runs with; else the model's trained length
-        "context_length_trained": trained,
-        "family": details.get("family"),
-        "parameter_size": details.get("parameter_size"),
-        "format": details.get("format"),
-        "server_parameters": parameters,  # e.g. temperature, num_ctx, draft_num_predict (MTP)
-        "server_thinking_default": (info.get("thinking") or {}).get("default"),
-    }

@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app import brief, config, replay, semantic, traces
 from app.agent.loop import AgentError, run_agent
-from app.agent.providers import Provider, ProviderError, from_env
+from app.agent.providers import AnthropicProvider, Provider, ProviderError
 from app.agent.trace import Trace, write_trace
 from app.db import db_conninfo
 from app.guardrails.rate_limit import enforce_spend_cap, limit_ask_rate
@@ -151,8 +151,9 @@ def llm_client() -> anthropic.Anthropic | None:
 
 @functools.cache
 def llm_provider() -> Provider | None:
-    """The configured model provider (CHANNELPULSE_PROVIDER), or None when it has no credentials or endpoint."""
-    return from_env(llm_client() if config.PROVIDER == "anthropic" else None)
+    """The model provider, or None when no Anthropic credentials resolve."""
+    client = llm_client()
+    return AnthropicProvider(client) if client is not None else None
 
 
 LLM = Annotated[Provider | None, Depends(llm_provider)]
@@ -187,7 +188,6 @@ class ReplayAnswer(BaseModel):
     served_model: str | None
     latency_ms: int
     cost_usd: float
-    note: str | None = None  # e.g. recorded under detector v1 (D48)
 
 
 class Replay(BaseModel):
@@ -206,7 +206,7 @@ def _not_live_reason(provider: Provider | None) -> str | None:
 def ask_status(provider: LLM) -> dict:
     """Whether /api/ask answers live, why not, and which recorded eval run the page can replay instead."""
     reason = _not_live_reason(provider)
-    return {"mode": "replay" if reason else "live", "reason": reason, "provider": config.PROVIDER,
+    return {"mode": "replay" if reason else "live", "reason": reason, "provider": AnthropicProvider.name,
             "model": provider.model if provider else None, "recording": replay.summary(replay.load())}
 
 
@@ -235,9 +235,8 @@ def ask(body: AskRequest, region: Region, provider: LLM) -> dict:
         status = 504 if isinstance(e, anthropic.APITimeoutError) else 502
         raise HTTPException(status, "The model API call failed; please try again.") from e
     except ProviderError as e:
-        trace.error = f"{e.kind}: {e}"
-        status = 503 if e.kind == "rate_limited" else 502
-        raise HTTPException(status, "The model provider didn't answer; please try again.") from e
+        trace.error = f"ProviderError: {e}"
+        raise HTTPException(502, "The model provider didn't answer; please try again.") from e
     except Exception as e:
         trace.error = f"{type(e).__name__}: {e}"
         raise

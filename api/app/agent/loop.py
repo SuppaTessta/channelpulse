@@ -1,4 +1,4 @@
-"""The hand-rolled tool-use loop behind POST /api/ask (PLAN §8), over any provider (agent/providers.py, D31).
+"""The hand-rolled tool-use loop behind POST /api/ask (PLAN §8), through the provider interface (agent/providers.py).
 
 A manual loop rather than a framework's, because code, not the model, decides what the user sees: every tool call
 is recorded here, and response.assemble builds the answer, SQL, data and label from those records.
@@ -10,7 +10,7 @@ import time
 
 from app import config
 from app.agent.prompt import FINAL_SCHEMA, system_prompt
-from app.agent.providers import FALLBACK_BETA, FINAL_TOOL, Provider, ToolUse
+from app.agent.providers import FALLBACK_BETA, Provider, ToolUse
 from app.agent.response import ToolCall, assemble, refusal
 from app.agent.trace import Trace
 from app.guardrails import refusal_routing
@@ -81,14 +81,11 @@ def run_agent(provider: Provider, question: str, region: str, trace: Trace, *, t
 def _run(use: ToolUse, region: str, calls: dict[str, ToolCall], trace: Trace) -> dict:
     """Execute one tool call and return its result; failures go back to the model as errors."""
     started = time.perf_counter()
-    result, error = None, use.error
-    if error is None and use.name == FINAL_TOOL:
-        error = f"Call {FINAL_TOOL} on its own."
-    if error is None:
-        try:
-            result = run_tool(use.name, use.input, region)
-        except ToolError as e:
-            error = str(e)
+    result, error = None, None
+    try:
+        result = run_tool(use.name, use.input, region)
+    except ToolError as e:
+        error = str(e)
     content = for_model(use.id, result) if error is None else json.dumps({"tool_use_id": use.id, "error": error},
                                                                           ensure_ascii=False)
     duration_ms = round((time.perf_counter() - started) * 1000)

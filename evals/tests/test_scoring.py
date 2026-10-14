@@ -248,7 +248,7 @@ def test_scorecard_scores_traps_by_refusal_and_leaves_skipped_questions_out():
 def message(*content, stop_reason="end_turn"):
     usage = {"input_tokens": 1000, "output_tokens": 200, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
     return BetaMessage.model_validate({
-        "id": "msg", "type": "message", "role": "assistant", "model": "claude-opus-5", "content": list(content),
+        "id": "msg", "type": "message", "role": "assistant", "model": "claude-sonnet-5-5", "content": list(content),
         "stop_reason": stop_reason, "stop_sequence": None, "usage": usage,
     })
 
@@ -271,7 +271,7 @@ def test_ask_all_scores_every_cited_result_refuses_traps_and_stops_at_the_budget
     uses = [{"type": "tool_use", "id": f"t{i}", "name": "query_metric", "input": {"value": v}}
             for i, v in enumerate((10.0, 20.0), 1)]
     replies = [
-        message(*uses, stop_reason="tool_use"),  # each call is priced at $0.01
+        message(*uses, stop_reason="tool_use"),  # each call is priced at $0.004
         message(final(answer_text="FY25 10, FY26 20.", evidence_tool_use_ids=["t1", "t2"])),
         message(final(refused=True, answer_text="I can't forecast.")),
     ]
@@ -282,7 +282,7 @@ def test_ask_all_scores_every_cited_result_refuses_traps_and_stops_at_the_budget
                  {**TRAP, "id": "T2", "question": "?"}]
     golden = table(["fy25", "fy26"], [10.0, 20.0])
 
-    results = run_eval.ask_all(AnthropicProvider(client), questions, {"Q1": golden}, budget_usd=0.025)
+    results = run_eval.ask_all(AnthropicProvider(client), questions, {"Q1": golden}, budget_usd=0.01)
 
     assert results[0]["correct"] and results[0]["tools_used"] == ["query_metric", "query_metric"]  # fy26 is only in t2
     assert results[1]["refused"] and results[1]["correct"] and results[2]["skipped"]
@@ -298,7 +298,7 @@ def test_the_golden_set_is_well_formed():
     assert len(questions) >= run_eval.MIN_QUESTIONS and all(re.compile(p) for p in patterns)
 
 
-# --- raw mode (decisions D32) and the per-provider scorecard -----------------------------------------------------
+# --- raw mode (decisions D50) and the scorecard -----------------------------------------------------------------
 
 
 def test_raw_mode_scores_a_why_question_on_its_answer_not_on_tools_it_never_had():
@@ -314,15 +314,13 @@ def test_raw_mode_expects_ad_hoc_answers_and_refused_traps():
     assert scoring.score_question(TRAP, None, answer("refused"), [], [], "raw")["label_correct"]
 
 
-def test_the_scorecard_reports_median_tokens_per_question_and_infrastructure_separately():
+def test_the_scorecard_reports_median_latency_and_tokens_per_question():
     results = [result("A", "simple_lookup", True, latency=100), result("B", "simple_lookup", True, latency=300),
                result("C", "trap", True, refused=True, latency=200)]
-    results[0]["infra_retries"], results[1]["rate_limit_waits"] = 2, 1
     card = scoring.scorecard(results)
     assert (card["median_latency_ms"], card["tokens_per_question"]) == (200, {"input": 10, "output": 5})
-    assert (card["infra_retries"], card["rate_limit_waits"]) == (2, 1)
-    rendered = scoring.markdown(card, {"provider": "gemini", "mode": "governed", "model": "m", "effort": "e", "as_of": "d"})
-    assert "gemini" in rendered and "governed" in rendered and "Infrastructure retries" in rendered
+    rendered = scoring.markdown(card, {"provider": "anthropic", "mode": "governed", "model": "m", "effort": "e", "as_of": "d"})
+    assert "anthropic / m, governed mode" in rendered and "Tokens per question" in rendered
 
 
 # --- ambiguous questions, the router and the threshold (decisions D39) -------------------------------------------

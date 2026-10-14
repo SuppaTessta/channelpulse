@@ -125,5 +125,5 @@ _TOOLS = [
 
 TOOLS = sorted(({**tool, "strict": True} for tool in _TOOLS), key=lambda tool: tool["name"])
 
-# Raw mode (evals only, decisions D32): a plain text-to-SQL agent's single tool.
+# Raw mode (evals only, decisions D50): a plain text-to-SQL agent's single tool.
 RAW_TOOLS = [tool for tool in TOOLS if tool["name"] == "run_readonly_sql"]

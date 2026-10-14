@@ -4,19 +4,10 @@ import os
 
 env = os.environ.get
 
-# Which model provider answers (decisions D31): gemini (default), ollama or anthropic. Each reads its own settings:
-# gemini GEMINI_API_KEY + GEMINI_MODEL; ollama OLLAMA_BASE_URL + OLLAMA_MODEL (+ OLLAMA_API_TOKEN); anthropic the
-# SDK's credentials + CHANNELPULSE_MODEL below.
-DEFAULT_PROVIDER = "gemini"
-PROVIDER = env("CHANNELPULSE_PROVIDER", DEFAULT_PROVIDER).strip().lower()
-# Owner-approved (D33): 3.8 Flash's free tier allows 20 requests a day; 3.5 Flash-Lite allows 500.
-GEMINI_MODEL = "gemini-3.5-flash-lite"
-# What each model thinks at when no reasoning_effort is sent (Google's thinking docs), recorded with eval runs.
-GEMINI_DEFAULT_THINKING = {"gemini-3.5-flash-lite": "minimal", "gemini-3.8-flash": "medium"}
-
-# Anthropic only. Owner-approved default (Phase 2, A3; decisions D29). Opus 5.5 at medium effort: Anthropic reports it beating
-# Opus 5 at high on analysis work, and medium is its own API default.
-MODEL = env("CHANNELPULSE_MODEL", "claude-opus-5-5")
+# Anthropic's Messages API is the only provider (decisions D50). Sonnet 5.5 by default, the owner's choice on cost:
+# Opus is ruled out. Medium effort is Anthropic's starting point for multistep tool use; claude-haiku-5-5 is the
+# model the eval compares against.
+MODEL = env("CHANNELPULSE_MODEL", "claude-sonnet-5-5")
 EFFORT = env("CHANNELPULSE_EFFORT", "medium")
 MAX_TOKENS = 16_000
 MAX_TOOL_ROUNDS = int(env("AGENT_MAX_TOOL_ROUNDS", "8"))
@@ -52,15 +43,13 @@ MART_TABLES = frozenset({
     "mart_installer_claim_cohorts", "dim_date", "mart_anomaly_flags",
 })
 
-# USD per million tokens: (input, output, cache read), from Anthropic's pricing page on 2026-09-27. Cache reads are
-# 0.1x input except on Opus 5.5 (0.05x) and Fable 5.1 (0.025x); 5-minute cache writes are 1.25x input everywhere.
-# The fallback models a refusal can be re-run on are listed too, and an unknown model is priced at the dearest row.
+# USD per million tokens: (input, output, cache read), from Anthropic's model docs on 2026-10-14. Cache reads are 0.1x
+# input; 5-minute cache writes are 1.25x. Claude Sonnet 5 is where Sonnet 5.5's refusal fallback re-runs a declined
+# request, and an unknown model is priced at the dearest row.
+# ponytail: Haiku 5.5's prompts over 100K tokens bill at $0.50 / $2.50; the agent's stay far below that.
 PRICES = {
-    "claude-fable-5-1": (10.0, 50.0, 0.25),
-    "claude-opus-5-5": (4.0, 20.0, 0.20),
-    "claude-opus-5": (5.0, 25.0, 0.50),
-    "claude-opus-4-8": (5.0, 25.0, 0.50),
+    "claude-sonnet-5-5": (2.0, 10.0, 0.20),
     "claude-sonnet-5": (2.0, 10.0, 0.20),
-    "claude-haiku-4-5": (1.0, 5.0, 0.10),
+    "claude-haiku-5-5": (0.10, 0.50, 0.01),
 }
 CACHE_WRITE_MULTIPLIER = 1.25

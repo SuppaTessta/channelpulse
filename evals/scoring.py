@@ -173,7 +173,7 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
                    tables: list[dict], mode: str = "governed") -> dict:
     """Correctness, refusal, label and confidently-wrong verdicts for one answered (or failed) question.
 
-    Raw mode (decisions D32) has only run_readonly_sql, so a rubric's evidence_tools requirement is dropped (the
+    Raw mode (decisions D50) has only run_readonly_sql, so a rubric's evidence_tools requirement is dropped (the
     answer is judged on what it says) and every answer is expected to be ad hoc, traps refused and ambiguous
     questions clarified. Asking for clarification is never confidently wrong: it states no figures."""
     spec = question["compare"]
@@ -275,9 +275,6 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
         "tokens_per_question": {
             kind: round(sum(r["tokens"][kind] for r in ran) / len(ran)) if ran else None for kind in ("input", "output")
         },
-        # Infrastructure, not the model: never scored, reported separately (decisions D32).
-        "infra_retries": sum(r.get("infra_retries", 0) for r in results),
-        "rate_limit_waits": sum(r.get("rate_limit_waits", 0) for r in results),
     }
 
 
@@ -320,10 +317,6 @@ def markdown(card: dict, meta: dict) -> str:
             if card["tokens_per_question"]["input"] is not None else "| Tokens per question | n/a |"
         ),
         f"| Cost avg per query / total | ${card['avg_cost_usd']} / ${card['total_cost_usd']} |",
-        (
-            f"| Infrastructure retries / rate-limit waits (not scored) | {card['infra_retries']} / "
-            f"{card['rate_limit_waits']} |"
-        ),
         (
             "| Tokens (input / output / cache read / cache write) | "
             f"{' / '.join(f'{n:,}' for n in card['total_tokens'].values())} |"

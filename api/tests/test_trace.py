@@ -6,7 +6,7 @@ from app.agent.trace import Trace, price, write_trace
 from app.db import db_conninfo, ops_conninfo
 
 
-def response(model="claude-opus-5", input_tokens=0, output_tokens=0, cache_read_input_tokens=0,
+def response(model="claude-sonnet-5-5", input_tokens=0, output_tokens=0, cache_read_input_tokens=0,
              cache_creation_input_tokens=0):
     usage = Usage(input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens)
     return Turn("end_turn", "", [], usage, model)
@@ -14,44 +14,31 @@ def response(model="claude-opus-5", input_tokens=0, output_tokens=0, cache_read_
 
 @pytest.mark.parametrize(
     ("model", "expected"),
-    [("claude-opus-5-5", (4.0, 20.0, 0.20)), ("claude-opus-5", (5.0, 25.0, 0.50)), ("claude-sonnet-5", (2.0, 10.0, 0.20)),
-     ("claude-haiku-4-5-20251001", (1.0, 5.0, 0.10)), ("claude-opus-4-8", (5.0, 25.0, 0.50)),
-     ("some-future-model", (10.0, 50.0, 0.25))],
+    [("claude-sonnet-5-5", (2.0, 10.0, 0.20)), ("claude-sonnet-5", (2.0, 10.0, 0.20)),
+     ("claude-haiku-5-5", (0.10, 0.50, 0.01)), ("some-future-model", (2.0, 10.0, 0.20))],
 )
 def test_models_are_priced_from_the_table_and_unknown_ones_at_the_dearest_rate(model, expected):
     assert price(model) == expected
 
 
-def test_cache_reads_bill_at_each_models_own_rate():
-    trace = Trace(question="q", region_claim="ALL", model="claude-opus-5-5")
-    trace.add_usage(response(model="claude-opus-5-5", cache_read_input_tokens=1_000_000), "anthropic")
-    assert trace.est_cost_usd == pytest.approx(0.20)  # 0.05x input on Opus 5.5, not the usual 0.1x
-
-
 def test_usage_adds_up_tokens_and_cost_across_rounds():
-    trace = Trace(question="q", region_claim="ALL", model="claude-opus-5")
+    trace = Trace(question="q", region_claim="ALL", model="claude-sonnet-5-5")
     trace.add_usage(response(input_tokens=1_000_000, output_tokens=100_000), "anthropic")
     trace.add_usage(response(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000), "anthropic")
     assert (trace.input_tokens, trace.output_tokens, trace.cache_read_tokens, trace.cache_write_tokens) == (
         1_000_000, 100_000, 1_000_000, 1_000_000)
-    assert trace.est_cost_usd == pytest.approx(5.0 + 2.5 + 0.5 + 6.25)  # input, output, cache read, cache write
+    assert trace.est_cost_usd == pytest.approx(2.0 + 1.0 + 0.2 + 2.5)  # input, output, cache read, cache write
 
 
 def test_cost_is_priced_at_the_model_that_served_the_response():
-    trace = Trace(question="q", region_claim="ALL", model="claude-sonnet-5")
-    trace.add_usage(response(model="claude-opus-4-8", output_tokens=1_000_000), "anthropic")
-    assert (trace.served_model, trace.est_cost_usd) == ("claude-opus-4-8", pytest.approx(25.0))
-
-
-def test_free_providers_count_tokens_but_no_cost():
-    trace = Trace(question="q", region_claim="ALL", model="gemini-3.8-flash")
-    trace.add_usage(response(model="gemini-3.8-flash", input_tokens=5_000, output_tokens=400), "gemini")
-    assert (trace.provider, trace.input_tokens, trace.output_tokens, trace.est_cost_usd) == ("gemini", 5_000, 400, 0.0)
+    trace = Trace(question="q", region_claim="ALL", model="claude-haiku-5-5")
+    trace.add_usage(response(model="claude-sonnet-5", output_tokens=1_000_000), "anthropic")
+    assert (trace.served_model, trace.est_cost_usd) == ("claude-sonnet-5", pytest.approx(10.0))
 
 
 @pytest.mark.db
 def test_a_trace_row_is_written_and_readable_by_the_ops_role():
-    trace = Trace(question="pytest probe", region_claim="Assam", model="claude-opus-5", label="refused",
+    trace = Trace(question="pytest probe", region_claim="Assam", model="claude-sonnet-5-5", label="refused",
                   tool_calls=[{"id": "toolu_1", "name": "list_metrics", "error": None}], final_sql=["select 1"],
                   est_cost_usd=0.000123456)
     write_trace(trace)

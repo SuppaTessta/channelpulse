@@ -52,7 +52,7 @@ When you are done, reply with the JSON object the response format asks for:
 Keep answers focused, brief and concise.
 """
 
-# Raw mode (evals only, decisions D32): the baseline a plain text-to-SQL agent gets. Same company, same refusal
+# Raw mode (evals only, decisions D50): the baseline a plain text-to-SQL agent gets. Same company, same refusal
 # rules and the same final answer, but only run_readonly_sql and the mart schema: no metric glossary, no semantic
 # layer and no anomaly detectors. The same SQL guardrails and row-level security apply.
 RAW_RULES = """\

@@ -50,7 +50,7 @@ def test_attack_sql_is_rejected(qid, sql):
 @pytest.mark.parametrize("q", GOVERNED, ids=lambda q: q["id"])
 def test_governed_call_compiles(q):
     for call in _calls(q):
-        semantic.compile_query(call["metric_name"], call["filters"], call["group_by"], call["date_range"], "ALL")
+        semantic.compile_query(call["metric_name"], call["filters"], call["group_by"], call["date_range"])
 
 
 @pytest.fixture(scope="module")

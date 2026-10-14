@@ -37,8 +37,8 @@ def test_query_metric_compiles_then_executes_under_the_region_claim(fake_db, fak
         "date_range": {"start": "2026-01-01", "end": "2026-06-30"},
     }
     result = run_tool("query_metric", tool_input, "Assam")
-    assert fake_semantic == [{**tool_input, "region_claim": "Assam"}]
-    assert fake_db.calls[0][1:] == ({"region": "Assam"}, "Assam")
+    assert fake_semantic == [tool_input]
+    assert fake_db.calls[0][1:] == (None, "Assam")
     assert result["label"] == "governed_metric" and result["data"]["rows"] == fake_db.result.rows
 
 
@@ -54,7 +54,7 @@ def test_query_metric_on_the_real_semantic_layer_runs_the_compiled_sql(fake_db):
     run_tool("query_metric", tool_input, "Assam")
     ((sql, params, region),) = fake_db.calls
     assert '"marts"."fct_invoice_collections"' in sql and "distributor__region = 'Assam'" in sql
-    assert (params, region) == ({}, "Assam")
+    assert (params, region) == (None, "Assam")
 
 
 def test_a_query_the_semantic_layer_rejects_is_a_tool_error_and_runs_nothing(fake_db):

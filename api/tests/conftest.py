@@ -91,12 +91,12 @@ def fake_semantic(monkeypatch):
     list of compile_query calls."""
     compiled = []
 
-    def compile_query(metric_name, filters, group_by, date_range, region_claim):
+    def compile_query(metric_name, filters, group_by, date_range):
         if metric_name not in {m["name"] for m in METRICS}:
             raise semantic.UnknownMetric(f"No governed metric is called {metric_name!r}.")
         compiled.append({"metric_name": metric_name, "filters": filters, "group_by": group_by,
-                         "date_range": date_range, "region_claim": region_claim})
-        return {"sql": GOVERNED_SQL, "params": {"region": region_claim}}
+                         "date_range": date_range})
+        return GOVERNED_SQL
 
     monkeypatch.setattr(semantic, "list_metrics", lambda: METRICS)
     monkeypatch.setattr(semantic, "explain_metric", lambda name: {"name": name, "formula": "sum(x) / 0.35"})

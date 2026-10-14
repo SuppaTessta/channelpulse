@@ -93,7 +93,7 @@ def explain_metric(name: str) -> dict:
         "time_dimension": entry["time_dimension"],
         "default_time_grain": entry["default_time_grain"],
         "example_group_by": example,
-        "sql": compile_query(name, [], example, None, "ALL")["sql"],
+        "sql": compile_query(name, [], example, None),
         "caveats": _caveats(metric, entry),
     }
 
@@ -103,9 +103,8 @@ def compile_query(
     filters: list[dict],
     group_by: list[str],
     date_range: dict | None,
-    region_claim: str,
-) -> dict:
-    """Compile a governed metric query to {"sql": str, "params": {}}; filter values are validated and inlined.
+) -> str:
+    """Compile a governed metric query to SQL; filter values are validated and inlined.
 
     filters     [{"dimension": a name from the metric's dimensions, "op": one of FILTER_OPS,
                   "value": text | number | boolean (ISO date for metric_time), or a list for in / not_in}]
@@ -113,7 +112,7 @@ def compile_query(
     date_range  {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}, both inclusive, or None for all history
     Raises UnknownMetric or InvalidQuery with a message that says what to change.
     """
-    # region_claim adds nothing to the SQL: Postgres RLS on the distributor-level marts filters rows by the claim
+    # No region in the SQL: Postgres RLS on the distributor-level marts filters rows by the caller's claim
     # (warehouse/macros/apply_region_rls.sql), and every compiled query runs as the RLS-bound agent role.
     entry = _entry(metric_name)
     allowed = frozenset(entry["dimensions"])
@@ -145,7 +144,7 @@ def compile_query(
     check = validate(sql, config.MART_TABLES, config.ROW_CAP)
     if not check.ok:
         raise InvalidQuery(f"The compiled query failed the SQL safety check: {', '.join(check.reasons)}.")
-    return {"sql": sql, "params": {}}
+    return sql
 
 
 def portable(manifest: dict) -> dict:

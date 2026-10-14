@@ -33,9 +33,7 @@ REGION = "distributor__region"
 
 
 def compile_sql(metric="primary_sales_value", group_by=("metric_time__month",), filters=(), date_range=None) -> str:
-    query = semantic.compile_query(metric, list(filters), list(group_by), date_range, "ALL")
-    assert query["params"] == {}
-    return query["sql"]
+    return semantic.compile_query(metric, list(filters), list(group_by), date_range)
 
 
 def region_is(value) -> list[dict]:
@@ -280,8 +278,8 @@ def test_a_compiled_query_runs_read_only_on_the_marts():
     built = readonly_db.run("select to_regclass('marts.fct_primary_sales') is not null as built", None, "ALL")
     if not built.rows[0][0]:
         pytest.skip("the marts aren't built yet (dbt build)")
-    query = semantic.compile_query("primary_sales_value", [], ["metric_time__month", REGION], None, "ALL")
-    result = readonly_db.run(query["sql"], query["params"], "ALL")
+    sql = semantic.compile_query("primary_sales_value", [], ["metric_time__month", REGION], None)
+    result = readonly_db.run(sql, None, "ALL")
     assert result.columns == ["metric_time__month", "distributor__region", "primary_sales_value"]
 
 
@@ -314,8 +312,8 @@ def _fiscal(metric, group_by, filters=()):
     built = readonly_db.run("select to_regclass('marts.fct_primary_sales') is not null as built", None, "ALL")
     if not built.rows[0][0]:
         pytest.skip("the marts aren't built yet (dbt build)")
-    query = semantic.compile_query(metric, list(filters), group_by, None, "ALL")
-    result = readonly_db.run(query["sql"], query["params"], "ALL")
+    sql = semantic.compile_query(metric, list(filters), group_by, None)
+    result = readonly_db.run(sql, None, "ALL")
     return [dict(zip(result.columns, row, strict=True)) for row in result.rows]
 
 

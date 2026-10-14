@@ -48,10 +48,10 @@ def explain_metric(tool_input: dict, _region: str) -> dict:
 
 
 def query_metric(tool_input: dict, region: str) -> dict:
-    compiled = semantic.compile_query(
-        tool_input["metric_name"], tool_input["filters"], tool_input["group_by"], tool_input["date_range"], region
+    sql = semantic.compile_query(
+        tool_input["metric_name"], tool_input["filters"], tool_input["group_by"], tool_input["date_range"]
     )
-    return _result(readonly_db.run(compiled["sql"], compiled.get("params"), region), GOVERNED)
+    return _result(readonly_db.run(sql, None, region), GOVERNED)
 
 
 def run_readonly_sql(tool_input: dict, region: str) -> dict:

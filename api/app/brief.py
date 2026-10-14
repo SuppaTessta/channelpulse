@@ -82,9 +82,8 @@ def display(kind: str, value) -> str:
 
 def _metric(name: str, start: dt.date, end: dt.date, region: str, group_by=(), filters=()) -> Callable:
     def run() -> readonly_db.QueryResult:
-        compiled = semantic.compile_query(name, list(filters), list(group_by), {"start": start.isoformat(),
-                                                                                "end": end.isoformat()}, region)
-        return readonly_db.run(compiled["sql"], compiled.get("params"), region)
+        date_range = {"start": start.isoformat(), "end": end.isoformat()}
+        return readonly_db.run(semantic.compile_query(name, list(filters), list(group_by), date_range), None, region)
     return run
 
 

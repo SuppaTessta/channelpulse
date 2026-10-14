@@ -98,7 +98,7 @@ def test_metric_query_is_the_governed_path_under_the_claim(api, fake_semantic):
             "group_by": ["month"], "date_range": {"start": "2026-01-01", "end": "2026-06-30"}}
     response = api.http.post("/api/metrics/query", json=body, headers={"X-Demo-Region": "Assam"})
     assert response.status_code == 200 and response.json()["label"] == "governed_metric"
-    assert fake_semantic == [{**body, "region_claim": "Assam"}] and api.db.calls[0][2] == "Assam"
+    assert fake_semantic == [body] and api.db.calls[0][2] == "Assam"
 
 
 def test_an_unknown_metric_is_404(api):

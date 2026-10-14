@@ -4,7 +4,7 @@ import { CaretDown, CaretUp, CheckCircle, Minus, WarningCircle, XCircle } from "
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { fmtNumber } from "@/lib/format";
-import { categoryText, fmtLatency, fmtUsd, tokenCounts, toolErrorCount, when, type TraceRow } from "@/lib/traces";
+import { categoryText, fmtLatency, fmtUsd, tokenCounts, when, type TraceRow } from "@/lib/traces";
 import { LabelBadge } from "../ask/answer";
 import { Badge, cx, ICON } from "../ui";
 
@@ -82,7 +82,6 @@ export function TraceTable({ rows, hrefFor }: { rows: TraceRow[]; hrefFor: Recor
         </thead>
         <tbody>
           {sorted.map((r) => {
-            const errors = toolErrorCount(r.tool_errors);
             const tokens = tokenCounts(r);
             return (
               <tr key={r.trace_id} className="relative border-b border-line align-top transition-colors duration-150 last:border-0 hover:bg-hover">
@@ -125,7 +124,7 @@ export function TraceTable({ rows, hrefFor }: { rows: TraceRow[]; hrefFor: Recor
                 <td className="px-3 py-2.5 text-right whitespace-nowrap text-ink">{fmtUsd(r.est_cost_usd)}</td>
                 <td className="px-3 py-2.5 text-right whitespace-nowrap">
                   <span className="text-ink">{fmtNumber(r.tools?.length ?? 0)}</span>
-                  {errors ? <span className="block text-xs text-danger">{errors === 1 ? "1 error" : `${fmtNumber(errors)} errors`}</span> : null}
+                  {r.tool_errors ? <span className="block text-xs text-danger">{r.tool_errors === 1 ? "1 error" : `${fmtNumber(r.tool_errors)} errors`}</span> : null}
                 </td>
                 <td className="px-3 py-2.5">
                   <Verdict correct={r.eval_correct} />

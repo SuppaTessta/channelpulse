@@ -5,7 +5,7 @@ import { getTrace, getTraces, type Result } from "@/lib/api";
 import { LABEL_TEXT, type AskLabel } from "@/lib/ask";
 import { regionName, type Region } from "@/lib/config";
 import { fmtNumber } from "@/lib/format";
-import { categoryText, facetPairs, fmtLatency, fmtUsd, tokenCounts, tokenLabel, toolErrorCount, when, type TraceList } from "@/lib/traces";
+import { categoryText, facetPairs, fmtLatency, fmtUsd, tokenCounts, tokenLabel, when, type TraceList } from "@/lib/traces";
 import { LabelBadge } from "../ask/answer";
 import { SqlBlock } from "../sql";
 import { EmptyState, ErrorState } from "../states";
@@ -211,6 +211,7 @@ export async function TraceDetailView({ id, region }: { id: string; region: Regi
   if (!r.ok) return <ErrorState error={r.error} className="px-5" />;
   const t = r.value;
   const tokens = tokenCounts(t);
+  const failed = t.tool_calls.filter((c) => c.error != null).length;
   return (
     <div className="flex flex-col gap-6 px-5 py-5">
       <section className="flex flex-col gap-3">
@@ -244,7 +245,7 @@ export async function TraceDetailView({ id, region }: { id: string; region: Regi
         <Fact label="Estimated cost">{fmtUsd(t.est_cost_usd)}</Fact>
         <Fact label="Tool calls">
           {fmtNumber(t.tool_calls.length)}
-          {toolErrorCount(t.tool_errors) ? <span className="text-danger">, {fmtNumber(toolErrorCount(t.tool_errors))} failed</span> : null}
+          {failed ? <span className="text-danger">, {fmtNumber(failed)} failed</span> : null}
         </Fact>
         {tokens.map(([k, n]) => (
           <Fact key={k} label={`${tokenLabel(k)} tokens`}>

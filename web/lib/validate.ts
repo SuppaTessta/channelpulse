@@ -73,7 +73,6 @@ export function isAskStatus(v: unknown): v is AskStatus {
     isObj(v) &&
     (v.mode === "live" || v.mode === "replay") &&
     (v.reason === null || v.reason === "no_credentials" || v.reason === "live_off") &&
-    isStr(v.provider) &&
     isStrOrNull(v.model) &&
     (v.recording === null || isRecording(v.recording))
   );
@@ -93,10 +92,7 @@ export function isReplay(v: unknown): v is Replay {
 
 // Traces and the Weekly Brief: the fields each page reads are checked; anything else the API adds passes through.
 const isNumOrNull = (v: unknown) => v == null || typeof v === "number";
-const isFacet = (v: unknown) =>
-  v === undefined ||
-  (isObj(v) && Object.values(v).every((n) => typeof n === "number")) ||
-  (Array.isArray(v) && v.every((x) => isObj(x) && typeof x.count === "number"));
+const isFacet = (v: unknown) => v === undefined || (isObj(v) && Object.values(v).every((n) => typeof n === "number"));
 
 function isTraceRow(v: unknown): boolean {
   return (
@@ -158,8 +154,9 @@ export function isBrief(v: unknown): v is Brief {
     isObj(check) &&
     typeof check.queries_rechecked === "number" &&
     Array.isArray(check.problems) &&
+    check.problems.every(isStr) &&
     isObj(narration) &&
     (narration.by === "model" || narration.by === "template") &&
-    (narration.blocked == null || Array.isArray(narration.blocked))
+    (narration.blocked == null || (Array.isArray(narration.blocked) && narration.blocked.every(isStr)))
   );
 }

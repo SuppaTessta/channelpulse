@@ -10,8 +10,8 @@ export type Brief = {
   status: "verified" | "blocked";
   sections: { title: string; sentences: BriefSentence[] }[];
   facts: Record<string, BriefFact>;
-  check: { queries_rechecked: number; problems: unknown[] };
-  narration: { by: "model" | "template"; model: string | null; blocked: unknown[] };
+  check: { queries_rechecked: number; problems: string[] };
+  narration: { by: "model" | "template"; model: string | null; blocked: string[] };
 };
 export type BriefWeeks = { weeks: string[] };
 
@@ -21,7 +21,3 @@ export function footnoteNumbers(brief: Brief): Map<string, number> {
   for (const s of brief.sections) for (const sentence of s.sentences) for (const id of sentence.facts) if (brief.facts[id] && !numbers.has(id)) numbers.set(id, numbers.size + 1);
   return numbers;
 }
-
-/** A problem or a blocked reason may arrive as text or as a small object; either way it reads as one line. */
-export const reasonText = (v: unknown): string =>
-  typeof v === "string" ? v : v && typeof v === "object" ? Object.entries(v).map(([k, x]) => `${k}: ${typeof x === "string" ? x : JSON.stringify(x)}`).join(", ") : String(v);

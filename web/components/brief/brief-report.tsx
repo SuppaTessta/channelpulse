@@ -1,7 +1,7 @@
 import { Info, SealCheck, ShieldWarning } from "@phosphor-icons/react/dist/ssr";
 import type { ReactNode } from "react";
 import { getBrief } from "@/lib/api";
-import { footnoteNumbers, reasonText, type Brief, type BriefFact } from "@/lib/brief";
+import { footnoteNumbers, type Brief, type BriefFact } from "@/lib/brief";
 import type { Region } from "@/lib/config";
 import { fmtDate, fmtRange } from "@/lib/format";
 import { SqlBlock } from "../sql";
@@ -63,7 +63,7 @@ function CheckLine({ brief }: { brief: Brief }) {
       {brief.check.problems.length ? (
         <ul className="ml-6 list-disc space-y-1 text-[13px] marker:text-danger">
           {brief.check.problems.map((p, i) => (
-            <li key={i}>{reasonText(p)}</li>
+            <li key={i}>{p}</li>
           ))}
         </ul>
       ) : null}
@@ -85,7 +85,7 @@ function NarrationNote({ brief }: { brief: Brief }) {
         {reasons.length ? (
           <ul className="mt-1 ml-4 list-disc space-y-0.5">
             {reasons.map((r, i) => (
-              <li key={i}>{reasonText(r)}</li>
+              <li key={i}>{r}</li>
             ))}
           </ul>
         ) : null}

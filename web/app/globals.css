@@ -403,6 +403,37 @@
   animation: cp-reveal-circle 650ms var(--ease-out-expo);
 }
 
+/* Graphics (DESIGN.md): the header aurora, the canvas grain and the brand mark's draw-in. */
+.cp-aurora {
+  pointer-events: none;
+  position: absolute;
+  inset: -40% -10% auto -10%;
+  height: 180%;
+  background:
+    radial-gradient(40% 60% at 18% 30%, var(--aurora-1), transparent 70%),
+    radial-gradient(35% 55% at 62% 10%, var(--aurora-2), transparent 70%),
+    radial-gradient(30% 45% at 88% 40%, var(--aurora-3), transparent 70%);
+  filter: blur(24px);
+  animation: cp-drift 40s ease-in-out infinite alternate;
+  mask-image: linear-gradient(to bottom, black 40%, transparent);
+}
+.cp-grain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+.cp-mark-draw path {
+  stroke-dasharray: 1;
+  animation: cp-draw 1400ms var(--ease-out-expo) both;
+}
+.cp-mark-draw path + path {
+  animation-delay: 250ms;
+}
+
 /* Observable Plot output: tokens in, library defaults out. */
 .cp-plot svg {
   display: block;

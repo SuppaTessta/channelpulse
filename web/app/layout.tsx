@@ -38,6 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             {children}
           </main>
         </Providers>
+        <div aria-hidden className="cp-grain print:hidden" />
       </body>
     </html>
   );

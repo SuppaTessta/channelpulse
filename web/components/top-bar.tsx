@@ -69,8 +69,9 @@ export function TopBar({
   children?: ReactNode;
 }) {
   return (
-    <header className="border-b border-line bg-canvas md:sticky md:top-0 md:z-20 md:bg-canvas/85 md:backdrop-blur-md print:hidden">
-      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 md:px-6 lg:min-h-16 lg:flex-nowrap">
+    <header className="relative overflow-hidden border-b border-line bg-canvas md:sticky md:top-0 md:z-20 md:bg-canvas/80 md:backdrop-blur-md print:hidden">
+      <div aria-hidden className="cp-aurora" />
+      <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 md:px-6 lg:min-h-16 lg:flex-nowrap">
         <MobileNav />
         <div className="min-w-0 flex-1 py-1">
           {children ? <div className="text-xs text-muted">{children}</div> : null}

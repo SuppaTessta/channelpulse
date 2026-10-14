@@ -110,3 +110,13 @@ test("a counting figure never shows a sign its value doesn't have", async ({ pag
   expect(frames.length, "the figures counted").toBeGreaterThan(5);
   expect(frames.filter((f) => /[−-]\d/.test(f))).toEqual([]);
 });
+
+test("the header carries the aurora and the canvas the grain, and neither takes a click", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("header .cp-aurora")).toHaveCount(1);
+  await expect(page.locator(".cp-grain")).toHaveCount(1);
+  const toggle = page.getByRole("button", { name: /Switch to the (light|dark) theme/ });
+  const box = (await toggle.boundingBox())!;
+  const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("button")?.getAttribute("aria-label") ?? null, [box.x + box.width / 2, box.y + box.height / 2]);
+  expect(hit).toMatch(/Switch to the (light|dark) theme/);
+});

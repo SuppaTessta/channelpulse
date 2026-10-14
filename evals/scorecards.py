@@ -48,10 +48,6 @@ def load(folder: Path = RUNS) -> list[dict]:
     return sorted(rows, key=lambda r: (r["label"] != "current", r["model"], r["mode"], r["label"]))
 
 
-def _pct(value: float | None) -> str:
-    return "n/a" if value is None else f"{100 * value:.1f}%"
-
-
 def _secs(ms: int | None) -> str:
     return "n/a" if ms is None else f"{ms / 1000:.1f} s"
 
@@ -73,7 +69,7 @@ def markdown(rows: list[dict]) -> str:
         w = r["wrong"] or {}
         ambiguous = f"{w.get('ambiguous_answered', 0)} of {r['ambiguous']}" if r["ambiguous"] else "n/a"
         lines.append(
-            f"| `{r['model']}` | {r['mode']} | {r['label']} | {r['questions']} | {_pct(r['accuracy'])} | "
+            f"| `{r['model']}` | {r['mode']} | {r['label']} | {r['questions']} | {scoring.percent(r['accuracy'])} | "
             f"{w.get('wrong_answer', 'n/a')} | {ambiguous} | {w.get('trap_answered', 'n/a')} | {_traps(r['traps'])} | "
             f"{_secs(r['median_ms'])} / {_secs(r['p95_ms'])} | {r['tokens']['input']:,} / {r['tokens']['output']:,} | "
             f"{_usd(r['cost'])} | {r['date']} |"
@@ -86,7 +82,7 @@ def by_category(rows: list[dict]) -> str:
     lines = ["| Run | " + " | ".join(categories) + " |", "|---|" + "---|" * len(categories)]
     for r in rows:
         lines.append(f"| {r['model']} {r['mode']} ({r['label']}) | "
-                     + " | ".join(_pct(r["by_category"].get(c)) for c in categories) + " |")
+                     + " | ".join(scoring.percent(r["by_category"].get(c)) for c in categories) + " |")
     return "\n".join(lines)
 
 

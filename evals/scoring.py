@@ -284,7 +284,7 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
     }
 
 
-def _percent(value: float | None) -> str:
+def percent(value: float | None) -> str:
     return "n/a" if value is None else f"{100 * value:.1f}%"
 
 
@@ -296,21 +296,21 @@ def markdown(card: dict, meta: dict) -> str:
         "",
         "| Measure | Result |",
         "|---|---|",
-        f"| Execution accuracy (answerable) | {_percent(card['execution_accuracy'])} |",
-        *([(f"| Accuracy threshold {_percent(card['accuracy_threshold'])} | "
+        f"| Execution accuracy (answerable) | {percent(card['execution_accuracy'])} |",
+        *([(f"| Accuracy threshold {percent(card['accuracy_threshold'])} | "
             f"{'met' if card['meets_threshold'] else 'NOT met'} |")] if card.get("accuracy_threshold") else []),
-        *(f"| &nbsp;&nbsp;{c} | {_percent(v)} |" for c, v in card["accuracy_by_category"].items()),
+        *(f"| &nbsp;&nbsp;{c} | {percent(v)} |" for c, v in card["accuracy_by_category"].items()),
         (
-            f"| Refusal correctness | {_percent(card['refusal_correctness'])} "
+            f"| Refusal correctness | {percent(card['refusal_correctness'])} "
             f"(refused exactly the traps: {'yes' if card['refused_exactly_the_traps'] else 'no'}) |"
         ),
         (
-            f"| Clarification asked on ambiguous questions | {_percent(card.get('clarification_correctness'))} "
+            f"| Clarification asked on ambiguous questions | {percent(card.get('clarification_correctness'))} "
             f"(needless elsewhere: {len(card.get('needless_clarifications', []))}) |"
         ),
         *([(f"| Traps refused: router / model | {t['router']} before any model call / {t['model']} of "
              f"{t['model_of']} by the model |")] if (t := card.get("trap_refusals")) else []),
-        f"| Label correctness | {_percent(card['label_accuracy'])} |",
+        f"| Label correctness | {percent(card['label_accuracy'])} |",
         *(f"| {label} | {len(ids)}{': ' + ', '.join(ids) if ids else ''} |" for label, ids in (
             ("Wrong answers (answerable questions)", card["confidently_wrong_by_kind"]["wrong_answer"]),
             ("Ambiguous questions answered without asking", card["confidently_wrong_by_kind"]["ambiguous_answered"]),

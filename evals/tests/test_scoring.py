@@ -233,10 +233,10 @@ def test_scorecard_scores_traps_by_refusal_and_leaves_skipped_questions_out():
     ]
     card = scoring.scorecard(results)
     assert card["execution_accuracy"] == 0.5 and card["accuracy_by_category"]["trap"] == 0.5
-    refusals = (card["refusal_correctness"], card["refused_exactly_the_traps"], card["missed_traps"])
+    refusals = (card["refusal_correctness"], card["refused_exactly_the_traps"], card["confidently_wrong_by_kind"]["trap_answered"])
     assert refusals == (0.75, False, ["D"])
     assert card["confidently_wrong"] == ["B", "D"] and (card["scored"], card["skipped"]) == (4, 1)
-    assert (card["avg_latency_ms"], card["p95_latency_ms"], card["total_cost_usd"]) == (250, 400, 0.04)
+    assert (card["median_latency_ms"], card["p95_latency_ms"], card["total_cost_usd"]) == (250, 400, 0.04)
     assert card["total_tokens"]["cache_read"] == 400
     rendered = scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})
     assert "Execution accuracy (answerable) | 50.0%" in rendered
@@ -357,7 +357,7 @@ def test_scorecard_keeps_ambiguous_questions_out_of_accuracy_and_checks_the_thre
     ]
     card = scoring.scorecard(results, threshold=0.5)
     assert (card["execution_accuracy"], card["meets_threshold"], card["clarification_correctness"]) == (0.3333, False, 1.0)
-    assert (card["needless_clarifications"], card["refused_before_model"]) == (["D"], ["E"])
+    assert (card["needless_clarifications"], card["trap_refusals"]["router"]) == (["D"], 1)
     assert scoring.scorecard(results)["meets_threshold"] is None
     assert "Accuracy threshold 50.0% | NOT met" in scoring.markdown(card, {"model": "m", "effort": "e", "as_of": "d"})
 

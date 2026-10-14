@@ -1,11 +1,10 @@
 """Golden-set eval of the Ask agent (PLAN §10). Writes evals/results/latest.json and prints a markdown scorecard.
 
-    python evals/run_eval.py [--mode governed|raw] [--model M] [--effort E] [--limit N] [--only SL01,MH02]
-                             [--fresh] [--budget-usd 5] [--yes] [--require-llm]
+    python evals/run_eval.py [--mode governed|raw] [--model M] [--only SL01,MH02] [--fresh] [--budget-usd 5] [--yes]
 
 1. Validates the question set and computes every golden answer from its hand-written SQL on marts.* (read-only),
    failing loudly on any error. Golden answers never come from the agent or the generator's answer key.
-2. With no Anthropic credentials, records status not_run (exit 0; exit 2 with --require-llm).
+2. With no Anthropic credentials, records status not_run (exit 0).
 3. Otherwise prints an estimated cost and spends nothing until you confirm (or pass --yes; a non-interactive run
    without --yes stops there). Then asks each question in-process through run_agent with region ALL, stopping once
    --budget-usd is spent, and scores the answers (evals/scoring.py). Everything but the model is deterministic.
@@ -416,12 +415,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="governed: the agent as built; raw: a text-to-SQL baseline with only run_readonly_sql")
     parser.add_argument("--fresh", action="store_true", help="discard this run's saved progress and start over")
     parser.add_argument("--model", help="model id (default: CHANNELPULSE_MODEL, else claude-sonnet-5-5)")
-    parser.add_argument("--effort", default=config.EFFORT, help="output effort (default: CHANNELPULSE_EFFORT)")
-    parser.add_argument("--limit", type=int, help="ask only the first N selected questions")
     parser.add_argument("--only", help="comma-separated question ids")
     parser.add_argument("--budget-usd", type=float, default=5.00, help="stop once this much is spent (default 5.00)")
     parser.add_argument("--yes", action="store_true", help="spend without asking (after printing the estimate)")
-    parser.add_argument("--require-llm", action="store_true", help="exit 2 instead of 0 when no credentials resolve")
     parser.add_argument("--threshold", type=float, default=ACCURACY_THRESHOLD,
                         help=f"execution accuracy a complete run must reach, else exit 5 (default {ACCURACY_THRESHOLD})")
     args = parser.parse_args(argv)
@@ -443,14 +439,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Unknown question id(s): {', '.join(sorted(unknown))}", file=sys.stderr)
             return 1
         selected = [q for q in questions if q["id"] in wanted]
-    selected = selected[: args.limit] if args.limit is not None else selected
 
-    config.MODEL, config.EFFORT = args.model or config.MODEL, args.effort
+    config.MODEL = args.model or config.MODEL
     meta = {
         "provider": "anthropic",
         "mode": args.mode,
         "model": config.MODEL,
-        "effort": args.effort,
+        "effort": config.EFFORT,
         "as_of": as_of,
         "pinned_as_of": pinned_as_of,
         "region": REGION,
@@ -466,13 +461,13 @@ def main(argv: list[str] | None = None) -> int:
         reason = "No Anthropic credentials are configured; agent not run."
         write({"status": "not_run", "reason": reason, **meta, "goldens": goldens})
         print(f"\nnot_run: {reason}\nGolden answers are validated; results written to {RESULTS.relative_to(ROOT)}.")
-        return 2 if args.require_llm else 0
+        return 0
 
     settings = provider.settings()
     meta |= {"model": provider.model, "settings": settings, "agent_timeout_s": config.AGENT_TIMEOUT_S}
     # Every call is paid: nothing is spent without a yes.
     estimate = estimate_usd(provider.model, len(selected), load_progress(RESULTS))
-    print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {args.effort}). "
+    print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {config.EFFORT}). "
           f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
     if estimate > args.budget_usd:
         print("WARNING: the estimate exceeds the budget, so the run will probably stop early and not be recorded "

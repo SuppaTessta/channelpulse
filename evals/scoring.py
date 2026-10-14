@@ -212,10 +212,6 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
 # --- scorecard --------------------------------------------------------------------------------------------------
 
 
-def _prompt_tokens(tokens: dict) -> int:
-    return tokens["input"] + tokens["cache_read"] + tokens["cache_write"]
-
-
 def p95(values: list[float]) -> float | None:
     """Nearest-rank 95th percentile."""
     return sorted(values)[math.ceil(0.95 * len(values)) - 1] if values else None
@@ -248,9 +244,6 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
         "accuracy_by_category": {c: _share([r["correct"] for r in ran if r["category"] == c]) for c in categories},
         "refusal_correctness": _share([r["refusal_correct"] for r in ran]),
         "refused_exactly_the_traps": bool(ran) and all(r["refusal_correct"] for r in ran),
-        "missed_traps": [r["id"] for r in ran if r["category"] == TRAP and not r["refused"]],
-        "false_refusals": [r["id"] for r in ran if r["refused"] and r["category"] != TRAP],
-        "refused_before_model": [r["id"] for r in ran if (r.get("confidence_note") or "").startswith(ROUTED_NOTE)],
         "clarification_correctness": _share([r["correct"] for r in ran if r["category"] == CLARIFY]),
         "needless_clarifications": [r["id"] for r in ran if r.get("clarified") and r["category"] != CLARIFY],
         "label_accuracy": _share([r["label_correct"] for r in ran]),
@@ -268,7 +261,6 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
             "model": sum(r["refused"] and r["id"] not in routed for r in traps),
             "model_of": sum(r["id"] not in routed for r in traps),
         },
-        "avg_latency_ms": round(sum(latencies) / len(latencies)) if latencies else None,
         "median_latency_ms": round(statistics.median(latencies)) if latencies else None,
         "p95_latency_ms": p95(latencies),
         "avg_cost_usd": round(cost / len(ran), 5) if ran else None,
@@ -278,7 +270,8 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
         },
         # Input is the whole prompt the model read, cached or not: nearly all of it is a cache read after the first call.
         "tokens_per_question": {
-            "input": round(sum(_prompt_tokens(r["tokens"]) for r in ran) / len(ran)) if ran else None,
+            "input": round(sum(r["tokens"][k] for r in ran for k in ("input", "cache_read", "cache_write")) / len(ran))
+            if ran else None,
             "output": round(sum(r["tokens"]["output"] for r in ran) / len(ran)) if ran else None,
         },
     }

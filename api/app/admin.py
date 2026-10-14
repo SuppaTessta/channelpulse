@@ -8,7 +8,6 @@ semantic  dbt-parse warehouse/ (no database needed) and ship the semantic manife
 """
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -17,7 +16,6 @@ from pathlib import Path
 
 API_DIR = Path(__file__).resolve().parents[1]
 WAREHOUSE_DIR = API_DIR.parent / "warehouse"
-ROLE_PASSWORDS = {"channelpulse_agent": "AGENT_DB_PASSWORD", "channelpulse_ops": "OPS_DB_PASSWORD"}
 
 
 def apply_roles() -> str:
@@ -25,13 +23,13 @@ def apply_roles() -> str:
     import psycopg  # here, not at the top: `semantic` needs no database driver
     from psycopg import sql
 
-    from app.db import db_conninfo
+    from app.db import ROLE_PASSWORD_VARS, db_conninfo, role_password
 
     with psycopg.connect(db_conninfo(), autocommit=True, connect_timeout=10) as conn:
         conn.execute((API_DIR / "sql" / "roles.sql").read_text(encoding="utf-8"))
-        for role, env_var in ROLE_PASSWORDS.items():
-            password = os.environ.get(env_var, role)  # local-dev default: the role name
-            conn.execute(sql.SQL("alter role {} with password {}").format(sql.Identifier(role), sql.Literal(password)))
+        for role in ROLE_PASSWORD_VARS:
+            conn.execute(sql.SQL("alter role {} with password {}").format(sql.Identifier(role),
+                                                                         sql.Literal(role_password(role))))
     return "Applied api/sql/roles.sql: channelpulse_agent (marts, read-only) and channelpulse_ops (ops.agent_traces)."
 
 

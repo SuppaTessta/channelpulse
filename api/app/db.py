@@ -4,6 +4,12 @@ import os
 
 from psycopg.conninfo import make_conninfo
 
+ROLE_PASSWORD_VARS = {"channelpulse_agent": "AGENT_DB_PASSWORD", "channelpulse_ops": "OPS_DB_PASSWORD"}
+
+
+def role_password(role: str) -> str:
+    return os.environ.get(ROLE_PASSWORD_VARS[role], role)  # local-dev default: the role name
+
 
 def _conninfo(url_var: str, user: str, password: str) -> str:
     if url := os.environ.get(url_var):
@@ -27,10 +33,9 @@ def db_conninfo() -> str:
 
 def agent_conninfo() -> str:
     """channelpulse_agent: read-only, SELECT on marts only. Every agent and dashboard query runs as this role."""
-    password = os.environ.get("AGENT_DB_PASSWORD", "channelpulse_agent")
-    return _conninfo("AGENT_DATABASE_URL", "channelpulse_agent", password)
+    return _conninfo("AGENT_DATABASE_URL", "channelpulse_agent", role_password("channelpulse_agent"))
 
 
 def ops_conninfo() -> str:
     """channelpulse_ops: INSERT/SELECT on ops.agent_traces only."""
-    return _conninfo("OPS_DATABASE_URL", "channelpulse_ops", os.environ.get("OPS_DB_PASSWORD", "channelpulse_ops"))
+    return _conninfo("OPS_DATABASE_URL", "channelpulse_ops", role_password("channelpulse_ops"))

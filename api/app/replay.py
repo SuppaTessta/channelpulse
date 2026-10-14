@@ -7,6 +7,8 @@ that eval run, with the run's model, date and region claim, and whether the eval
 import json
 from pathlib import Path
 
+from app import config
+
 RECORDINGS = Path(__file__).with_name("recordings")
 _SUMMARY = ("provider", "model", "effort", "recorded_at", "as_of", "region", "status", "git_commit")
 
@@ -16,8 +18,10 @@ def load_all() -> list[dict]:
 
 
 def load() -> dict | None:
-    """The newest recording; None before any eval run."""
-    return max(load_all(), key=lambda r: r["recorded_at"], default=None)
+    """The configured model's newest recording, else the newest one; None before any eval run."""
+    recordings = load_all()
+    own = [r for r in recordings if r["model"] == config.MODEL]
+    return max(own or recordings, key=lambda r: r["recorded_at"], default=None)
 
 
 def summary(recording: dict | None) -> dict | None:

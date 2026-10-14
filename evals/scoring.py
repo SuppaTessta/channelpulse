@@ -212,6 +212,10 @@ def score_question(question: dict, golden: dict | None, response: dict | None, t
 # --- scorecard --------------------------------------------------------------------------------------------------
 
 
+def _prompt_tokens(tokens: dict) -> int:
+    return tokens["input"] + tokens["cache_read"] + tokens["cache_write"]
+
+
 def p95(values: list[float]) -> float | None:
     """Nearest-rank 95th percentile."""
     return sorted(values)[math.ceil(0.95 * len(values)) - 1] if values else None
@@ -272,8 +276,10 @@ def scorecard(results: list[dict], threshold: float | None = None) -> dict:
         "total_tokens": {
             kind: sum(r["tokens"][kind] for r in ran) for kind in ("input", "output", "cache_read", "cache_write")
         },
+        # Input is the whole prompt the model read, cached or not: nearly all of it is a cache read after the first call.
         "tokens_per_question": {
-            kind: round(sum(r["tokens"][kind] for r in ran) / len(ran)) if ran else None for kind in ("input", "output")
+            "input": round(sum(_prompt_tokens(r["tokens"]) for r in ran) / len(ran)) if ran else None,
+            "output": round(sum(r["tokens"]["output"] for r in ran) / len(ran)) if ran else None,
         },
     }
 

@@ -318,7 +318,7 @@ def test_the_scorecard_reports_median_latency_and_tokens_per_question():
     results = [result("A", "simple_lookup", True, latency=100), result("B", "simple_lookup", True, latency=300),
                result("C", "trap", True, refused=True, latency=200)]
     card = scoring.scorecard(results)
-    assert (card["median_latency_ms"], card["tokens_per_question"]) == (200, {"input": 10, "output": 5})
+    assert (card["median_latency_ms"], card["tokens_per_question"]) == (200, {"input": 110, "output": 5})  # cache reads count
     rendered = scoring.markdown(card, {"provider": "anthropic", "mode": "governed", "model": "m", "effort": "e", "as_of": "d"})
     assert "anthropic / m, governed mode" in rendered and "Tokens per question" in rendered
 

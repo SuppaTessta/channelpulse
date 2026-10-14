@@ -398,8 +398,20 @@ Superseded on the model by D50.
 - Kept from that work: the provider interface between the loop and the model, resumable runs (progress is saved after every question; rerunning the same command resumes), and the raw text-to-SQL baseline mode.
 - A run now stops with its progress saved (exit 4) when the API is unreachable, overloaded, rate-limited or out of credit, instead of scoring those questions as model failures.
 - Model: `claude-sonnet-5-5` at `medium` effort by default, superseding D29's Opus 5.5, which the owner ruled out on cost. `claude-haiku-5-5` is the comparison model. Haiku 5.5 has no server-side refusal fallback, so its requests don't send `fallbacks`.
-- Replay serves the newest recording; with one provider there is no longer a provider's own recording to prefer.
+- Replay serves the configured model's newest recording, else the newest one (as in D29, by model now rather than provider).
 - Until the first Claude run, the scorecard is empty and the Ask page's replay says no eval has run yet.
+
+**D51. The first Claude runs, reported as they fell (2026-10-14).**
+- **Runs:** Sonnet 5.5 and Haiku 5.5, governed and raw, all 102 questions, once each, at `medium` effort. A 6-question pilot on Haiku 5.5 checked the integration first; its answers count toward the full run, which resumed from them. No run paused or errored.
+- **Results:**
+  - Execution accuracy, governed against raw: Sonnet 5.5 100% against 86.8%; Haiku 5.5 97.1% against 73.5%.
+  - No question went from right to wrong (McNemar exact p = 0.0039 and 3.1e-05).
+  - One trap was answered: TR01, by Haiku 5.5 in governed mode.
+  - Ambiguous questions answered without asking, out of 16: governed Sonnet 6, raw Sonnet 3, governed Haiku 4, raw Haiku 2.
+- **Cost:** $7.99 in all. Sonnet 5.5: $5.96 governed, $1.83 raw. Haiku 5.5: $0.12 governed, $0.08 raw. The harness's pre-run estimate (about $10 a Sonnet run) was high, because cache reads dominate the bill.
+- **Reporting:** "tokens per question" now counts the whole prompt the model read, cache reads and writes included. It had counted only uncached input, which on Claude is a handful of tokens. No scoring rule changed.
+- **Replay** serves the configured model's recording (Sonnet 5.5 by default); Haiku 5.5's is shipped too.
+- **Not changed after seeing the results:** no rubric, golden answer or prompt. Governed mode's ambiguity gap is the next thing to fix, and it goes through the owner first.
 
 ## Environment
 

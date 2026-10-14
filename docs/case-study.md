@@ -125,7 +125,20 @@ The eval measures that by running the same model in two modes:
 
 The golden answers are hand-written SQL, independent of any model.
 
-**No scored run yet.** The Claude runs come next: Sonnet 5.5 and Haiku 5.5, each governed and raw, on the same 102 questions (golden set v2, D39). The eval harness, the golden set and the scoring are unchanged.
+Sonnet 5.5 and Haiku 5.5 each answered all 102 questions of golden set v2 (D39) once in each mode, at `medium` effort, on 2026-10-14 (D51).
+
+| Model | Raw | Governed | Wrong to right | Right to wrong | McNemar exact p |
+|---|---|---|---|---|---|
+| Sonnet 5.5 | 86.8% | 100% | 9 | 0 | 0.0039 |
+| Haiku 5.5 | 73.5% | 97.1% | 16 | 0 | 3.1e-05 |
+
+Execution accuracy is measured on the 68 answerable questions. The paired columns compare the same question across the two modes.
+
+- **The layer is worth more to the smaller model.** Haiku 5.5 with the layer beats Sonnet 5.5 without it, at about a sixteenth of the cost per question ($0.0011 against $0.0179).
+- **Raw mode's misses cluster on time comparisons and multi-hop questions** (Haiku 5.5 raw: 66.7% and 64.3%; Sonnet 5.5 raw: 83.3% and 78.6%). Simple lookups hold up best.
+- **The safety rules held.** The router refused 9 of the 18 traps before any model call. Sonnet 5.5 refused the other 9 in both modes. Haiku 5.5 answered TR01 in governed mode, and asked a clarifying question instead of refusing TR12 in both modes.
+- **Governed mode asks fewer clarifying questions, and that is the finding to fix next.** Of the 16 ambiguous questions, governed Sonnet answered 6 without asking (raw: 3), and governed Haiku answered 4 (raw: 2). A governed metric looks like a settled reading, so the model stops asking which one was meant. AC06 and AC09 were answered without asking in every run.
+- **Cost:** $7.99 for all four runs. Sonnet 5.5 governed costs $0.059 a question, against $0.018 raw: the larger cached prompt is read on every call.
 
 ## What I'd defend in an interview
 - **Two anomalies came through cleanly: the resin lot and the decoy.** For the lot, the cohort view beat the raw monthly count by six weeks. For the decoy, the join path through installations points at the installer, while the batch view shows nothing.

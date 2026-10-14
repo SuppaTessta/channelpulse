@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app import replay
+from app import config, replay
 
 QUESTION = {"question": "How has DSO moved this year?"}
 ANSWER = {
@@ -75,8 +75,11 @@ def test_replay_withholds_answers_recorded_under_another_region_claim(api, recor
     assert (body["answers"], body["withheld"], body["recording"]["region"]) == ([], True, "ALL")
 
 
-def test_replay_serves_the_newest_recording(api, recordings):
+def test_replay_prefers_the_configured_models_recording_else_the_newest(api, recordings, monkeypatch):
     recordings(model="claude-haiku-5-5", recorded_at="2026-10-16T10:00:00+00:00")
     recordings(model="claude-sonnet-5-5", recorded_at="2026-10-15T10:00:00+00:00")
     api.use_llm(None)
+    monkeypatch.setattr(config, "MODEL", "claude-sonnet-5-5")
+    assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "claude-sonnet-5-5"
+    monkeypatch.setattr(config, "MODEL", "claude-other")  # no recording of its own: the newest one
     assert api.http.get("/api/ask/replay").json()["recording"]["model"] == "claude-haiku-5-5"

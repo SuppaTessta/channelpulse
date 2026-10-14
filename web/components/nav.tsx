@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { ThemeToggle } from "./theme-toggle";
 import { buttonClass, cx, ICON } from "./ui";
 
 type Page = { href: string; label: string; title: string; icon: Icon };
@@ -120,7 +121,15 @@ export function Rail() {
       <Suspense fallback={<RailLinks query="" />}>
         <RailLinksWithQuery />
       </Suspense>
-      <p className="mt-auto hidden px-5 text-[11px]/4 text-subtle wide:block">Synthetic data for a fictional manufacturer. Every figure opens to its definition and the SQL behind it.</p>
+      <div className="mt-auto flex flex-col gap-3">
+        <div className="wide:hidden">
+          <ThemeToggle variant="rail" />
+        </div>
+        <div className="hidden wide:block">
+          <ThemeToggle variant="sidebar" />
+        </div>
+        <p className="hidden px-5 text-[11px]/4 text-subtle wide:block">Synthetic data for a fictional manufacturer. Every figure opens to its definition and the SQL behind it.</p>
+      </div>
     </nav>
   );
 }

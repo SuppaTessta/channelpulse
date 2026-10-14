@@ -1,120 +1,130 @@
 @import "tailwindcss";
 
 /*
-  ChannelPulse tokens (web/DESIGN.md). One semantic set, swapped for dark mode under prefers-color-scheme.
-  Surfaces step canvas < sunken < surface < raised; hover is the pointer tint. Accent teal is the only hue outside charts and status.
-  Chart colours follow the dataviz method: the categorical order below was chosen by enumerating orders with the
-  brand teal fixed in slot 1 and keeping only those that pass every validator gate in both modes
-  (worst adjacent CVD dE 13.0, normal-vision dE 19.3). The heatmap ramp is one hue (teal, OKLCH h 200), light to
-  dark, with the anchor flipped in dark mode. Text tokens all clear WCAG AA (4.5:1) on every surface.
+  Monsoon Editorial tokens (web/DESIGN.md). Dark is the default edition; the light edition is the warm paper one,
+  switched by data-theme="light" and remembered. Print always uses the light values.
+  Every text token clears WCAG AA (4.5:1) on every surface in both editions (e2e/redesign.spec.ts checks it).
+  Chart colours follow the dataviz method; the validated order is recorded with the series tokens below.
 */
-:root {
-  color-scheme: light;
-  --canvas: #f4f5f7;
-  --surface: #fcfcfd;
-  --surface-raised: #fefeff;
-  --surface-hover: #eef0f3;
-  --surface-sunken: #eceef2;
-  --text: #16181d;
-  --text-muted: #50555e;
-  --text-subtle: #646973;
-  --border: #e3e5e9;
-  --border-strong: #c6cad1;
-  --control-border: #878c95;
-  --grid: #eceef1;
-  --axis: #c6cad1;
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #070b14;
+  --surface: #0d1422;
+  --surface-raised: #131b2c;
+  --surface-hover: #162036;
+  --surface-sunken: #0a101d;
+  --text: #e9edf5;
+  --text-muted: #a6b0c3;
+  --text-subtle: #8d97ac;
+  --border: #1b2436;
+  --border-strong: #2b3650;
+  --control-border: #56627c;
+  --grid: #151d2d;
+  --axis: #2b3650;
 
-  --accent: #0a7377;
-  --accent-hover: #076165;
-  --accent-soft: #dcf6f8;
-  --on-accent: #fcfcfd;
-  --focus: #0a7377;
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-soft: #0c2e31;
+  --on-accent: #03201c;
+  --focus: #2dd4bf;
+  --marigold: #f5a524;
 
-  --adhoc: #8a5a00;
-  --adhoc-soft: #fdf1d6;
-  --danger: #b8322f;
-  --danger-soft: #fdecea;
-  --good: #0f6a2c;
-  --refused-edge: #d0406a;
-  --refused-soft: #f3f4f6;
+  --adhoc: #f5b547;
+  --adhoc-soft: #2b220e;
+  --danger: #f87171;
+  --danger-soft: #351818;
+  --good: #34d399;
+  --refused-edge: #f472b6;
+  --refused-soft: #111827;
 
-  --series-1: #139aa0;
-  --series-2: #eb6834;
-  --series-3: #2a78d6;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
-  --series-8: #e34948;
-  --deemph: #aab0b8;
-  --band: rgb(22 24 29 / 0.05);
+  --series-1: #2dd4bf;
+  --series-2: #f5a524;
+  --series-3: #60a5fa;
+  --series-4: #f472b6;
+  --series-5: #a78bfa;
+  --series-6: #4ade80;
+  --series-7: #fb7185;
+  --series-8: #22d3ee;
+  --deemph: #4a5570;
+  --band: rgb(245 165 36 / 0.07);
 
-  --seq-1: #aee7ea;
-  --seq-2: #73cfd4;
-  --seq-3: #35afb5;
-  --seq-4: #0e868c;
-  --seq-5: #076165;
-  --seq-6: #023f42;
+  --seq-1: #023f42;
+  --seq-2: #076165;
+  --seq-3: #0e868c;
+  --seq-4: #35afb5;
+  --seq-5: #73cfd4;
+  --seq-6: #aee7ea;
 
-  --shadow-raised: 0 1px 2px rgb(22 38 48 / 0.05), 0 12px 32px -12px rgb(22 38 48 / 0.16);
-  /* The lifted segment of a segmented control, and the inner highlight of a raised plate. */
-  --shadow-segment: 0 1px 2px rgb(22 38 48 / 0.08), 0 0 0 1px var(--border-strong);
-  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 48px -16px rgb(0 0 0 / 0.7);
+  --shadow-segment: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px var(--border-strong);
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --glow-accent: 0 0 0 1px rgb(45 212 191 / 0.35), 0 0 24px -4px rgb(45 212 191 / 0.45);
+  --spotlight: rgb(45 212 191 / 0.1);
+  --aurora-1: rgb(45 212 191 / 0.2);
+  --aurora-2: rgb(56 120 248 / 0.16);
+  --aurora-3: rgb(245 165 36 / 0.1);
+  --grain-opacity: 0.035;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --canvas: #0e0f11;
-    --surface: #16171a;
-    --surface-raised: #1d1e22;
-    --surface-hover: #22242a;
-    --surface-sunken: #121316;
-    --text: #ececef;
-    --text-muted: #a7abb4;
-    --text-subtle: #9296a0;
-    --border: #2a2c31;
-    --border-strong: #3d4047;
-    --control-border: #6f747e;
-    --grid: #222428;
-    --axis: #3d4047;
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f6f3ec;
+  --surface: #fffdf8;
+  --surface-raised: #ffffff;
+  --surface-hover: #f2ede3;
+  --surface-sunken: #eee9df;
+  --text: #15171c;
+  --text-muted: #4b505a;
+  --text-subtle: #5e6470;
+  --border: #e4ded2;
+  --border-strong: #cfc6b5;
+  --control-border: #8a8478;
+  --grid: #ece6da;
+  --axis: #cfc6b5;
 
-    --accent: #54bfc5;
-    --accent-hover: #73cfd4;
-    --accent-soft: #0d3436;
-    --on-accent: #0e0f11;
-    --focus: #54bfc5;
+  --accent: #0b6e72;
+  --accent-hover: #085558;
+  --accent-soft: #dcefee;
+  --on-accent: #fffdf8;
+  --focus: #0b6e72;
+  --marigold: #8f5b00;
 
-    --adhoc: #f0b547;
-    --adhoc-soft: #2e2410;
-    --danger: #f07470;
-    --danger-soft: #351a1a;
-    --good: #3fbf5f;
-    --refused-edge: #e8628a;
-    --refused-soft: #1b1c20;
+  --adhoc: #8a5a00;
+  --adhoc-soft: #fbefd5;
+  --danger: #b3261e;
+  --danger-soft: #fbe7e4;
+  --good: #12683a;
+  --refused-edge: #c2185b;
+  --refused-soft: #f1eee8;
 
-    --series-1: #139aa0;
-    --series-2: #d95926;
-    --series-3: #3987e5;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
-    --deemph: #5d626b;
-    --band: rgb(236 236 239 / 0.06);
+  --series-1: #0e7c80;
+  --series-2: #c77f00;
+  --series-3: #2f6fd6;
+  --series-4: #d9488b;
+  --series-5: #7c5cd6;
+  --series-6: #2e8b3e;
+  --series-7: #e0563b;
+  --series-8: #0f8fb0;
+  --deemph: #b8b0a2;
+  --band: rgb(199 127 0 / 0.08);
 
-    --seq-1: #023f42;
-    --seq-2: #076165;
-    --seq-3: #0e868c;
-    --seq-4: #35afb5;
-    --seq-5: #73cfd4;
-    --seq-6: #aee7ea;
+  --seq-1: #cdeeed;
+  --seq-2: #8fd3d4;
+  --seq-3: #45aeb2;
+  --seq-4: #0e868c;
+  --seq-5: #0b6e72;
+  --seq-6: #054447;
 
-    --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -16px rgb(0 0 0 / 0.6);
-    --shadow-segment: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px var(--border-strong);
-    --highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
-  }
+  --shadow-raised: 0 1px 2px rgb(60 45 20 / 0.06), 0 16px 40px -16px rgb(60 45 20 / 0.18);
+  --shadow-segment: 0 1px 2px rgb(60 45 20 / 0.08), 0 0 0 1px var(--border-strong);
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.8);
+  --glow-accent: 0 0 0 1px rgb(11 110 114 / 0.3), 0 0 18px -6px rgb(11 110 114 / 0.35);
+  --spotlight: rgb(11 110 114 / 0.06);
+  --aurora-1: rgb(11 110 114 / 0.12);
+  --aurora-2: rgb(199 127 0 / 0.1);
+  --aurora-3: rgb(37 99 166 / 0.06);
+  --grain-opacity: 0.05;
 }
 
 @theme inline {
@@ -133,6 +143,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
+  --color-marigold: var(--marigold);
   --color-adhoc: var(--adhoc);
   --color-adhoc-soft: var(--adhoc-soft);
   --color-danger: var(--danger);
@@ -266,18 +277,69 @@
 
 /* Print (the Weekly Brief is meant to be printed): light ink on paper whatever the screen theme, no chrome. */
 @media print {
-  :root {
+  :root,
+  :root[data-theme] {
     color-scheme: light;
-    --canvas: #ffffff;
-    --surface: #ffffff;
+    --canvas: #f6f3ec;
+    --surface: #fffdf8;
     --surface-raised: #ffffff;
-    --surface-sunken: #f4f5f7;
-    --text: #16181d;
-    --text-muted: #50555e;
-    --text-subtle: #646973;
-    --border: #d9dce1;
-    --accent: #0a7377;
-    --accent-soft: #e6f6f7;
+    --surface-hover: #f2ede3;
+    --surface-sunken: #eee9df;
+    --text: #15171c;
+    --text-muted: #4b505a;
+    --text-subtle: #5e6470;
+    --border: #e4ded2;
+    --border-strong: #cfc6b5;
+    --control-border: #8a8478;
+    --grid: #ece6da;
+    --axis: #cfc6b5;
+
+    --accent: #0b6e72;
+    --accent-hover: #085558;
+    --accent-soft: #dcefee;
+    --on-accent: #fffdf8;
+    --focus: #0b6e72;
+    --marigold: #8f5b00;
+
+    --adhoc: #8a5a00;
+    --adhoc-soft: #fbefd5;
+    --danger: #b3261e;
+    --danger-soft: #fbe7e4;
+    --good: #12683a;
+    --refused-edge: #c2185b;
+    --refused-soft: #f1eee8;
+
+    --series-1: #0e7c80;
+    --series-2: #c77f00;
+    --series-3: #2f6fd6;
+    --series-4: #d9488b;
+    --series-5: #7c5cd6;
+    --series-6: #2e8b3e;
+    --series-7: #e0563b;
+    --series-8: #0f8fb0;
+    --deemph: #b8b0a2;
+    --band: rgb(199 127 0 / 0.08);
+
+    --seq-1: #cdeeed;
+    --seq-2: #8fd3d4;
+    --seq-3: #45aeb2;
+    --seq-4: #0e868c;
+    --seq-5: #0b6e72;
+    --seq-6: #054447;
+
+    --shadow-raised: 0 1px 2px rgb(60 45 20 / 0.06), 0 16px 40px -16px rgb(60 45 20 / 0.18);
+    --shadow-segment: 0 1px 2px rgb(60 45 20 / 0.08), 0 0 0 1px var(--border-strong);
+    --highlight: inset 0 1px 0 rgb(255 255 255 / 0.8);
+    --glow-accent: 0 0 0 1px rgb(11 110 114 / 0.3), 0 0 18px -6px rgb(11 110 114 / 0.35);
+    --spotlight: rgb(11 110 114 / 0.06);
+    --aurora-1: rgb(11 110 114 / 0.12);
+    --aurora-2: rgb(199 127 0 / 0.1);
+    --aurora-3: rgb(37 99 166 / 0.06);
+    --grain-opacity: 0.05;
+    --aurora-1: transparent;
+    --aurora-2: transparent;
+    --aurora-3: transparent;
+    --grain-opacity: 0;
   }
   @page {
     margin: 16mm;

@@ -66,3 +66,47 @@ test("the three families load, and the title and KPI figures are set in the disp
   const figureFont = await page.locator("[data-figure]").first().evaluate((el) => getComputedStyle(el).fontFamily);
   expect(figureFont).toContain("Newsreader");
 });
+
+test.describe("with reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+  test("nothing animates and figures show their final value at once", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length);
+    expect(running).toBe(0);
+    for (const fig of await page.locator("[data-final]").all()) {
+      expect((await fig.innerText()).replace(/\s/g, "")).toContain((await fig.getAttribute("data-final"))!.replace(/\s/g, ""));
+    }
+  });
+});
+
+test("KPI figures count up and settle on exactly the formatted value", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  const figures = page.locator("[data-final]");
+  await expect(figures).toHaveCount(5);
+  await page.waitForTimeout(1500); // the count-up runs 900 ms
+  for (const fig of await figures.all()) {
+    expect((await fig.innerText()).replace(/\s/g, "")).toContain((await fig.getAttribute("data-final"))!.replace(/\s/g, ""));
+  }
+});
+
+test("a counting figure never shows a sign its value doesn't have", async ({ page }) => {
+  // Record every text a counting figure shows, from the first frame on (polling would miss the earliest frames).
+  await page.addInitScript(() => {
+    const w = window as unknown as { __frames: string[] };
+    w.__frames = [];
+    new MutationObserver((records) => {
+      for (const r of records) {
+        const fig = (r.target instanceof Element ? r.target : r.target.parentElement)?.closest("[data-final]");
+        if (fig && !/^[−-]/.test(fig.getAttribute("data-final") ?? "")) w.__frames.push(fig.textContent ?? "");
+      }
+    }).observe(document, { subtree: true, childList: true, characterData: true });
+  });
+  await page.goto("/");
+  await expect(page.locator("[data-final]")).toHaveCount(5);
+  await page.waitForTimeout(1500);
+  const frames = await page.evaluate(() => (window as unknown as { __frames: string[] }).__frames);
+  expect(frames.length, "the figures counted").toBeGreaterThan(5);
+  expect(frames.filter((f) => /[−-]\d/.test(f))).toEqual([]);
+});

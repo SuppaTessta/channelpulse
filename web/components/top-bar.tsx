@@ -108,5 +108,5 @@ export function FilterBar({ children }: { children: ReactNode }) {
 }
 
 export function PageBody({ children }: { children: ReactNode }) {
-  return <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-4 pt-5 pb-16 md:gap-6 md:px-6 md:pt-6">{children}</div>;
+  return <div className="cp-stagger mx-auto flex max-w-[1440px] flex-col gap-5 px-4 pt-5 pb-16 md:gap-6 md:px-6 md:pt-6">{children}</div>;
 }

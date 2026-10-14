@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { CountUp } from "./count-up";
 
 export const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" ");
 
@@ -77,14 +78,14 @@ const FIGURE = /^(₹?)([−+-]?[\d.,]+)\s?(.*)$/;
  * A formatted figure set like an instrument readout: the digits carry the weight, the currency sign and unit step
  * back ("₹226.1 cr" reads as 226.1 first). Anything that isn't a number ("No value") is shown as it is, muted.
  */
-export function Figure({ text, className }: { text: string; className?: string }) {
+export function Figure({ text, className, animate = false }: { text: string; className?: string; animate?: boolean }) {
   const m = FIGURE.exec(text);
   if (!m) return <span className={cx(className, "text-muted")}>{text}</span>;
   const [, currency, digits, unit] = m;
   return (
-    <span data-figure="" className={cx("tabular-nums", className)}>
+    <span data-figure="" data-final={animate ? digits : undefined} className={cx("tabular-nums", className)}>
       {currency ? <span className="mr-[0.08em] align-[0.12em] text-[0.62em] font-medium text-muted">{currency}</span> : null}
-      {digits}
+      {animate ? <CountUp value={digits} /> : digits}
       {unit ? <span className={cx("text-[0.5em] font-medium tracking-normal text-muted", unit === "%" || unit === "×" ? "ml-[0.04em]" : "ml-[0.22em]")}>{unit}</span> : null}
     </span>
   );

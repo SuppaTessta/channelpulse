@@ -164,6 +164,7 @@
   /* The rail opens into a labelled sidebar from 1440px. */
   --breakpoint-wide: 90rem;
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -242,8 +243,17 @@
   transition: opacity 180ms var(--ease-out);
 }
 
-/* Disclosures enter in 150-200 ms and leave at once (DESIGN.md motion 3). Reduced motion zeroes these below. */
-@keyframes cp-fade {
+/*
+  Motion (DESIGN.md): entrances rise and fade on --ease-out-expo; charts draw in on a data change; loops are slow and
+  few. prefers-reduced-motion turns every animation off below.
+*/
+@keyframes cp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes cp-fade-in {
   from {
     opacity: 0;
   }
@@ -257,19 +267,140 @@
 @keyframes cp-slide {
   from {
     opacity: 0;
-    transform: translateX(24px);
+    transform: translateX(32px);
   }
 }
+@keyframes cp-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes cp-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes cp-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes cp-ping {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+@keyframes cp-breathe {
+  from {
+    box-shadow: 0 0 0 2px var(--surface), 0 0 4px 1px color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 2px var(--surface), 0 0 12px 3px color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+}
+@keyframes cp-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@keyframes cp-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) rotate(6deg);
+  }
+}
+@keyframes cp-reveal-circle {
+  from {
+    clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+.cp-reveal {
+  animation: cp-rise 600ms var(--ease-out-expo) both;
+}
+/* Children enter one after another (page sections, KPI figures). */
+.cp-stagger > * {
+  animation: cp-rise 600ms var(--ease-out-expo) both;
+}
+.cp-stagger > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.cp-stagger > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.cp-stagger > :nth-child(4) {
+  animation-delay: 180ms;
+}
+.cp-stagger > :nth-child(5) {
+  animation-delay: 240ms;
+}
+.cp-stagger > :nth-child(n + 6) {
+  animation-delay: 300ms;
+}
+
 .cp-fade[data-state="open"] {
-  animation: cp-fade 150ms var(--ease-out);
+  animation: cp-fade-in 200ms var(--ease-out);
 }
 .cp-drop[data-state="open"],
 .cp-drop[data-state="delayed-open"],
 .cp-drop[data-state="instant-open"] {
-  animation: cp-drop 160ms var(--ease-out);
+  animation: cp-drop 200ms var(--ease-out-expo);
 }
 .cp-slide[data-state="open"] {
-  animation: cp-slide 200ms var(--ease-out);
+  animation: cp-slide 420ms var(--ease-out-expo);
+}
+
+/* A panel's light follows the pointer (providers.tsx sets --mx and --my). */
+.cp-spotlight:hover {
+  background-image: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), var(--spotlight), transparent 60%);
+}
+/* The primary button's sheen. */
+.cp-sheen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.cp-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: translateX(-120%);
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.28) 50%, transparent 65%);
+}
+.cp-sheen:hover::before {
+  transform: translateX(120%);
+  transition: transform 800ms var(--ease-out-expo);
+}
+/* Loading placeholders: a slow light sweep across the sunken tone. */
+.cp-shimmer {
+  background: linear-gradient(100deg, var(--surface-sunken) 30%, color-mix(in oklab, var(--surface-sunken), var(--text) 7%) 50%, var(--surface-sunken) 70%);
+  background-size: 200% 100%;
+  animation: cp-shimmer 1.8s linear infinite;
+}
+
+/* The theme switch reveals the new edition from the toggle (theme-toggle.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: cp-reveal-circle 650ms var(--ease-out-expo);
 }
 
 /* Observable Plot output: tokens in, library defaults out. */
@@ -359,6 +490,11 @@
   *::after {
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }

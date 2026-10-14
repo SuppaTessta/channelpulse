@@ -82,7 +82,7 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
       {head}
       <div className="grid grid-cols-[1fr_minmax(96px,38%)] items-end gap-x-4 gap-y-3 md:grid-cols-1">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <Figure text={formatValue(kind, value)} className={TYPE.figureHero} />
+          <Figure text={formatValue(kind, value)} className={TYPE.figureHero} animate />
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
             {delta ? (
               <span className={cx("inline-flex items-center gap-0.5 font-semibold", tone)}>

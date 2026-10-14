@@ -38,11 +38,10 @@ class Trace:
     answer_text: str | None = None
     error: str | None = None
 
-    def add_usage(self, turn, provider: str) -> None:
+    def add_usage(self, turn) -> None:
         """Add one model turn. Its usage covers the attempt that produced it, priced at the model that served it
         (after a refusal fallback, the fallback model)."""
         usage = turn.usage
-        self.provider = provider
         self.input_tokens += usage.input_tokens
         self.output_tokens += usage.output_tokens
         self.cache_read_tokens += usage.cache_read_tokens

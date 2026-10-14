@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from app import config, semantic
-from app.agent.providers import Provider, ProviderError
+from app.agent.providers import AnthropicProvider, ProviderError
 from app.agent.response import figures, traced
 from app.guardrails import readonly_db
 
@@ -176,7 +176,7 @@ and set refused false, refusal_reason null, clarifying_question null, evidence_t
 """
 
 
-def narrate(provider: Provider, fs: dict[str, Fact]) -> list[dict]:
+def narrate(provider: AnthropicProvider, fs: dict[str, Fact]) -> list[dict]:
     """The model's sections; raises ValueError or ProviderError when it can't give usable ones."""
     payload = [{"id": f.id, "label": f.label, "display": display(f.kind, f.value)} for f in fs.values()]
     turn = provider.complete(NARRATOR_PROMPT, [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
@@ -241,7 +241,7 @@ def weeks(region: str) -> list[str]:
     return [str(row[0])[:10] for row in readonly_db.run(WEEKS_SQL, None, region).rows]
 
 
-def build(start: dt.date, region: str, as_of: dt.date, provider: Provider | None) -> dict:
+def build(start: dt.date, region: str, as_of: dt.date, provider: AnthropicProvider | None) -> dict:
     fs = facts(start, region)
     for f, value in zip(fs.values(), _execute_all(list(fs.values())), strict=True):
         f.value = value

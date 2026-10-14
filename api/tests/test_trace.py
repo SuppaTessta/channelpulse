@@ -23,8 +23,8 @@ def test_models_are_priced_from_the_table_and_unknown_ones_at_the_dearest_rate(m
 
 def test_usage_adds_up_tokens_and_cost_across_rounds():
     trace = Trace(question="q", region_claim="ALL", model="claude-sonnet-5-5")
-    trace.add_usage(response(input_tokens=1_000_000, output_tokens=100_000), "anthropic")
-    trace.add_usage(response(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000), "anthropic")
+    trace.add_usage(response(input_tokens=1_000_000, output_tokens=100_000))
+    trace.add_usage(response(cache_read_input_tokens=1_000_000, cache_creation_input_tokens=1_000_000))
     assert (trace.input_tokens, trace.output_tokens, trace.cache_read_tokens, trace.cache_write_tokens) == (
         1_000_000, 100_000, 1_000_000, 1_000_000)
     assert trace.est_cost_usd == pytest.approx(2.0 + 1.0 + 0.2 + 2.5)  # input, output, cache read, cache write
@@ -32,7 +32,7 @@ def test_usage_adds_up_tokens_and_cost_across_rounds():
 
 def test_cost_is_priced_at_the_model_that_served_the_response():
     trace = Trace(question="q", region_claim="ALL", model="claude-haiku-5-5")
-    trace.add_usage(response(model="claude-sonnet-5", output_tokens=1_000_000), "anthropic")
+    trace.add_usage(response(model="claude-sonnet-5", output_tokens=1_000_000))
     assert (trace.served_model, trace.est_cost_usd) == ("claude-sonnet-5", pytest.approx(10.0))
 
 

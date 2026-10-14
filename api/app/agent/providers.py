@@ -1,13 +1,13 @@
-"""The model behind one small interface: the loop sends a system prompt, a transcript and the tool definitions; the
-provider returns one Turn (text, tool calls, token usage, stop reason). AnthropicProvider is the Messages API through
-the official SDK (refusal fallback, adaptive thinking, structured final answer); tests script the same interface.
+"""The model call behind the loop: it sends a system prompt, a transcript and the tool definitions, and
+AnthropicProvider returns one Turn (text, tool calls, token usage, stop reason). It is the Messages API through
+the official SDK (refusal fallback, adaptive thinking, structured final answer); tests script the same methods.
 
 Transcript items: {"role": "user", "content": str}, {"role": "assistant", "turn": Turn} and
 {"role": "tool", "results": [{"tool_use_id", "content", "is_error"}]}.
 """
 
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Literal
 
 from app import config
 
@@ -46,16 +46,6 @@ class Turn:
 
 class ProviderError(Exception):
     """A call that produced no usable turn (the SDK's own errors are anthropic.APIError)."""
-
-
-class Provider(Protocol):
-    name: str
-    model: str
-
-    def complete(self, system: str, transcript: list[dict], tools: list[dict], *, final_only: bool,
-                 timeout: float) -> Turn: ...
-
-    def settings(self) -> dict: ...
 
 
 # --- Anthropic ----------------------------------------------------------------------------------------------------

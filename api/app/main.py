@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app import brief, config, replay, semantic, traces
 from app.agent.loop import AgentError, run_agent
-from app.agent.providers import AnthropicProvider, Provider, ProviderError
+from app.agent.providers import AnthropicProvider, ProviderError
 from app.agent.trace import Trace, write_trace
 from app.db import db_conninfo
 from app.guardrails.rate_limit import enforce_spend_cap, limit_ask_rate
@@ -150,13 +150,13 @@ def llm_client() -> anthropic.Anthropic | None:
 
 
 @functools.cache
-def llm_provider() -> Provider | None:
+def llm_provider() -> AnthropicProvider | None:
     """The model provider, or None when no Anthropic credentials resolve."""
     client = llm_client()
     return AnthropicProvider(client) if client is not None else None
 
 
-LLM = Annotated[Provider | None, Depends(llm_provider)]
+LLM = Annotated[AnthropicProvider | None, Depends(llm_provider)]
 
 
 class Recording(BaseModel):
@@ -196,7 +196,7 @@ class Replay(BaseModel):
     withheld: bool
 
 
-def _not_live_reason(provider: Provider | None) -> str | None:
+def _not_live_reason(provider: AnthropicProvider | None) -> str | None:
     if provider is None:
         return "no_credentials"
     return None if config.ASK_LIVE else "live_off"

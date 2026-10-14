@@ -132,7 +132,8 @@ def _tool_use(tool_use_id: str, name: str, tool_input: dict) -> dict:
 def _answer(**fields) -> dict:
     """The final structured-output turn's text block."""
     final = {
-        "answer_text": "", "refused": False, "refusal_reason": None, "evidence_tool_use_ids": [],
+        "answer_text": "", "refused": False, "refusal_reason": None, "clarifying_question": None,
+        "evidence_tool_use_ids": [],
         "chart_hint": {"type": "none", "x": None, "y": None, "series": None}, **fields,
     }
     return {"type": "text", "text": json.dumps(final)}

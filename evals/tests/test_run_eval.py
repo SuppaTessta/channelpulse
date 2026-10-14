@@ -97,7 +97,8 @@ class Scripted:
         self.requests.append({"system": system, "tools": [t["name"] for t in tools]})
         if self.fail_at is not None and len(self.requests) > self.fail_at:
             raise self.error
-        final = {"answer_text": "No.", "refused": True, "refusal_reason": "trap", "evidence_tool_use_ids": [],
+        final = {"answer_text": "No.", "refused": True, "refusal_reason": "trap", "clarifying_question": None,
+                 "evidence_tool_use_ids": [],
                  "chart_hint": {"type": "none", "x": None, "y": None, "series": None}}
         return Turn("end_turn", __import__("json").dumps(final), [], Usage(100, 10), self.model)
 

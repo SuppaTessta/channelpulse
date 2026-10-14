@@ -1,16 +1,15 @@
-"""The hand-rolled tool-use loop behind POST /api/ask (PLAN §8), through the provider interface (agent/providers.py).
+"""The hand-rolled tool-use loop behind POST /api/ask (PLAN §8), over AnthropicProvider (agent/providers.py).
 
 A manual loop rather than a framework's, because code, not the model, decides what the user sees: every tool call
 is recorded here, and response.assemble builds the answer, SQL, data and label from those records.
 """
 
 import json
-import re
 import time
 
 from app import config
 from app.agent.prompt import FINAL_SCHEMA, system_prompt
-from app.agent.providers import Provider, ToolUse
+from app.agent.providers import AnthropicProvider, ToolUse
 from app.agent.response import ToolCall, assemble, refusal
 from app.agent.trace import Trace
 from app.guardrails import refusal_routing
@@ -22,7 +21,6 @@ FINAL_NUDGE = (
     "Your last reply wasn't the final answer in the required format. Reply now with only the final answer, in the "
     "format the instructions give, citing the tool_use_id of every result it relies on."
 )
-_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$")
 
 
 class AgentError(Exception):
@@ -33,7 +31,7 @@ class AgentError(Exception):
         self.status = status
 
 
-def run_agent(provider: Provider, question: str, region: str, trace: Trace, *, tools: list[dict] = TOOLS,
+def run_agent(provider: AnthropicProvider, question: str, region: str, trace: Trace, *, tools: list[dict] = TOOLS,
               system: str | None = None) -> dict:
     """Answer one question; fills `trace` as it goes, so a failure still leaves a useful record."""
     if reason := refusal_routing.route(question):  # no answer could be right, so no model call (D39)
@@ -52,7 +50,7 @@ def run_agent(provider: Provider, question: str, region: str, trace: Trace, *, t
         # Past the tool-round cap, the model must answer with what it has.
         turn = provider.complete(system, transcript, tools, final_only=round_no == config.MAX_TOOL_ROUNDS,
                                  timeout=remaining)
-        trace.add_usage(turn, provider.name)
+        trace.add_usage(turn)
         # Check refusal before touching content: the whole fallback chain declined, and content may be partial.
         if turn.stop == "refusal":
             category = f" ({turn.refusal_category})" if turn.refusal_category else ""
@@ -102,14 +100,13 @@ def _run(use: ToolUse, region: str, calls: dict[str, ToolCall], trace: Trace) ->
 
 
 def _final_answer(text: str) -> dict | None:
-    """The final answer object, or None when the text isn't one (tolerating a ```json fence)."""
+    """The final answer object, or None when the text isn't one."""
     try:
-        answer = json.loads(_FENCE.sub("", text.strip()))
+        answer = json.loads(text)
     except (TypeError, ValueError):
         return None
     if not isinstance(answer, dict):
         return None
-    answer = {"clarifying_question": None, **answer}  # optional for a model that leaves it out
     if not set(FINAL_SCHEMA["required"]) <= answer.keys():
         return None
     ids, hint = answer["evidence_tool_use_ids"], answer["chart_hint"]

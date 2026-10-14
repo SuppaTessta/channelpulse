@@ -31,6 +31,7 @@ export function DefinitionButton({
   title,
   metrics,
   queries,
+  note,
   trigger,
   source = false,
   label,
@@ -39,6 +40,7 @@ export function DefinitionButton({
   title: string;
   metrics: DefMetric[];
   queries: DefQuery[];
+  note?: ReactNode;
   trigger?: ReactNode;
   /** Name the governed metrics beside the button, so the source reads without opening it (a panel's provenance row). */
   source?: boolean;
@@ -71,6 +73,7 @@ export function DefinitionButton({
             </Dialog.Close>
           </header>
           <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+            {note ? <div className="text-[15px]/6 text-ink">{note}</div> : null}
             {metrics.map((m) => (
               <section key={m.name} className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">

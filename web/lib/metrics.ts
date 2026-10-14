@@ -1,6 +1,6 @@
 // Presentation rules for governed metrics, derived from the catalogue (GET /api/metrics) wherever possible.
 import type { DefMetric, DefQuery } from "@/components/definition";
-import type { Anomaly, Metric, Query } from "./api";
+import type { Anomaly, Metric, Query, Result } from "./api";
 import type { Kind } from "./format";
 
 export const toDefMetric = ({ name, label, description, formula, type, time_dimension }: Metric): DefMetric => ({
@@ -93,6 +93,8 @@ export function fallbackMetric(name: string): Metric {
     glossary: false,
   };
 }
+
+export const metricOf = (catalog: Result<Record<string, Metric>>, name: string) => (catalog.ok ? catalog.value[name] : undefined) ?? fallbackMetric(name);
 
 const WEEKLY_DETECTORS = new Set(["distributor_health", "lot_scan", "installer_scan"]);
 const day = (v: unknown) => (typeof v === "string" ? v.slice(0, 10) : null);

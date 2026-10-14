@@ -19,13 +19,15 @@ export function timeBuckets(grain: Grain, range: Range, win: Win): Bucket[] {
     const year = start.slice(0, 4);
     const partial = end > win.asOf ? `Data to ${fmtDayMonth(win.asOf)}` : start < win.dataStart ? `Data from ${fmtDayMonth(win.dataStart)}` : null;
     const provisional = !!win.provisionalFrom && end >= win.provisionalFrom;
-    if (grain === "month") return { start, end, year, partial, provisional, label: fmtMonth(start), tick: fmtMonthShort(start), tickYear: fmtMonth(start) };
-    if (grain === "week") {
-      return { start, end, year, partial, provisional, label: `Week of ${fmtDate(start)}`, tick: fmtDayMonth(start), tickYear: `${fmtDayMonth(start)} ${year}` };
-    }
-    return { start, end, year, partial, provisional, label: fmtDate(start), tick: fmtDayMonth(start), tickYear: fmtDate(start) };
+    return { start, end, year, partial, provisional, ...bucketText(grain, start) };
   });
 }
+
+/** A bucket's label and axis ticks at its grain (the Ask chart's buckets use it too). */
+export const bucketText = (grain: string, start: string) =>
+  grain === "month"
+    ? { label: fmtMonth(start), tick: fmtMonthShort(start), tickYear: fmtMonth(start) }
+    : { label: grain === "week" ? `Week of ${fmtDate(start)}` : fmtDate(start), tick: fmtDayMonth(start), tickYear: fmtDate(start) };
 
 /** What a grouped chart actually covers: whole buckets, cut at the as-of date. */
 export function coverage(buckets: Bucket[], win: Win): Range | null {

@@ -5,7 +5,7 @@ import { query, queryAll, type Anomalies, type Anomaly, type DataWindow, type Fi
 import type { Region } from "@/lib/config";
 import { addDays, addMonths, minDate, monthEnd, toISODate } from "@/lib/dates";
 import { fmtDate, fmtMonth, fmtNumber, formatValue } from "@/lib/format";
-import { anomaliesDefQuery, fallbackMetric, isCurrentFlag, latestSnapshot, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
+import { anomaliesDefQuery, isCurrentFlag, latestSnapshot, metricOf, shortLabel, toDefMetric, toDefQuery } from "@/lib/metrics";
 import { hrefWith, type SearchParams } from "@/lib/params";
 import { niceThresholds } from "@/lib/series";
 import { column, num, records, scalar, str } from "@/lib/table";
@@ -30,7 +30,6 @@ export type QualityCtx = {
 const AGE = "batch_cohort_month__months_since_ship";
 /** Only cells where every unit has been out the whole month, so an incomplete cell is never painted as low. */
 const OBSERVED: Filter = { dimension: "batch_cohort_month__is_fully_observed", op: "=", value: true };
-const metricOf = (c: QualityCtx["catalog"], name: string) => (c.ok ? c.value[name] : undefined) ?? fallbackMetric(name);
 /** To-date claim rates exist only across all failure modes; say so when the page is showing base cracks. */
 const allModesNote = (ctx: QualityCtx) => (ctx.metric.includes("base_crack") ? ", all failure modes" : "");
 

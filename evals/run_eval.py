@@ -217,13 +217,6 @@ def estimate_usd(model: str, questions: int, previous: dict | None = None) -> fl
     return questions * per_question * ESTIMATE_MARGIN
 
 
-def previous_results() -> dict | None:
-    try:
-        return json.loads(RESULTS.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
 def confirm_spend(estimate: float, assume_yes: bool, stdin=sys.stdin) -> bool:
     """Paid calls need an explicit yes: --yes, or typing it. A non-interactive run without --yes never spends."""
     if assume_yes:
@@ -478,7 +471,7 @@ def main(argv: list[str] | None = None) -> int:
     settings = provider.settings()
     meta |= {"model": provider.model, "settings": settings, "agent_timeout_s": config.AGENT_TIMEOUT_S}
     # Every call is paid: nothing is spent without a yes.
-    estimate = estimate_usd(provider.model, len(selected), previous_results())
+    estimate = estimate_usd(provider.model, len(selected), load_progress(RESULTS))
     print(f"\nAbout to ask {len(selected)} question(s) with {provider.model} (effort {args.effort}). "
           f"Estimated cost ${estimate:.2f}; the run stops once ${args.budget_usd:.2f} is spent (--budget-usd).")
     if estimate > args.budget_usd:
@@ -495,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
     progress["meta"] = meta  # the latest invocation's settings; each result carries its own asked_at
     done = {qid: r for qid, r in progress["results"].items() if qid in meta["selected"]}
     print(f"\n{provider.name} / {provider.model}, {args.mode} mode: {len(done)} of {len(selected)} already answered; "
-          f"settings {json.dumps({k: v for k, v in settings.items()}, default=str)}")
+          f"settings {json.dumps(settings, default=str)}")
 
     def save(result: dict) -> None:
         progress["results"][result["id"]] = result

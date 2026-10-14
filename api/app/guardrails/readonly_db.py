@@ -25,7 +25,6 @@ class QueryResult:
     columns: list[str]
     rows: list[list]
     row_cap_hit: bool  # exactly ROW_CAP rows came back, so there may be more
-    duration_ms: int
 
     @property
     def data(self) -> dict:
@@ -35,7 +34,6 @@ class QueryResult:
 def run(sql: str, params: dict | None, region: str) -> QueryResult:
     """Execute one SELECT in a read-only transaction under the caller's region claim; return at most ROW_CAP rows."""
     params = params or None  # with no params psycopg leaves a literal % alone
-    started = time.perf_counter()
     try:
         with psycopg.connect(agent_conninfo(), connect_timeout=5) as conn:
             conn.read_only = True  # transactions open with BEGIN READ ONLY
@@ -62,7 +60,6 @@ def run(sql: str, params: dict | None, region: str) -> QueryResult:
         columns=columns,
         rows=[[json_safe(value) for value in row] for row in rows],
         row_cap_hit=len(rows) >= config.ROW_CAP,
-        duration_ms=round((time.perf_counter() - started) * 1000),
     )
 
 

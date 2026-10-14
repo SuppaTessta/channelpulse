@@ -18,7 +18,7 @@ VALUES = {"primary": 82_200_000.0, "primary_prev": 70_300_000.0, "secondary": 76
 
 
 def result(value) -> QueryResult:
-    return QueryResult(sql=f"select {value!r}", columns=["v"], rows=[[value]], row_cap_hit=False, duration_ms=1)
+    return QueryResult(sql=f"select {value!r}", columns=["v"], rows=[[value]], row_cap_hit=False)
 
 
 @pytest.fixture

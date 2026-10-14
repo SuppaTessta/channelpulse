@@ -69,7 +69,7 @@ class FakeDB:
         self.calls = []
         self.result = readonly_db.QueryResult(
             sql="", columns=["month", "dso_days"], rows=[["2026-07-01", 41.3], ["2026-08-01", 44.8]],
-            row_cap_hit=False, duration_ms=3,
+            row_cap_hit=False,
         )
 
     def run(self, sql, params, region):

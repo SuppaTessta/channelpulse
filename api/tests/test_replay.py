@@ -47,7 +47,7 @@ def test_credentials_alone_do_not_make_the_agent_live(api, claude, recordings):
 def test_status_says_why_the_agent_is_not_live(api, claude, recordings):
     api.use_llm(None)
     assert api.http.get("/api/ask/status").json() == {
-        "mode": "replay", "reason": "no_credentials", "provider": "anthropic", "model": None, "recording": None}
+        "mode": "replay", "reason": "no_credentials", "model": None, "recording": None}
     api.use_llm(claude.client(), live=False)
     assert api.http.get("/api/ask/status").json()["reason"] == "live_off"
     api.use_llm(claude.client(), live=True)

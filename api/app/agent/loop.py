@@ -85,7 +85,7 @@ def _run(use: ToolUse, region: str, calls: dict[str, ToolCall], trace: Trace) ->
     content = for_model(use.id, result) if error is None else json.dumps({"tool_use_id": use.id, "error": error},
                                                                           ensure_ascii=False)
     duration_ms = round((time.perf_counter() - started) * 1000)
-    calls[use.id] = ToolCall(use.id, use.name, use.input or {}, result, error, duration_ms)
+    calls[use.id] = ToolCall(use.name, result)
     trace.tool_calls.append({
         "id": use.id,
         "name": use.name,

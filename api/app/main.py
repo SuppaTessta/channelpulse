@@ -174,7 +174,6 @@ class Recording(BaseModel):
 class AskStatus(BaseModel):
     mode: Literal["live", "replay"]
     reason: Literal["no_credentials", "live_off"] | None
-    provider: str
     model: str | None
     recording: Recording | None
 
@@ -206,7 +205,7 @@ def _not_live_reason(provider: AnthropicProvider | None) -> str | None:
 def ask_status(provider: LLM) -> dict:
     """Whether /api/ask answers live, why not, and which recorded eval run the page can replay instead."""
     reason = _not_live_reason(provider)
-    return {"mode": "replay" if reason else "live", "reason": reason, "provider": AnthropicProvider.name,
+    return {"mode": "replay" if reason else "live", "reason": reason,
             "model": provider.model if provider else None, "recording": replay.summary(replay.load())}
 
 
@@ -230,13 +229,10 @@ def ask(body: AskRequest, region: Region, provider: LLM) -> dict:
     except AgentError as e:
         trace.error = str(e)
         raise HTTPException(e.status, str(e)) from e
-    except anthropic.APIError as e:
+    except (anthropic.APIError, ProviderError) as e:
         trace.error = f"{type(e).__name__}: {e}"
         status = 504 if isinstance(e, anthropic.APITimeoutError) else 502
         raise HTTPException(status, "The model API call failed; please try again.") from e
-    except ProviderError as e:
-        trace.error = f"ProviderError: {e}"
-        raise HTTPException(502, "The model provider didn't answer; please try again.") from e
     except Exception as e:
         trace.error = f"{type(e).__name__}: {e}"
         raise

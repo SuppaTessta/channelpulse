@@ -14,12 +14,8 @@ NO_EVIDENCE_ANSWER = "I couldn't back an answer with query results from the mart
 
 @dataclass
 class ToolCall:
-    id: str
     name: str
-    input: dict
     result: dict | None  # None when the call failed
-    error: str | None
-    duration_ms: int
 
 
 def assemble(final: dict, calls: dict[str, ToolCall], trace_id: str) -> dict:

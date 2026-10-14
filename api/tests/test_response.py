@@ -15,7 +15,7 @@ DATA = {"columns": ["month", "dso_days"], "rows": [["2026-07-01", 41.3], ["2026-
 def call(call_id, name="query_metric", data=DATA, sql="select month, dso_days from marts.x", error=None):
     result = None if error else {"label": "governed_metric", "sql": sql, "row_count": 2, "row_cap_hit": False,
                                  "data": data}
-    return ToolCall(call_id, name, {}, result, error, 5)
+    return ToolCall(name, result)
 
 
 def final(answer="DSO rose from 41.3 to 44.8 days.", evidence=("t1",), refused=False, chart=None):

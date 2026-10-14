@@ -10,14 +10,12 @@ import time
 
 from app import config
 from app.agent.prompt import FINAL_SCHEMA, system_prompt
-from app.agent.providers import FALLBACK_BETA, Provider, ToolUse
+from app.agent.providers import Provider, ToolUse
 from app.agent.response import ToolCall, assemble, refusal
 from app.agent.trace import Trace
 from app.guardrails import refusal_routing
 from app.tools.definitions import TOOLS
 from app.tools.handlers import ToolError, for_model, run_tool
-
-__all__ = ["FALLBACK_BETA", "AgentError", "run_agent"]
 
 # Asked once when a turn ends without a readable final answer (a weaker model often replies in prose).
 FINAL_NUDGE = (

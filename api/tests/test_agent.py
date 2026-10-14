@@ -5,9 +5,9 @@ import httpx2
 import pytest
 
 from app import config
-from app.agent.loop import FALLBACK_BETA, FINAL_NUDGE, AgentError, run_agent
+from app.agent.loop import FINAL_NUDGE, AgentError, run_agent
 from app.agent.prompt import FINAL_SCHEMA
-from app.agent.providers import AnthropicProvider
+from app.agent.providers import FALLBACK_BETA, AnthropicProvider
 from app.agent.trace import Trace
 from app.tools.definitions import TOOLS
 

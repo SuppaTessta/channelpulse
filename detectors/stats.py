@@ -4,51 +4,30 @@ import math
 
 import numpy as np
 
-_EPS = 1e-15
-_TINY = 1e-300
-
-
-def lower_regularized_gamma(a: float, x: float) -> float:
-    """P(a, x) = gamma(a, x) / Gamma(a), with relative accuracy near machine precision in the series region.
-
-    x < a + 1 uses the power series, which computes P directly, so tiny tails (the ones a Bonferroni test cares about)
-    keep their relative accuracy. Otherwise P = 1 - Q with Q from Lentz's continued fraction; there P is not small.
-    """
-    if x <= 0:
-        return 0.0
-    log_prefix = -x + a * math.log(x) - math.lgamma(a)
-    if x < a + 1:
-        term = total = 1.0 / a
-        n = a
-        while abs(term) > abs(total) * _EPS:
-            n += 1
-            term *= x / n
-            total += term
-        return total * math.exp(log_prefix)
-    b = x + 1 - a
-    c = 1 / _TINY
-    d = 1 / b
-    h = d
-    for i in range(1, 10_000):
-        an = -i * (i - a)
-        b += 2
-        d = an * d + b
-        d = 1 / (d if abs(d) > _TINY else _TINY)
-        c = b + an / c
-        c = c if abs(c) > _TINY else _TINY
-        h *= d * c
-        if abs(d * c - 1) < _EPS:
-            break
-    return 1 - math.exp(log_prefix) * h
-
 
 def poisson_sf(k: int, lam: float) -> float:
-    """One-sided Poisson tail P(X >= k | lam), via P(X >= k) = P(k, lam) for k >= 1."""
+    """One-sided Poisson tail P(X >= k | lam), summing the pmf on whichever side of lam has no cancellation.
+
+    k > lam sums upward from k, so the tiny tails a Bonferroni test cares about keep full relative accuracy. Otherwise
+    the tail is at least about 1/2 and 1 - P(X < k) loses nothing.
+    """
     if k <= 0:
         return 1.0
     if lam <= 0:
         return 0.0
-    return lower_regularized_gamma(float(k), float(lam))
+    term = math.exp(-lam + k * math.log(lam) - math.lgamma(k + 1))  # P(X = k)
+    if k > lam:
+        total, i = 0.0, k
+        while term > total * 1e-18:
+            total += term
+            i += 1
+            term *= lam / i
+        return total
+    lower = 0.0
+    for i in range(k, 0, -1):
+        term *= i / lam  # P(X = i - 1)
+        lower += term
+    return 1 - lower
 
 
 def bonferroni_alpha(alpha_family: float, n_entities: int, n_snapshots: int) -> float:

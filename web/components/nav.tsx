@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { ThemeToggle } from "./theme-toggle";
-import { buttonClass, cx, ICON, TYPE } from "./ui";
+import { buttonClass, cx, ICON, NAV_ACTIVE, NAV_IDLE, TYPE } from "./ui";
 
 type Page = { href: string; label: string; title: string; icon: Icon };
 
@@ -39,11 +39,6 @@ const NAV: { group: string; pages: Page[] }[] = [
 
 /** Filters that follow the viewer from page to page. */
 const SHARED = ["region", "from", "to"];
-
-/** The active page: a soft wash and a glowing accent bar that grows in on arrival. */
-const ACTIVE_LINK =
-  "relative bg-accent-soft/60 text-ink before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:shadow-[var(--glow-accent)] before:content-[''] before:animate-[cp-grow_400ms_var(--ease-out-expo)_both]";
-const IDLE_LINK = "text-muted transition-[background-color,color] duration-200 hover:bg-hover hover:text-ink";
 
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
@@ -91,7 +86,7 @@ function RailLinks({ query }: { query: string }) {
                     className={cx(
                       "flex h-14 flex-col items-center justify-center gap-1 rounded-control text-[11px] font-medium",
                       "wide:h-9 wide:flex-row wide:justify-start wide:gap-2.5 wide:px-2.5 wide:text-[13px]",
-                      active ? ACTIVE_LINK : IDLE_LINK,
+                      active ? NAV_ACTIVE : NAV_IDLE,
                     )}
                   >
                     <Icon size={20} {...ICON} weight={active ? "regular" : "light"} className={cx("shrink-0", active && "text-accent")} aria-hidden />
@@ -157,7 +152,7 @@ function SheetLinks({ onNavigate }: { onNavigate: () => void }) {
                     aria-current={active ? "page" : undefined}
                     className={cx(
                       "flex h-12 items-center gap-3 rounded-control px-3 text-[15px] font-medium",
-                      active ? ACTIVE_LINK : IDLE_LINK,
+                      active ? NAV_ACTIVE : NAV_IDLE,
                     )}
                   >
                     <Icon size={22} {...ICON} className={active ? "text-accent" : undefined} aria-hidden />

@@ -19,6 +19,11 @@ export const TYPE = {
   micro: "text-[10.5px]/4 font-semibold uppercase tracking-[0.12em] text-subtle",
 } as const;
 
+/** The current item in a list of places (nav, Ask questions): a soft wash and a glowing accent bar that grows in. */
+export const NAV_ACTIVE =
+  "relative bg-accent-soft/60 text-ink before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:shadow-[var(--glow-accent)] before:content-[''] before:animate-[cp-grow_400ms_var(--ease-out-expo)_both]";
+export const NAV_IDLE = "text-muted transition-[background-color,color] duration-200 hover:bg-hover hover:text-ink";
+
 const BUTTON_BASE =
   "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] font-medium " +
   "transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:translate-y-px " +

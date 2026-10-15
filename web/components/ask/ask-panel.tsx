@@ -7,7 +7,7 @@ import { API_URL, regionName, type Region } from "@/lib/config";
 import { isAskResponse } from "@/lib/validate";
 import { Answer, AnswerHeader, LabelBadge, PendingAnswer } from "./answer";
 import { OtherPages } from "./replay-panel";
-import { buttonClass, cx, ICON } from "../ui";
+import { buttonClass, cx, ICON, TYPE } from "../ui";
 
 type Failure = { status: number | null; detail: string; retryAfter?: number; cancelled?: boolean };
 type Entry = { id: string; question: string; region: Region; askedAt: string } & (
@@ -50,7 +50,7 @@ function AnalystOffline({ pagesQuery }: { pagesQuery: string }) {
       <div className="flex items-start gap-3">
         <Key size={22} {...ICON} className="mt-0.5 shrink-0 text-adhoc" aria-hidden />
         <div className="max-w-[68ch]">
-          <h2 id="offline-title" className="text-[15px]/6 font-semibold text-ink">
+          <h2 id="offline-title" className={TYPE.stateTitle}>
             The analyst isn&apos;t configured on this server
           </h2>
           <p className="mt-1 text-base/7 text-muted">
@@ -250,7 +250,7 @@ export function AskPanel({ region, pagesQuery }: { region: Region; pagesQuery: s
           ask(question);
         }}
       >
-        <label htmlFor="question" className="text-sm font-semibold text-ink">
+        <label htmlFor="question" className={TYPE.subhead}>
           Your question
         </label>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -314,7 +314,7 @@ export function AskPanel({ region, pagesQuery }: { region: Region; pagesQuery: s
       {earlier.length ? (
         <section aria-labelledby="history-title" className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <h2 id="history-title" className="text-sm font-semibold text-ink">
+            <h2 id="history-title" className={TYPE.subhead}>
               Earlier in this session
             </h2>
             <button type="button" className={buttonClass("ghost", "sm")} onClick={() => setEntries(latest ? [latest] : [])}>

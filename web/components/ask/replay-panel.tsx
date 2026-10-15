@@ -7,7 +7,7 @@ import type { AskStatus, Recording, Replay, ReplayAnswer } from "@/lib/ask";
 import { regionName, type Region } from "@/lib/config";
 import { fmtDate, fmtNumber } from "@/lib/format";
 import { EmptyState } from "../states";
-import { buttonClass, cx, ICON } from "../ui";
+import { buttonClass, cx, Figure, ICON, NAV_ACTIVE, NAV_IDLE, TYPE } from "../ui";
 import { Answer } from "./answer";
 
 const CATEGORIES: [string, string][] = [
@@ -56,11 +56,13 @@ function Scorecard({ answers }: { answers: ReplayAnswer[] }) {
     ["Governed answers", fmtNumber(answers.filter((a) => a.response.label === "governed_metric").length)],
   ];
   return (
-    <dl className="grid shrink-0 grid-cols-3 gap-px overflow-clip rounded-control border border-line bg-line">
+    <dl className="cp-sheet grid shrink-0 grid-cols-3 gap-px overflow-clip rounded-[14px] border border-line bg-line">
       {figures.map(([label, value]) => (
         <div key={label} className="flex min-w-0 flex-col gap-0.5 bg-surface px-3.5 py-2.5">
           <dt className="text-[11.5px]/4 text-muted">{label}</dt>
-          <dd className="text-lg/6 font-semibold tracking-[-0.02em] text-ink">{value}</dd>
+          <dd>
+            <Figure text={value} className={TYPE.figureLg} animate />
+          </dd>
         </div>
       ))}
     </dl>
@@ -75,7 +77,7 @@ function ModeNotice({ status, recording, answers }: { status: AskStatus; recordi
           <ClockCounterClockwise size={20} {...ICON} aria-hidden />
         </span>
         <div>
-        <h2 id="mode-title" className="text-[15px]/6 font-semibold text-ink">
+        <h2 id="mode-title" className={TYPE.stateTitle}>
           {recording
             ? "Replay mode: recorded answers, not live ones"
             : status.reason === "live_off"
@@ -148,8 +150,8 @@ function QuestionList({ answers, active, hrefFor }: { answers: ReplayAnswer[]; a
                     scroll={false}
                     aria-current={a.id === active ? "page" : undefined}
                     className={cx(
-                      "flex items-start gap-2.5 rounded-control px-2 py-2 text-[13px]/5 transition-colors duration-150 hover:bg-hover",
-                      a.id === active ? "bg-accent-soft text-ink" : "text-muted",
+                      "flex items-start gap-2.5 rounded-control px-2 py-2 text-[13px]/5",
+                      a.id === active ? NAV_ACTIVE : NAV_IDLE,
                     )}
                   >
                     <Verdict answer={a} />

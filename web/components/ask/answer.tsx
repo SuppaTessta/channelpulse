@@ -10,7 +10,7 @@ import { TimeChart } from "../charts/time-chart";
 import { CopyButton } from "../copy-button";
 import { DataTable } from "../data-table";
 import { SqlBlock } from "../sql";
-import { Badge, cx, ICON } from "../ui";
+import { Badge, cx, ICON, TYPE } from "../ui";
 
 export function LabelBadge({ label }: { label: AskResponse["label"] }) {
   if (label === "governed_metric") {
@@ -64,11 +64,20 @@ function TraceId({ id, className }: { id: string; className?: string }) {
   );
 }
 
-/** Shared frame for an answer: an outer tray and an inner plate, because the answer is the one elevated thing here. */
-function Frame({ children, className }: { children: ReactNode; className?: string }) {
+/** The plate's edge light names the answer's family: teal for governed, amber for ad hoc, plain while pending. */
+const GLOW = {
+  governed: "shadow-[var(--glow-accent)]",
+  adhoc: "shadow-[0_0_0_1px_color-mix(in_oklab,var(--adhoc)_40%,transparent),0_0_24px_-6px_color-mix(in_oklab,var(--adhoc)_45%,transparent)]",
+  plain: "shadow-raised",
+};
+
+/** Shared frame for an answer: an outer tray and an inner glass plate, because the answer is the one elevated thing here. */
+function Frame({ children, className, glow = "plain" }: { children: ReactNode; className?: string; glow?: keyof typeof GLOW }) {
   return (
-    <div className="rounded-[14px] bg-sunken p-1 ring-1 ring-line">
-      <div className={cx("flex flex-col gap-5 rounded-panel bg-raised p-4 shadow-raised md:p-6", className)}>{children}</div>
+    <div className="rounded-[20px] bg-sunken p-1 ring-1 ring-line">
+      <div className={cx("cp-reveal flex flex-col gap-5 rounded-[16px] border border-line-strong/70 bg-raised/90 p-4 backdrop-blur-xl md:p-6", GLOW[glow], className)}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -80,7 +89,7 @@ export function AnswerHeader({ question, meta, badge }: { question: string; meta
         {badge}
         <span className="text-xs text-muted">{meta}</span>
       </div>
-      <h3 className="text-[17px]/6 font-semibold tracking-[-0.01em] text-pretty text-ink">{question}</h3>
+      <h3 className={TYPE.question}>{question}</h3>
     </header>
   );
 }
@@ -91,9 +100,9 @@ export function AnswerHeader({ question, meta, badge }: { question: string; meta
  */
 function NoFigures({ response, question, meta, edge, children }: { response: AskResponse; question: string; meta: string; edge: string; children: ReactNode }) {
   return (
-    <article className={cx("flex flex-col gap-3 rounded-panel border border-l-[3px] border-line bg-refused-soft p-4 md:p-6", edge)}>
+    <article className={cx("cp-reveal flex flex-col gap-3 rounded-[16px] border border-l-[3px] border-line bg-refused-soft p-4 md:p-6", edge)}>
       <AnswerHeader question={question} meta={meta} badge={<LabelBadge label={response.label} />} />
-      <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
+      <p className="max-w-[70ch] font-display text-[18px]/[30px] text-ink">{response.answer_text}</p>
       {children}
       <TraceId id={response.trace_id} className="border-t border-line pt-3" />
     </article>
@@ -124,9 +133,9 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
   const chart = buildAskChart(response);
   const data = response.data;
   return (
-    <Frame>
+    <Frame glow={response.label === "governed_metric" ? "governed" : "adhoc"}>
       <AnswerHeader question={question} meta={meta} badge={<LabelBadge label={response.label} />} />
-      <p className="max-w-[70ch] text-base/7 text-ink">{response.answer_text}</p>
+      <p className="max-w-[70ch] font-display text-[18px]/[30px] text-ink">{response.answer_text}</p>
       {response.label === "ad_hoc_sql_verify" ? (
         <p className="flex max-w-[70ch] items-start gap-2 rounded-control bg-adhoc-soft px-3 py-2.5 text-sm text-ink">
           <SealWarning size={18} {...ICON} className="mt-px shrink-0 text-adhoc" aria-hidden />
@@ -156,7 +165,7 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
           />
         </div>
       ) : null}
-      <div className="-mx-4 -mb-4 flex flex-col gap-3 rounded-b-panel border-t border-line bg-surface px-4 py-4 md:-mx-6 md:-mb-6 md:px-6">
+      <div className="-mx-4 -mb-4 flex flex-col gap-3 rounded-b-[16px] border-t border-line bg-surface px-4 py-4 md:-mx-6 md:-mb-6 md:px-6">
         <p className="flex items-start gap-2 text-sm text-ink">
           <CheckCircle size={18} {...ICON} className="mt-px shrink-0 text-accent" aria-hidden />
           <span>

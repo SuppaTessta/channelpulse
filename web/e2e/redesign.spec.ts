@@ -120,3 +120,13 @@ test("the header carries the aurora and the canvas the grain, and neither takes 
   const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("button")?.getAttribute("aria-label") ?? null, [box.x + box.width / 2, box.y + box.height / 2]);
   expect(hit).toMatch(/Switch to the (light|dark) theme/);
 });
+
+// The sparkline stroke doesn't scale with its stretched viewBox, so a dash-based draw-in measured its dashes on
+// screen and left gaps in the line for good. Sparklines reveal with a wipe instead and keep a solid stroke.
+test("sparklines land as whole lines, without dash gaps", async ({ page }) => {
+  await page.goto("/");
+  const lines = page.locator('section[aria-labelledby="kpi-heading"] svg path[stroke="var(--series-1)"]');
+  await expect(lines).toHaveCount(5);
+  await page.waitForTimeout(2500);
+  expect(await lines.evaluateAll((els) => els.map((e) => getComputedStyle(e).strokeDasharray))).toEqual(Array(5).fill("none"));
+});

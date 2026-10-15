@@ -280,6 +280,15 @@
     stroke-dashoffset: 0;
   }
 }
+/* Reveals left to right; the 8px outset keeps the line's cap and glow unclipped once it has landed. */
+@keyframes cp-wipe {
+  from {
+    clip-path: inset(-8px 100% -8px -8px);
+  }
+  to {
+    clip-path: inset(-8px -8px -8px -8px);
+  }
+}
 @keyframes cp-grow {
   from {
     transform: scaleY(0);
@@ -435,6 +444,25 @@
 }
 .cp-mark-draw path + path {
   animation-delay: 250ms;
+}
+
+/* Sparklines draw in, then the latest point lands and breathes (sparkline.tsx; --i staggers the tiles). */
+.cp-spark {
+  animation: cp-wipe 1100ms var(--ease-out-expo) both;
+  animation-delay: calc(200ms + var(--i, 0) * 80ms);
+}
+:root[data-theme="dark"] .cp-spark-line {
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--series-1) 55%, transparent));
+}
+.cp-spark-area {
+  animation: cp-fade-in 900ms var(--ease-out-expo) both;
+  animation-delay: calc(500ms + var(--i, 0) * 80ms);
+}
+.cp-spark-dot {
+  animation:
+    cp-fade-in 300ms both calc(1100ms + var(--i, 0) * 80ms),
+    cp-ping 900ms var(--ease-out-expo) calc(1100ms + var(--i, 0) * 80ms),
+    cp-breathe 2.6s ease-in-out calc(2000ms + var(--i, 0) * 80ms) infinite alternate;
 }
 
 /* Observable Plot output: tokens in, library defaults out. */

@@ -18,7 +18,8 @@ const KPI_METRICS = ["primary_sales_value", "secondary_sales_value", "channel_da
 type Ctx = { period: Period; win: DataWindow; region: Region; cat: Record<string, Metric> };
 type Loaded = { name: string; current: Result<Query>; prior: Result<Query> | null; trend: Result<Query>; grain: Grain };
 
-// Five tiles: three then two on tablets, one row on desktop, one column on phones (DESIGN.md).
+// Five tiles: three then two on tablets and small laptops, one row from 1280px, one column on phones (DESIGN.md).
+// At 1024px a single row left each tile about 180px, which wrapped the labels and stacked the notes.
 const SPANS = ["md:col-span-2", "md:col-span-2", "md:col-span-2", "md:col-span-3", "md:col-span-3"];
 
 async function load(name: string, { period, region }: Ctx): Promise<Loaded> {
@@ -33,13 +34,13 @@ async function load(name: string, { period, region }: Ctx): Promise<Loaded> {
   return { name, current, prior: priorResult, trend, grain };
 }
 
-function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
+function Tile({ k, ctx, span, index }: { k: Loaded; ctx: Ctx; span: string; index: number }) {
   const metric = ctx.cat[k.name] ?? fallbackMetric(k.name);
   const label = shortLabel(metric.label);
   const kind = metricKind(k.name, metric.label);
   const head = (
     <div className="flex min-w-0 items-center gap-0.5">
-      <p className="text-[13px] font-medium text-muted">{label}</p>
+      <p className="text-[12.5px] font-medium text-muted">{label}</p>
       {metric.description ? <InfoTip label={`Definition of ${label}`}>{metric.description}</InfoTip> : null}
     </div>
   );
@@ -60,7 +61,12 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
   const delta = value != null && priorValue != null ? formatDelta(kind, value, priorValue) : null;
   const cohort = isCohortTimed(metric);
   const good = cohort ? 0 : (GOOD_DIRECTION[k.name] ?? 0);
-  const tone = !delta || delta.sign === 0 || good === 0 ? "text-muted" : delta.sign === good ? "text-good" : "text-danger";
+  const tone =
+    !delta || delta.sign === 0 || good === 0
+      ? "bg-sunken text-muted"
+      : delta.sign === good
+        ? "bg-[color-mix(in_oklab,var(--good)_14%,transparent)] text-good"
+        : "bg-danger-soft text-danger";
   const buckets = timeBuckets(k.grain, ctx.period.range, ctx.win);
   const trend = alignSeries(buckets, k.trend.value, `metric_time__${k.grain}`, k.name, false);
   const provisional = isHorizonBound(metric) && ctx.win.provisionalFrom && ctx.period.range.to >= ctx.win.provisionalFrom;
@@ -85,7 +91,7 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
           <Figure text={formatValue(kind, value)} className={TYPE.figureHero} animate />
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs">
             {delta ? (
-              <span className={cx("inline-flex items-center gap-0.5 font-semibold", tone)}>
+              <span className={cx("inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold", tone)}>
                 <Arrow size={13} weight="bold" className="shrink-0" aria-hidden />
                 {delta.text}
               </span>
@@ -97,6 +103,7 @@ function Tile({ k, ctx, span }: { k: Loaded; ctx: Ctx; span: string }) {
         </div>
         <Sparkline
           values={trend}
+          index={index}
           label={`${label} by ${k.grain}, ${buckets.length} ${k.grain}s; latest ${formatValue(kind, trend.findLast((v) => v != null))}`}
         />
       </div>
@@ -134,7 +141,7 @@ export async function KpiStrip({ period, win, region, catalog }: { period: Perio
   return (
     <section aria-labelledby="kpi-heading" className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="kpi-heading" className="text-sm font-semibold text-ink">
+        <h2 id="kpi-heading" className={TYPE.panelTitle}>
           Key figures, {fmtRange(period.range)}
         </h2>
         <p className="text-xs text-muted">
@@ -143,9 +150,9 @@ export async function KpiStrip({ period, win, region, catalog }: { period: Perio
             : `No changes shown: the data starts ${fmtDate(win.dataStart)}, so the comparison window isn't covered.`}
         </p>
       </div>
-      <Sheet className="md:grid-cols-6 lg:grid-cols-5">
+      <Sheet className="cp-stagger md:grid-cols-6 xl:grid-cols-5">
         {loaded.map((k, i) => (
-          <Tile key={k.name} k={k} ctx={ctx} span={cx(SPANS[i], "lg:col-span-1")} />
+          <Tile key={k.name} k={k} ctx={ctx} span={cx(SPANS[i], "xl:col-span-1")} index={i} />
         ))}
       </Sheet>
     </section>
@@ -157,13 +164,13 @@ export function KpiStripSkeleton() {
     <div aria-busy="true" className="flex flex-col gap-2">
       <span className="sr-only">Loading key figures</span>
       <Skeleton className="h-4 w-48" />
-      <div className="grid grid-cols-1 gap-px overflow-clip rounded-panel border border-line bg-line md:grid-cols-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-px overflow-clip rounded-[14px] border border-line bg-line md:grid-cols-6 xl:grid-cols-5">
         {SPANS.map((span, i) => (
-          <div key={i} className={cx("flex flex-col gap-3 bg-surface p-4 md:p-5", span, "lg:col-span-1")}>
+          <div key={i} className={cx("flex flex-col gap-3 bg-surface p-4 md:p-5", span, "xl:col-span-1")}>
             <Skeleton className="h-3.5 w-32" />
-            <Skeleton className="h-8 w-28" />
+            <Skeleton className="h-10 w-28 md:h-[46px]" />
             <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-9 w-full" />
           </div>
         ))}
       </div>

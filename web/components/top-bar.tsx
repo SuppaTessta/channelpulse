@@ -17,7 +17,7 @@ function DataAsOf({ win, catalog }: { win: Result<DataWindow>; catalog: Result<R
   return (
     <DefinitionButton
       title="Data as of"
-      className="-ml-2.5 h-auto min-h-10 flex-wrap justify-start gap-x-1.5 gap-y-0 py-1 text-left md:min-h-8 lg:-mr-2.5 lg:ml-0 lg:justify-end lg:text-right"
+      className="-ml-2.5 h-auto min-h-10 flex-wrap justify-start gap-x-1.5 gap-y-0 py-1 text-left md:min-h-8 xl:-mr-2.5 xl:ml-0 xl:justify-end xl:text-right"
       trigger={
         <>
           <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_var(--accent-soft)] animate-[cp-breathe_2.4s_ease-in-out_infinite_alternate]" />
@@ -72,13 +72,13 @@ export function TopBar({
   return (
     <header className="relative overflow-hidden border-b border-line bg-canvas md:sticky md:top-0 md:z-20 md:bg-canvas/80 md:backdrop-blur-md print:hidden">
       <div aria-hidden className="cp-aurora" />
-      <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3 md:px-6 md:py-4 lg:min-h-[88px] lg:flex-nowrap">
+      <div className="relative mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-5 gap-y-1 px-4 py-3 md:px-6 md:py-4 xl:min-h-[88px] xl:flex-nowrap">
         <MobileNav />
         <div className="min-w-0 flex-1 py-1">
           {children ? <div className="text-xs text-muted">{children}</div> : null}
           <h1 className={cx(TYPE.pageTitle, "line-clamp-2 text-balance")}>{title}</h1>
         </div>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface/60 px-3 py-1.5 shadow-highlight backdrop-blur-md lg:w-auto lg:flex-nowrap lg:justify-end">
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface/60 px-3 py-1.5 shadow-highlight backdrop-blur-md xl:w-auto xl:flex-nowrap xl:justify-end">
           <ParamSelect
             param="region"
             label="Viewing as"

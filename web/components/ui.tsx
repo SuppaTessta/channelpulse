@@ -105,7 +105,7 @@ export function Sheet({ children, className, dim = true }: { children: ReactNode
 
 /** Static placeholder blocks shaped like the content they stand in for. No shimmer: DESIGN.md has no loops. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cx("rounded-control bg-sunken", className)} />;
+  return <div aria-hidden className={cx("cp-shimmer rounded-control", className)} />;
 }
 
 export function PanelSkeleton({ className, label, chartHeight = "h-56" }: { className?: string; label: string; chartHeight?: string }) {

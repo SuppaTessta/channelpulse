@@ -6,7 +6,7 @@ export default function Loading() {
     <div aria-busy="true">
       <span className="sr-only">Loading the page</span>
       <div className="border-b border-line">
-        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:px-6">
+        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:h-[72px] md:px-6 lg:h-[88px]">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="hidden h-8 w-72 md:block" />
         </div>

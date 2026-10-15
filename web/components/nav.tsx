@@ -1,12 +1,13 @@
 "use client";
 
-import { ChatCenteredText, GridFour, List, ListMagnifyingGlass, Newspaper, PresentationChart, Pulse, Storefront, X, type Icon } from "@phosphor-icons/react";
+import { ChatCenteredText, GridFour, List, ListMagnifyingGlass, Newspaper, PresentationChart, Storefront, X, type Icon } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { BrandMark } from "./brand-mark";
 import { ThemeToggle } from "./theme-toggle";
-import { buttonClass, cx, ICON } from "./ui";
+import { buttonClass, cx, ICON, TYPE } from "./ui";
 
 type Page = { href: string; label: string; title: string; icon: Icon };
 
@@ -39,6 +40,11 @@ const NAV: { group: string; pages: Page[] }[] = [
 /** Filters that follow the viewer from page to page. */
 const SHARED = ["region", "from", "to"];
 
+/** The active page: a soft wash and a glowing accent bar that grows in on arrival. */
+const ACTIVE_LINK =
+  "relative bg-accent-soft/60 text-ink before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:shadow-[var(--glow-accent)] before:content-[''] before:animate-[cp-grow_400ms_var(--ease-out-expo)_both]";
+const IDLE_LINK = "text-muted transition-[background-color,color] duration-200 hover:bg-hover hover:text-ink";
+
 const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
 function useSharedQuery(): string {
@@ -55,11 +61,9 @@ function useSharedQuery(): string {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-accent text-on-accent shadow-highlight">
-        <Pulse size={20} weight="bold" aria-hidden />
-      </span>
+      <BrandMark size={32} animate />
       <span className={cx("min-w-0 flex-col leading-tight", compact ? "flex" : "hidden wide:flex")}>
-        <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">ChannelPulse</span>
+        <span className="font-display text-[17px]/5 font-medium tracking-[-0.01em] text-ink">ChannelPulse</span>
         <span className="truncate text-[11px] text-subtle">Gangasagar Polymers</span>
       </span>
     </span>
@@ -73,7 +77,7 @@ function RailLinks({ query }: { query: string }) {
       {NAV.map(({ group, pages }, g) => (
         <div key={group} className="flex flex-col gap-1">
           {/* Below 1440px the group name gives way to a hairline, so the rail stays 72px wide. */}
-          <p className="hidden px-2.5 pb-1 text-[11px] font-medium text-subtle wide:block">{group}</p>
+          <p className={cx(TYPE.micro, "hidden px-2.5 pb-1.5 wide:block")}>{group}</p>
           {g > 0 ? <hr aria-hidden className="mx-3 mb-2 wide:hidden" /> : null}
           <ul className="flex flex-col gap-0.5">
             {pages.map(({ href, label, title, icon: Icon }) => {
@@ -85,9 +89,9 @@ function RailLinks({ query }: { query: string }) {
                     aria-current={active ? "page" : undefined}
                     title={title}
                     className={cx(
-                      "flex h-14 flex-col items-center justify-center gap-1 rounded-control text-[11px] font-medium transition-colors duration-150 ease-out",
+                      "flex h-14 flex-col items-center justify-center gap-1 rounded-control text-[11px] font-medium",
                       "wide:h-9 wide:flex-row wide:justify-start wide:gap-2.5 wide:px-2.5 wide:text-[13px]",
-                      active ? "bg-accent-soft text-ink" : "text-muted hover:bg-hover hover:text-ink",
+                      active ? ACTIVE_LINK : IDLE_LINK,
                     )}
                   >
                     <Icon size={20} {...ICON} weight={active ? "regular" : "light"} className={cx("shrink-0", active && "text-accent")} aria-hidden />
@@ -113,7 +117,7 @@ export function Rail() {
   return (
     <nav
       aria-label="Pages"
-      className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col gap-5 border-r border-line bg-canvas py-3 md:flex wide:w-[232px] wide:py-4 print:hidden"
+      className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col gap-5 border-r border-line bg-[color-mix(in_oklab,var(--canvas),var(--surface)_35%)] py-3 md:flex wide:w-[232px] wide:py-4 print:hidden"
     >
       <Link href="/" className="mx-auto flex rounded-control p-1 wide:mx-3 wide:px-2" aria-label="ChannelPulse home">
         <Brand />
@@ -141,7 +145,7 @@ function SheetLinks({ onNavigate }: { onNavigate: () => void }) {
     <div className="flex flex-col gap-4">
       {NAV.map(({ group, pages }) => (
         <div key={group}>
-          <p className="px-3 pb-1 text-xs font-medium text-subtle">{group}</p>
+          <p className={cx(TYPE.micro, "px-3 pb-1.5")}>{group}</p>
           <ul className="flex flex-col gap-1">
             {pages.map(({ href, title, icon: Icon }) => {
               const active = isActive(pathname, href);
@@ -153,7 +157,7 @@ function SheetLinks({ onNavigate }: { onNavigate: () => void }) {
                     aria-current={active ? "page" : undefined}
                     className={cx(
                       "flex h-12 items-center gap-3 rounded-control px-3 text-[15px] font-medium",
-                      active ? "bg-accent-soft text-ink" : "text-muted hover:bg-hover hover:text-ink",
+                      active ? ACTIVE_LINK : IDLE_LINK,
                     )}
                   >
                     <Icon size={22} {...ICON} className={active ? "text-accent" : undefined} aria-hidden />
@@ -178,7 +182,7 @@ export function MobileNav() {
         <List size={22} {...ICON} aria-hidden />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(10_12_14/0.4)] md:hidden" />
+        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(3_6_12/0.55)] backdrop-blur-[3px] md:hidden" />
         <Dialog.Content className="cp-drop fixed inset-x-0 top-0 z-50 border-b border-line bg-raised px-4 pt-3 pb-5 shadow-raised md:hidden">
           <div className="mb-4 flex items-center justify-between">
             <Dialog.Title asChild>
@@ -194,6 +198,9 @@ export function MobileNav() {
           <Suspense fallback={null}>
             <SheetLinks onNavigate={() => setOpen(false)} />
           </Suspense>
+          <div className="mt-4 border-t border-line pt-3">
+            <ThemeToggle variant="sheet" />
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

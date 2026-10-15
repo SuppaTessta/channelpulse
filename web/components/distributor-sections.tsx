@@ -12,7 +12,7 @@ import { DataTable } from "./data-table";
 import { DefinitionButton } from "./definition";
 import { InfoTip } from "./info-tip";
 import { EmptyState, ErrorState } from "./states";
-import { Badge, Figure, ICON } from "./ui";
+import { Badge, cx, Figure, ICON, TYPE } from "./ui";
 
 type Ctx = { period: Period; win: DataWindow; region: Region; catalog: Result<Record<string, Metric>>; filters: Filter[] };
 
@@ -73,7 +73,9 @@ export async function HealthPanel({ ctx, flag, pastFlag, className }: { ctx: Ctx
         <div className="flex flex-col gap-5">
           <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
             <div className="flex flex-col gap-2">
-              <p className="text-[52px]/none font-semibold tracking-tight text-ink">{formatValue("score", series[0].values[scored])}</p>
+              <p>
+                <Figure text={formatValue("score", series[0].values[scored])} className="font-display text-[56px]/none font-normal tracking-[-0.03em] text-ink" animate />
+              </p>
               <p className="text-sm text-muted">{buckets[scored].label}</p>
               {flag ? (
                 <Badge tone="danger" className="w-fit" icon={<WarningDiamond size={14} {...ICON} aria-hidden />}>
@@ -140,7 +142,7 @@ export async function Receivables({ ctx }: { ctx: Ctx }) {
           return (
             <div key={name} className="bg-surface p-3">
               <p className="text-xs text-muted">{shortLabel(m.label)}</p>
-              <Figure text={formatValue("inr", scalar(r.value[i].result.data, name))} className="block text-xl font-semibold tracking-[-0.02em] text-ink" />
+              <Figure text={formatValue("inr", scalar(r.value[i].result.data, name))} className={cx("block", TYPE.figureMd, "text-ink")} />
             </div>
           );
         })}
@@ -300,7 +302,7 @@ export function ProfileFacts({ profile, flag, pastFlag }: { profile: Profile; fl
         {profile.tier ? <Badge tone="neutral">{/^\d+$/.test(profile.tier) ? `Tier ${profile.tier}` : profile.tier}</Badge> : null}
         {profile.status && profile.status.toLowerCase() !== "active" ? <Badge tone="neutral">{profile.status}</Badge> : null}
         {flag ? (
-          <Badge tone="danger" icon={<WarningDiamond size={12} {...ICON} aria-hidden />}>
+          <Badge tone="danger" icon={<span aria-hidden className="size-1.5 rounded-full bg-current" />}>
             At risk
           </Badge>
         ) : pastFlag ? (

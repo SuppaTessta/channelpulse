@@ -76,7 +76,7 @@ export function TopBar({
         <MobileNav />
         <div className="min-w-0 flex-1 py-1">
           {children ? <div className="text-xs text-muted">{children}</div> : null}
-          <h1 className={cx(TYPE.pageTitle, "truncate")}>{title}</h1>
+          <h1 className={cx(TYPE.pageTitle, "line-clamp-2 text-balance")}>{title}</h1>
         </div>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface/60 px-3 py-1.5 shadow-highlight backdrop-blur-md lg:w-auto lg:flex-nowrap lg:justify-end">
           <ParamSelect

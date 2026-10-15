@@ -4,7 +4,7 @@ import { CaretDown, CaretUp, MagnifyingGlass, WarningDiamond } from "@phosphor-i
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { fmtDate, fmtNumber, formatValue } from "@/lib/format";
-import { Badge, buttonClass, cx, Figure, ICON, SEGMENT, SEGMENT_ON, SEGMENTS } from "./ui";
+import { Badge, buttonClass, cx, Figure, ICON, SEGMENT, SEGMENT_ON, SEGMENTS, TYPE } from "./ui";
 
 export type DistributorRow = { id: string; name: string; region: string; tier: string; sales: number | null };
 export type RiskFlag = {
@@ -50,14 +50,14 @@ function Summary({ rows, atRisk, salesLabel }: { rows: DistributorRow[]; atRisk:
     ["Top 10 share", total > 0 ? formatValue("pct", top10 / total) : "No value", "Of primary sales in the range"],
   ];
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-clip rounded-control border border-line bg-line lg:grid-cols-4">
+    <dl className="cp-sheet grid grid-cols-2 gap-px overflow-clip rounded-[14px] border border-line bg-line lg:grid-cols-4">
       {figures.map(([label, value, hint]) => (
         <div key={label} className="flex min-w-0 flex-col gap-1 bg-surface px-3.5 py-3">
           <dt className="truncate text-xs text-muted" title={label}>
             {label}
           </dt>
           <dd>
-            <Figure text={value} className="text-[22px]/7 font-semibold tracking-[-0.025em] text-ink" />
+            <Figure text={value} className={TYPE.figureLg} animate />
             {hint ? <span className="block text-[11.5px]/4 text-subtle">{hint}</span> : null}
           </dd>
         </div>
@@ -126,7 +126,7 @@ export function DistributorTable({
             setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : key === "sales" ? -1 : 1 }));
             setLimit(PAGE);
           }}
-          className={cx("-mx-1 inline-flex h-8 items-center gap-1 rounded-control px-1 text-xs hover:text-ink", active ? "text-ink" : "text-muted", numeric && "flex-row-reverse")}
+          className={cx("-mx-1 inline-flex h-8 items-center gap-1 rounded-control px-1 text-[11px] font-semibold tracking-[0.08em] uppercase hover:text-ink", active ? "text-ink" : "text-subtle", numeric && "flex-row-reverse")}
         >
           {label}
           {active ? sort.dir === 1 ? <CaretUp size={12} {...ICON} aria-hidden /> : <CaretDown size={12} {...ICON} aria-hidden /> : null}
@@ -135,7 +135,7 @@ export function DistributorTable({
     );
   };
   const plainHeader = (label: string, numeric = false) => (
-    <th scope="col" className={cx("px-3 py-1.5 text-xs font-medium whitespace-nowrap text-muted", numeric ? "text-right" : "text-left")}>
+    <th scope="col" className={cx("px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] whitespace-nowrap text-subtle uppercase", numeric ? "text-right" : "text-left")}>
       {label}
     </th>
   );
@@ -144,7 +144,7 @@ export function DistributorTable({
     <section aria-labelledby="distributors-heading" className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 md:p-5" data-dim="">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h2 id="distributors-heading" className="text-sm font-semibold text-ink">
+          <h2 id="distributors-heading" className={TYPE.panelTitle}>
             Distributors
           </h2>
           <div role="group" aria-label="Distributor view" className={SEGMENTS}>

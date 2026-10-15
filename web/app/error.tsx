@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowClockwise, WarningOctagon } from "@phosphor-icons/react";
-import { buttonClass, ICON } from "@/components/ui";
+import { ArrowClockwise } from "@phosphor-icons/react";
+import { Illustration } from "@/components/illustration";
+import { buttonClass, ICON, TYPE } from "@/components/ui";
 
 /** Unexpected render failures. API failures never land here: each section shows those in place. */
 export default function PageFailure({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -9,11 +10,11 @@ export default function PageFailure({ error, reset }: { error: Error & { digest?
   const stale = error.name === "ChunkLoadError" || /loading (css )?chunk/i.test(error.message);
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
-      <section role="alert" data-panel-error="" className="flex max-w-[68ch] items-start gap-3 rounded-panel border border-line bg-surface p-5">
-        <WarningOctagon size={22} {...ICON} className="mt-0.5 shrink-0 text-danger" aria-hidden />
+      <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start gap-3 rounded-[16px] border border-line bg-surface p-6 shadow-highlight cp-reveal">
+        <Illustration kind="error" />
         <div>
-          <h1 className="text-[15px]/6 font-semibold text-ink">{stale ? "The dashboard was updated" : "This page failed to render"}</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className={TYPE.stateTitle}>{stale ? "The dashboard was updated" : "This page failed to render"}</h1>
+          <p className="mt-2 text-sm text-muted">
             {stale
               ? "This page belongs to an older version than the server now has, so some of its code can't be loaded. Reload to get the current version."
               : "The dashboard hit an unexpected error while drawing this page. Try again; if it keeps happening, the reference below identifies it in the server log."}

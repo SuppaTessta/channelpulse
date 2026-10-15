@@ -27,7 +27,7 @@ export function DataTable({
               <th
                 key={c.label}
                 scope="col"
-                className={cx("border-b border-line px-3 py-2 text-xs font-medium whitespace-nowrap text-muted", c.numeric ? "text-right" : "text-left")}
+                className={cx("border-b border-line px-3 py-2 text-[11px] font-semibold tracking-[0.08em] whitespace-nowrap text-subtle uppercase", c.numeric ? "text-right" : "text-left")}
               >
                 {c.label}
               </th>
@@ -36,7 +36,7 @@ export function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-line last:border-0">
+            <tr key={i} className="border-b border-line transition-colors duration-150 last:border-0 hover:bg-hover hover:shadow-[inset_3px_0_0_var(--accent)]">
               {row.map((cell, j) => (
                 <td key={j} className={cx("px-3 py-1.5 text-ink", columns[j]?.numeric ? "text-right whitespace-nowrap" : "text-left")}>
                   {cell}

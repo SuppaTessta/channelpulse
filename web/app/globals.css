@@ -365,7 +365,8 @@
 }
 
 /* A panel's light follows the pointer (providers.tsx sets --mx and --my). */
-.cp-spotlight:hover {
+.cp-spotlight:hover,
+.cp-sheet > *:hover {
   background-image: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), var(--spotlight), transparent 60%);
 }
 /* The primary button's sheen. */

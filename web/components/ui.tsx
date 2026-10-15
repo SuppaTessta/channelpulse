@@ -20,13 +20,13 @@ export const TYPE = {
 } as const;
 
 const BUTTON_BASE =
-  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control font-medium " +
-  "transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:translate-y-px " +
+  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] font-medium " +
+  "transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:translate-y-px " +
   "disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0";
 
 const BUTTON_VARIANT = {
-  primary: "bg-accent text-on-accent shadow-highlight hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-surface text-ink shadow-highlight hover:border-control hover:bg-hover",
+  primary: "cp-sheen bg-accent text-on-accent shadow-[var(--highlight),0_8px_24px_-12px_color-mix(in_oklab,var(--accent)_70%,transparent)] hover:bg-accent-hover",
+  secondary: "border border-line-strong bg-surface/70 text-ink shadow-highlight backdrop-blur-sm hover:border-control hover:bg-hover",
   ghost: "text-muted hover:bg-hover hover:text-ink",
 } as const;
 
@@ -41,9 +41,9 @@ export function buttonClass(variant: keyof typeof BUTTON_VARIANT = "secondary", 
 }
 
 /** Segmented controls (Chart/Table, All/At risk, failure mode): a sunken tray, the chosen segment lifted out of it. */
-export const SEGMENTS = "flex w-fit items-center gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line ring-inset";
+export const SEGMENTS = "flex w-fit items-center gap-0.5 rounded-[10px] bg-sunken p-0.5 ring-1 ring-line ring-inset";
 export const SEGMENT =
-  "flex h-8 items-center rounded-[5px] px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,box-shadow] duration-150 ease-out hover:text-ink max-md:h-9";
+  "flex h-8 items-center rounded-[8px] px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,box-shadow] duration-150 ease-out hover:text-ink max-md:h-9";
 export const SEGMENT_ON = "bg-raised text-ink shadow-segment";
 
 type Tone = "governed" | "adhoc" | "refused" | "danger" | "neutral";
@@ -91,19 +91,19 @@ export function Figure({ text, className, animate = false }: { text: string; cla
   );
 }
 
-/** A grid of panels divided by 1px rules (the gap shows the border colour through), not floating cards. */
+/** A grid of panels divided by 1px rules (the gap shows the border colour through), not floating cards. Each panel catches the pointer's light. */
 export function Sheet({ children, className, dim = true }: { children: ReactNode; className?: string; dim?: boolean }) {
   return (
     <div
       data-dim={dim ? "" : undefined}
-      className={cx("grid grid-cols-1 gap-px overflow-clip rounded-panel border border-line bg-line", className)}
+      className={cx("cp-sheet grid grid-cols-1 gap-px overflow-clip rounded-[14px] border border-line bg-line shadow-[var(--highlight)]", className)}
     >
       {children}
     </div>
   );
 }
 
-/** Static placeholder blocks shaped like the content they stand in for. No shimmer: DESIGN.md has no loops. */
+/** Placeholder blocks shaped like the content they stand in for, with a slow light sweep (still under reduced motion). */
 export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden className={cx("cp-shimmer rounded-control", className)} />;
 }

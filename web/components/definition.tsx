@@ -4,7 +4,7 @@ import { Database, SealCheck, X } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ReactNode } from "react";
 import { SqlBlock } from "./sql";
-import { Badge, buttonClass, cx, ICON } from "./ui";
+import { Badge, buttonClass, cx, ICON, TYPE } from "./ui";
 
 export type DefMetric = { name: string; label: string; description: string; formula: string; type: string; time_dimension: string };
 /** One API call behind a figure: what was asked (label and value lines), the SQL it ran, how many rows came back. */
@@ -59,11 +59,11 @@ export function DefinitionButton({
         )}
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(10_12_14/0.35)] backdrop-blur-[2px]" />
-        <Dialog.Content className="cp-slide fixed inset-y-0 right-0 z-50 flex w-full max-w-[640px] flex-col border-l border-line bg-raised shadow-raised outline-none">
+        <Dialog.Overlay className="cp-fade fixed inset-0 z-40 bg-[rgb(3_6_12/0.55)] backdrop-blur-[3px]" />
+        <Dialog.Content className="cp-slide fixed inset-y-0 right-0 z-50 flex w-full max-w-[680px] flex-col rounded-l-[16px] border-l border-line-strong/70 bg-raised/95 shadow-raised outline-none backdrop-blur-xl">
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-base font-semibold text-ink">{title}</Dialog.Title>
+              <Dialog.Title className={TYPE.stateTitle}>{title}</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted">
                 Where these figures come from: the governed definition and the SQL the API ran.
               </Dialog.Description>
@@ -97,7 +97,7 @@ export function DefinitionButton({
             {queries.map((q, i) => (
               <section key={i} className="space-y-3 border-t border-line pt-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-ink">{q.caption}</h3>
+                  <h3 className={TYPE.subhead}>{q.caption}</h3>
                   <p className="text-xs text-muted">
                     {q.rowCount} {q.rowCount === 1 ? "row" : "rows"}
                     {q.rowCapHit ? ", capped at the API's row limit" : ""}

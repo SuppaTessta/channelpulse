@@ -38,9 +38,9 @@ export const useNavigation = () => useContext(NavContext);
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
-    // One delegated listener feeds every .cp-spotlight panel the pointer position (globals.css).
+    // One delegated listener feeds every .cp-spotlight panel, and every panel of a ruled sheet, the pointer position (globals.css).
     const onMove = (e: PointerEvent) => {
-      const el = (e.target as Element | null)?.closest?.(".cp-spotlight") as HTMLElement | null;
+      const el = (e.target as Element | null)?.closest?.(".cp-spotlight, .cp-sheet > *") as HTMLElement | null;
       if (!el) return;
       const r = el.getBoundingClientRect();
       el.style.setProperty("--mx", `${e.clientX - r.left}px`);

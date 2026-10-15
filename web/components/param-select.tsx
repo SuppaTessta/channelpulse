@@ -43,7 +43,7 @@ export function ParamSelect({
         <Select.Trigger
           aria-labelledby={labelId}
           className={cx(
-            "inline-flex h-10 min-w-0 items-center gap-2 rounded-control border border-line-strong bg-surface pr-2 pl-3 text-sm font-medium text-ink shadow-highlight md:h-9",
+            "inline-flex h-10 min-w-0 items-center gap-2 rounded-[10px] border border-line-strong bg-surface/70 pr-2 pl-3 text-sm font-medium text-ink shadow-highlight backdrop-blur-sm data-[state=open]:shadow-[var(--glow-accent)] md:h-9",
             "transition-colors duration-150 ease-out hover:border-control hover:bg-hover data-[state=open]:border-control",
           )}
         >
@@ -59,14 +59,14 @@ export function ParamSelect({
           <Select.Content
             position="popper"
             sideOffset={4}
-            className="cp-drop z-50 max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-control border border-line bg-raised shadow-raised"
+            className="cp-drop z-50 max-h-[min(360px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-[12px] border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl"
           >
             <Select.Viewport className="p-1">
               {[{ value: ALL, label: allLabel }, ...options].map((o) => (
                 <Select.Item
                   key={o.value}
                   value={o.value}
-                  className="relative flex h-10 cursor-pointer items-center rounded-[4px] pr-8 pl-2.5 text-sm text-ink outline-none select-none data-[highlighted]:bg-hover md:h-8"
+                  className="relative flex h-10 cursor-pointer items-center rounded-[4px] pr-8 pl-2.5 text-sm text-ink outline-none select-none data-[highlighted]:bg-accent-soft/70 md:h-8"
                 >
                   <Select.ItemText>{o.label}</Select.ItemText>
                   <Select.ItemIndicator className="absolute right-2 text-accent">

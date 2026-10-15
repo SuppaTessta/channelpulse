@@ -4,7 +4,7 @@ import { WarningOctagon } from "@phosphor-icons/react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { RetryButton } from "./retry-button";
 import { FailureMessage } from "./states";
-import { cx, ICON } from "./ui";
+import { cx, ICON, TYPE } from "./ui";
 
 /** Fences one panel: a render exception replaces this panel with a failure state, never the page. */
 export class PanelBoundary extends Component<{ title: string; className?: string; children: ReactNode }, { error: (Error & { digest?: string }) | null }> {
@@ -23,7 +23,7 @@ export class PanelBoundary extends Component<{ title: string; className?: string
     if (!error) return this.props.children;
     return (
       <section aria-label={this.props.title} className={cx("min-w-0 bg-surface p-4 md:p-5", this.props.className)}>
-        <h2 className="text-sm font-semibold text-ink">{this.props.title}</h2>
+        <h2 className={TYPE.panelTitle}>{this.props.title}</h2>
         <FailureMessage
           compact
           icon={<WarningOctagon size={20} {...ICON} aria-hidden />}

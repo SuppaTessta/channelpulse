@@ -2,8 +2,9 @@ import { Database, Hourglass, PlugsConnected, Warning, WarningOctagon } from "@p
 import type { ReactNode } from "react";
 import type { ApiError } from "@/lib/api";
 import { AutoRefresh } from "./auto-refresh";
+import { Illustration } from "./illustration";
 import { RetryButton } from "./retry-button";
-import { cx, ICON } from "./ui";
+import { cx, ICON, TYPE } from "./ui";
 
 /** What happened and what to do, for each way the governed API can fail. */
 export function describeError(error: ApiError): { title: string; body: string; icon: ReactNode } {
@@ -78,7 +79,7 @@ function ErrorDetail({ error, className }: { error: ApiError; className?: string
   );
 }
 
-/** The failure layout shared by API errors and render failures: icon, what happened, what to do, then actions. */
+/** The failure layout shared by API errors and render failures: a drawing, icon, what happened, what to do, then actions. */
 export function FailureMessage({
   icon,
   title,
@@ -99,10 +100,11 @@ export function FailureMessage({
 }) {
   return (
     <div role="status" data-panel-error="" className={cx("flex flex-col items-start gap-3 text-left", compact ? "py-2" : "py-8", className)}>
+      {compact ? null : <Illustration kind={calm ? "waking" : "error"} className="mb-1" />}
       <div className="flex items-start gap-3">
         <span className={cx("mt-0.5", calm ? "text-muted" : "text-danger")}>{icon}</span>
         <div className="max-w-[60ch]">
-          <p className="text-[15px]/6 font-medium text-ink">{title}</p>
+          <p className={compact ? "text-[15px]/6 font-medium text-ink" : TYPE.stateTitle}>{title}</p>
           <p className="mt-1 text-sm text-muted">{body}</p>
         </div>
       </div>
@@ -135,7 +137,7 @@ export function ErrorState({ error, compact = false, className }: { error: ApiEr
 export function EmptyState({ title, body, icon, action, className }: { title: string; body: ReactNode; icon?: ReactNode; action?: ReactNode; className?: string }) {
   return (
     <div role="status" className={cx("flex items-start gap-3 py-8", className)}>
-      {icon ? <span className="mt-0.5 text-subtle">{icon}</span> : null}
+      {icon ? <span className="mt-0.5 text-subtle">{icon}</span> : <Illustration kind="empty" />}
       <div className="max-w-[60ch]">
         <p className="text-[15px]/6 font-medium text-ink">{title}</p>
         <div className="mt-1 text-sm text-muted">{body}</div>

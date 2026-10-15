@@ -21,7 +21,7 @@ export function InfoTip({ label, children, className }: { label: string; childre
           side="bottom"
           sideOffset={6}
           collisionPadding={12}
-          className="cp-drop z-50 max-w-[320px] rounded-control border border-line bg-raised px-3 py-2 text-[13px]/5 text-ink shadow-raised"
+          className="cp-drop z-50 max-w-[320px] rounded-[12px] border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl px-3 py-2 text-[13px]/5 text-ink"
         >
           {children}
         </Tooltip.Content>

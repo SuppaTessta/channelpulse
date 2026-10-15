@@ -4,7 +4,9 @@
   Monsoon Editorial tokens (web/DESIGN.md). Dark is the default edition; the light edition is the warm paper one,
   switched by data-theme="light" and remembered. Print always uses the light values.
   Every text token clears WCAG AA (4.5:1) on every surface in both editions (e2e/redesign.spec.ts checks it).
-  Chart colours follow the dataviz method; the validated order is recorded with the series tokens below.
+  Chart colours follow the dataviz method: one hue order in both editions (teal, marigold, pink, blue, green, violet,
+  rose, cyan), each edition stepped into its lightness band and validated against its chart surface. Worst adjacent
+  pair: CVD ΔE 14.0 and normal vision 22.5 on #fffdf8 (light); CVD ΔE 12.4 and normal vision 21.0 on #0d1422 (dark).
 */
 :root,
 :root[data-theme="dark"] {
@@ -38,14 +40,14 @@
   --refused-edge: #f472b6;
   --refused-soft: #111827;
 
-  --series-1: #2dd4bf;
-  --series-2: #f5a524;
-  --series-3: #60a5fa;
-  --series-4: #f472b6;
-  --series-5: #a78bfa;
-  --series-6: #4ade80;
-  --series-7: #fb7185;
-  --series-8: #22d3ee;
+  --series-1: #049b8b;
+  --series-2: #c68207;
+  --series-3: #d64797;
+  --series-4: #1384f7;
+  --series-5: #05a151;
+  --series-6: #8f67ee;
+  --series-7: #e24463;
+  --series-8: #0897ab;
   --deemph: #4a5570;
   --band: rgb(245 165 36 / 0.07);
 
@@ -98,14 +100,14 @@
   --refused-edge: #c2185b;
   --refused-soft: #f1eee8;
 
-  --series-1: #0e7c80;
-  --series-2: #c77f00;
-  --series-3: #2f6fd6;
-  --series-4: #d9488b;
-  --series-5: #7c5cd6;
-  --series-6: #2e8b3e;
-  --series-7: #e0563b;
-  --series-8: #0f8fb0;
+  --series-1: #05999e;
+  --series-2: #c77f02;
+  --series-3: #e13a8c;
+  --series-4: #0f6aed;
+  --series-5: #058e2f;
+  --series-6: #7e52e7;
+  --series-7: #ee4320;
+  --series-8: #078fb1;
   --deemph: #b8b0a2;
   --band: rgb(199 127 0 / 0.08);
 
@@ -479,14 +481,14 @@
     --refused-edge: #c2185b;
     --refused-soft: #f1eee8;
 
-    --series-1: #0e7c80;
-    --series-2: #c77f00;
-    --series-3: #2f6fd6;
-    --series-4: #d9488b;
-    --series-5: #7c5cd6;
-    --series-6: #2e8b3e;
-    --series-7: #e0563b;
-    --series-8: #0f8fb0;
+    --series-1: #05999e;
+    --series-2: #c77f02;
+    --series-3: #e13a8c;
+    --series-4: #0f6aed;
+    --series-5: #058e2f;
+    --series-6: #7e52e7;
+    --series-7: #ee4320;
+    --series-8: #078fb1;
     --deemph: #b8b0a2;
     --band: rgb(199 127 0 / 0.08);
 

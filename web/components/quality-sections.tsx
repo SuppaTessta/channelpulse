@@ -16,7 +16,7 @@ import { TimeChart, type Bucket } from "./charts/time-chart";
 import { DataTable } from "./data-table";
 import { DefinitionButton } from "./definition";
 import { EmptyState, ErrorState } from "./states";
-import { Badge, buttonClass, cx, Figure, ICON } from "./ui";
+import { Badge, buttonClass, cx, Figure, ICON, TYPE } from "./ui";
 
 export type QualityCtx = {
   region: Region;
@@ -174,7 +174,7 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
   if (!anomalies.ok) {
     return (
       <section aria-labelledby="flags" className={className}>
-        <h2 id="flags" className="text-sm font-semibold text-ink">
+        <h2 id="flags" className={TYPE.panelTitle}>
           {title}
         </h2>
         <ErrorState compact error={anomalies.error} />
@@ -190,7 +190,7 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
     <section aria-labelledby="flags" className={cx("flex flex-col gap-4", className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 id="flags" className="text-sm font-semibold text-ink">
+          <h2 id="flags" className={TYPE.panelTitle}>
             {title}
           </h2>
           <p className="mt-0.5 max-w-[60ch] text-xs text-muted">
@@ -223,7 +223,7 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
                   </span>
                   {f.effect_size != null ? (
                     <span className="row-span-2 text-right">
-                      <Figure text={`${fmtNumber(f.effect_size, 2)}×`} className={cx("block text-xl/6 font-semibold tracking-[-0.02em]", current ? "text-danger" : "text-ink")} />
+                      <Figure text={`${fmtNumber(f.effect_size, 2)}×`} className={cx("block", TYPE.figureMd, current ? "text-danger" : "text-ink")} />
                       <span className="text-[11px] text-subtle">peer rate</span>
                     </span>
                   ) : null}
@@ -265,11 +265,11 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
   );
 }
 
-/** Elevated because it is a focused layer over the heatmap: an outer tray and an inner plate (radius 10 + 4). */
+/** Elevated because it is a focused layer over the heatmap: an outer tray and an inner glass plate (radius 14 + 4). */
 function DrillShell({ title, eyebrow, closeHref, children, actions }: { title: string; eyebrow: string; closeHref: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section aria-labelledby="drill-title" className="rounded-[14px] bg-sunken p-1 ring-1 ring-line">
-      <div className="flex flex-col gap-4 rounded-panel bg-raised p-4 shadow-raised md:p-5">
+    <section aria-labelledby="drill-title" className="rounded-[18px] bg-sunken p-1 ring-1 ring-line">
+      <div className="cp-reveal flex flex-col gap-4 rounded-[14px] border border-line-strong/70 bg-raised/90 p-4 shadow-raised backdrop-blur-xl md:p-5">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-muted">{eyebrow}</p>
@@ -336,7 +336,7 @@ export async function MonthDrill({ ctx, month }: { ctx: QualityCtx; month: strin
           caption={`Resin lots made in ${fmtMonth(month)}`}
           columns={[{ label: "Resin lot" }, { label: "Plant, line" }, { label: "Units", numeric: true }, { label: `${shortLabel(metric.label)}${allModesNote(ctx)}`, numeric: true }]}
           rows={lots.map((l) => [
-            <Link key="l" href={hrefWith("/quality", ctx.sp, { lot: l.lot, month: null, batch: null })} scroll={false} className="font-mono text-accent underline-offset-4 hover:underline">
+            <Link key="l" href={hrefWith("/quality", ctx.sp, { lot: l.lot, month: null, batch: null })} scroll={false} className="font-mono whitespace-nowrap text-accent underline-offset-4 hover:underline">
               {l.lot}
             </Link>,
             `${l.plant}, line ${l.line}`,
@@ -475,7 +475,7 @@ export async function EntityDrill({ ctx, kind, id, anomalies }: { ctx: QualityCt
           <div className="col-span-2">
             <dt className="text-xs text-muted">Resin lot</dt>
             <dd>
-              <Link href={hrefWith("/quality", ctx.sp, { lot: lotId, batch: null })} scroll={false} className="font-mono text-accent underline-offset-4 hover:underline">
+              <Link href={hrefWith("/quality", ctx.sp, { lot: lotId, batch: null })} scroll={false} className="font-mono whitespace-nowrap text-accent underline-offset-4 hover:underline">
                 {lotId}
               </Link>
             </dd>
@@ -521,7 +521,7 @@ export async function EntityDrill({ ctx, kind, id, anomalies }: { ctx: QualityCt
           <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
             {batches.map((b) => (
               <li key={b.id}>
-                <Link href={hrefWith("/quality", ctx.sp, { batch: b.id, lot: null })} scroll={false} className="font-mono text-xs text-accent underline-offset-4 hover:underline">
+                <Link href={hrefWith("/quality", ctx.sp, { batch: b.id, lot: null })} scroll={false} className="font-mono text-xs whitespace-nowrap text-accent underline-offset-4 hover:underline">
                   {b.id}
                 </Link>
                 {b.day ? <span className="ml-2 text-xs text-subtle">{fmtDate(b.day)}</span> : null}

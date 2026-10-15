@@ -423,6 +423,13 @@ Superseded on the model by D50.
 - **Kept:** `toDefMetric`, because passing a whole `Metric` to the client-side definition drawer would ship its dimensions to the browser; the two `month_add` copies, because merging them would couple the black-box acceptance suite to the detectors; `/api/meta`, which the smoke test uses to detect a stale API process (D28).
 - **Verified:** after each change. At the end: 800 tests, ruff, eslint, typecheck, dbt parse and the production build, plus the Ask, traces and brief pages against the live API.
 
+**D53. A filter change that Next never applies falls back to a full page load (2026-10-15).**
+- **Found** while clicking through the redesign: on a cold result cache, about half of region switches never applied. The page stayed on the old render, dimmed as "Updating", with no error and no end. Warm switches always applied.
+- **Cause, as far as it can be traced:** Next 15.5's client navigation itself. A bare `router.push` from the console stalled the same way, outside the app's transition. In the stalled runs, the RSC response either finished streaming and was never committed, or the browser cancelled it mid-stream; nothing in the app dispatched another navigation or touched `history`. D49's waking-up refresh, which sometimes was never applied, is the same behaviour.
+- **Workaround:** `setParams` (every filter on every page) starts a 12 s watchdog. If the URL still hasn't moved by then, the browser loads the new URL in full, as Next does itself when an RSC fetch fails. A change made in the meantime, or a move to another page, cancels it. Links between pages don't go through it; none stalled in testing.
+- **Test:** a fault test stalls the navigation's RSC fetch and expects the region to apply by a full load.
+- **Revisit** on the next Next upgrade: drop the watchdog if region switches on a cold cache always apply.
+
 ## Environment
 
 **E1. Windows Smart App Control pins psycopg2-binary to 2.9.10.**

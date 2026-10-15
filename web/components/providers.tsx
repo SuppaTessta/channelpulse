@@ -7,6 +7,13 @@ import { createContext, useCallback, useContext, useEffect, useTransition, type 
 type Nav = { pending: boolean; setParams: (changes: Record<string, string | null>) => void };
 const NavContext = createContext<Nav>({ pending: false, setParams: () => {} });
 
+// Next 15.5 sometimes never applies a streamed navigation: on a cold cache about half of region switches stayed on
+// the old render, dimmed, for good (decisions D53). Even a bare router.push does it, so the app can't avoid it.
+// ponytail: a watchdog, not a fix; if the URL still hasn't moved after STUCK_MS the browser loads the new one in full,
+// as Next itself does when an RSC fetch fails. Drop it once a Next release applies every navigation.
+const STUCK_MS = 12_000;
+let stuck: ReturnType<typeof setTimeout> | undefined;
+
 /** Filter changes go through one transition, so the page keeps its current render (dimmed) while it refetches. */
 function NavigationProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -21,7 +28,11 @@ function NavigationProvider({ children }: { children: ReactNode }) {
         else next.set(key, value);
       }
       const qs = next.toString();
-      start(() => router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      const from = window.location.pathname + window.location.search;
+      start(() => router.push(href, { scroll: false }));
+      clearTimeout(stuck);
+      if (href !== from) stuck = setTimeout(() => window.location.pathname + window.location.search === from && window.location.assign(href), STUCK_MS);
     },
     [pathname, router],
   );

@@ -101,3 +101,17 @@ test.describe("a sleeping free-tier API shows a waking-up state (D49)", () => {
     expect(uncaught).toEqual([]);
   });
 });
+
+// Next 15.5 sometimes never applies a streamed client navigation: on a cold cache about half of region switches
+// stayed dimmed on the old page for good (decisions D53). Stalling the navigation's RSC fetch reproduces that state.
+test("a filter change that never applies falls back to loading the page in full", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await page.route(/[?&]_rsc=/, async (route) => {
+    if (!route.request().url().includes("region=")) await route.continue(); // a region navigation's fetch never answers
+  });
+  await page.getByRole("combobox", { name: "Viewing as" }).click();
+  await page.getByRole("option", { name: "Assam" }).click();
+  await expect(page).toHaveURL(/region=assam/, { timeout: 30_000 });
+  await expect(page.getByRole("combobox", { name: "Viewing as" })).toHaveText("Assam");
+});

@@ -78,7 +78,7 @@ export function TopBar({
           {children ? <div className="text-xs text-muted">{children}</div> : null}
           <h1 className={cx(TYPE.pageTitle, "line-clamp-2 text-balance")}>{title}</h1>
         </div>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-[14px] border border-line bg-surface/60 px-3 py-1.5 shadow-highlight backdrop-blur-md xl:w-auto xl:flex-nowrap xl:justify-end">
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-panel border border-line bg-surface/60 px-3 py-1.5 shadow-highlight backdrop-blur-md xl:w-auto xl:flex-nowrap xl:justify-end">
           <ParamSelect
             param="region"
             label="Viewing as"

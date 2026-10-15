@@ -63,9 +63,9 @@
   --highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
   --glow-accent: 0 0 0 1px rgb(45 212 191 / 0.35), 0 0 24px -4px rgb(45 212 191 / 0.45);
   --spotlight: rgb(45 212 191 / 0.1);
-  --aurora-1: rgb(45 212 191 / 0.2);
-  --aurora-2: rgb(56 120 248 / 0.16);
-  --aurora-3: rgb(245 165 36 / 0.1);
+  --aurora-1: rgb(45 212 191 / 0.3);
+  --aurora-2: rgb(56 120 248 / 0.22);
+  --aurora-3: rgb(245 165 36 / 0.14);
   --grain-opacity: 0.035;
 }
 
@@ -158,8 +158,8 @@
   --font-display: var(--font-newsreader), ui-serif, Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --radius-control: 6px;
-  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-panel: 12px;
   --shadow-raised: var(--shadow-raised);
   --shadow-segment: var(--shadow-segment);
   --shadow-highlight: var(--highlight);

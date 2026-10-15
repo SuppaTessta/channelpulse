@@ -8,12 +8,12 @@ export const ICON = { weight: "light" } as const;
 
 /** The type scale (DESIGN.md): Newsreader for titles and figures, Plus Jakarta Sans for the interface. */
 export const TYPE = {
-  pageTitle: "font-display text-[30px]/9 font-normal tracking-[-0.02em] text-ink md:text-[40px]/[46px]",
-  panelTitle: "font-display text-[19px]/7 font-medium tracking-[-0.01em] text-ink",
+  pageTitle: "font-display text-[32px]/[38px] font-normal tracking-[-0.02em] text-ink md:text-[40px]/[46px]",
+  panelTitle: "font-display text-[20px]/7 font-medium tracking-[-0.01em] text-ink",
   stateTitle: "font-display text-[22px]/7 font-normal tracking-[-0.01em] text-ink",
   question: "font-display text-[22px]/8 font-normal tracking-[-0.01em] text-pretty text-ink",
   subhead: "text-[13px]/5 font-semibold text-ink",
-  figureHero: "font-display text-[36px]/10 font-normal tracking-[-0.025em] text-ink md:text-[42px]/[46px]",
+  figureHero: "font-display text-[40px]/[44px] font-normal tracking-[-0.025em] text-ink",
   figureLg: "font-display text-[30px]/9 font-normal tracking-[-0.02em] text-ink",
   figureMd: "font-display text-[24px]/8 font-normal tracking-[-0.015em]",
   micro: "text-[10.5px]/4 font-semibold uppercase tracking-[0.12em] text-subtle",
@@ -25,7 +25,7 @@ export const NAV_ACTIVE =
 export const NAV_IDLE = "text-muted transition-[background-color,color] duration-200 hover:bg-hover hover:text-ink";
 
 const BUTTON_BASE =
-  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] font-medium " +
+  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control font-medium " +
   "transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:translate-y-px " +
   "disabled:cursor-not-allowed disabled:opacity-45 disabled:active:translate-y-0";
 
@@ -46,9 +46,9 @@ export function buttonClass(variant: keyof typeof BUTTON_VARIANT = "secondary", 
 }
 
 /** Segmented controls (Chart/Table, All/At risk, failure mode): a sunken tray, the chosen segment lifted out of it. */
-export const SEGMENTS = "flex w-fit items-center gap-0.5 rounded-[10px] bg-sunken p-0.5 ring-1 ring-line ring-inset";
+export const SEGMENTS = "flex w-fit items-center gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line ring-inset";
 export const SEGMENT =
-  "flex h-8 items-center rounded-[8px] px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,box-shadow] duration-150 ease-out hover:text-ink max-md:h-9";
+  "flex h-8 items-center rounded-[6px] px-2.5 text-[13px] font-medium text-muted transition-[color,background-color,box-shadow] duration-150 ease-out hover:text-ink max-md:h-9";
 export const SEGMENT_ON = "bg-raised text-ink shadow-segment";
 
 type Tone = "governed" | "adhoc" | "refused" | "danger" | "neutral";
@@ -101,7 +101,7 @@ export function Sheet({ children, className, dim = true }: { children: ReactNode
   return (
     <div
       data-dim={dim ? "" : undefined}
-      className={cx("cp-sheet grid grid-cols-1 gap-px overflow-clip rounded-[14px] border border-line bg-line shadow-[var(--highlight)]", className)}
+      className={cx("cp-sheet grid grid-cols-1 gap-px overflow-clip rounded-panel border border-line bg-line shadow-[var(--highlight)]", className)}
     >
       {children}
     </div>

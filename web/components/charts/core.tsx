@@ -109,7 +109,7 @@ export function ChartTooltip({ x, y, containerWidth, title, note, rows }: { x: n
   const left = x + 14 + width > containerWidth ? Math.max(4, x - 14 - width) : x + 14;
   return (
     <div
-      className="pointer-events-none absolute z-10 rounded-[12px] border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl px-3 py-2 text-[13px]/5"
+      className="pointer-events-none absolute z-10 rounded-panel border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl px-3 py-2 text-[13px]/5"
       style={{ left, top: Math.max(0, y), width }}
     >
       <p className="font-medium text-ink">{title}</p>

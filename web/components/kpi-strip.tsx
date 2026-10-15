@@ -164,7 +164,7 @@ export function KpiStripSkeleton() {
     <div aria-busy="true" className="flex flex-col gap-2">
       <span className="sr-only">Loading key figures</span>
       <Skeleton className="h-4 w-48" />
-      <div className="grid grid-cols-1 gap-px overflow-clip rounded-[14px] border border-line bg-line md:grid-cols-6 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-px overflow-clip rounded-panel border border-line bg-line md:grid-cols-6 xl:grid-cols-5">
         {SPANS.map((span, i) => (
           <div key={i} className={cx("flex flex-col gap-3 bg-surface p-4 md:p-5", span, "xl:col-span-1")}>
             <Skeleton className="h-3.5 w-32" />

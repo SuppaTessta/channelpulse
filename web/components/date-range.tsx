@@ -60,7 +60,7 @@ export function DateRangeControl({
           align="start"
           sideOffset={6}
           collisionPadding={16}
-          className="cp-drop z-50 w-[min(340px,calc(100vw-32px))] rounded-[12px] border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl p-1.5 outline-none"
+          className="cp-drop z-50 w-[min(340px,calc(100vw-32px))] rounded-panel border border-line-strong/70 bg-raised/90 shadow-raised backdrop-blur-xl p-1.5 outline-none"
         >
           <div role="group" aria-label="Presets" className="flex flex-col">
             {presets.map((p) => {

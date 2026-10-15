@@ -50,7 +50,7 @@ function Summary({ rows, atRisk, salesLabel }: { rows: DistributorRow[]; atRisk:
     ["Top 10 share", total > 0 ? formatValue("pct", top10 / total) : "No value", "Of primary sales in the range"],
   ];
   return (
-    <dl className="cp-sheet grid grid-cols-2 gap-px overflow-clip rounded-[14px] border border-line bg-line lg:grid-cols-4">
+    <dl className="cp-sheet grid grid-cols-2 gap-px overflow-clip rounded-panel border border-line bg-line lg:grid-cols-4">
       {figures.map(([label, value, hint]) => (
         <div key={label} className="flex min-w-0 flex-col gap-1 bg-surface px-3.5 py-3">
           <dt className="truncate text-xs text-muted" title={label}>

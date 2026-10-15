@@ -18,7 +18,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     <html lang="en-IN" data-theme="dark" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-dvh bg-canvas font-sans text-ink">
         <main className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
-          <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start rounded-[16px] border border-line bg-surface p-6 shadow-highlight cp-reveal">
+          <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start rounded-panel border border-line bg-surface p-6 shadow-highlight cp-reveal">
             <Illustration kind="error" className="mb-3" />
             <h1 className={TYPE.stateTitle}>{stale ? "The dashboard was updated" : "ChannelPulse couldn't start"}</h1>
             <p className="mt-2 text-sm text-muted">

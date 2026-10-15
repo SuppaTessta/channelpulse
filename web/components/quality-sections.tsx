@@ -265,11 +265,11 @@ export function LotFlags({ anomalies, sp, activeLot, className }: { anomalies: R
   );
 }
 
-/** Elevated because it is a focused layer over the heatmap: an outer tray and an inner glass plate (radius 14 + 4). */
+/** Elevated because it is a focused layer over the heatmap: an outer tray and an inner glass plate (radius 12 + 4). */
 function DrillShell({ title, eyebrow, closeHref, children, actions }: { title: string; eyebrow: string; closeHref: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section aria-labelledby="drill-title" className="rounded-[18px] bg-sunken p-1 ring-1 ring-line">
-      <div className="cp-reveal flex flex-col gap-4 rounded-[14px] border border-line-strong/70 bg-raised/90 p-4 shadow-raised backdrop-blur-xl md:p-5">
+    <section aria-labelledby="drill-title" className="rounded-[16px] bg-sunken p-1 ring-1 ring-line">
+      <div className="cp-reveal flex flex-col gap-4 rounded-panel border border-line-strong/70 bg-raised/90 p-4 shadow-raised backdrop-blur-xl md:p-5">
         <header className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-muted">{eyebrow}</p>

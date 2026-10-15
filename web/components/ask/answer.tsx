@@ -74,8 +74,8 @@ const GLOW = {
 /** Shared frame for an answer: an outer tray and an inner glass plate, because the answer is the one elevated thing here. */
 function Frame({ children, className, glow = "plain" }: { children: ReactNode; className?: string; glow?: keyof typeof GLOW }) {
   return (
-    <div className="rounded-[20px] bg-sunken p-1 ring-1 ring-line">
-      <div className={cx("cp-reveal flex flex-col gap-5 rounded-[16px] border border-line-strong/70 bg-raised/90 p-4 backdrop-blur-xl md:p-6", GLOW[glow], className)}>
+    <div className="rounded-[16px] bg-sunken p-1 ring-1 ring-line">
+      <div className={cx("cp-reveal flex flex-col gap-5 rounded-panel border border-line-strong/70 bg-raised/90 p-4 backdrop-blur-xl md:p-6", GLOW[glow], className)}>
         {children}
       </div>
     </div>
@@ -100,7 +100,7 @@ export function AnswerHeader({ question, meta, badge }: { question: string; meta
  */
 function NoFigures({ response, question, meta, edge, children }: { response: AskResponse; question: string; meta: string; edge: string; children: ReactNode }) {
   return (
-    <article className={cx("cp-reveal flex flex-col gap-3 rounded-[16px] border border-l-[3px] border-line bg-refused-soft p-4 md:p-6", edge)}>
+    <article className={cx("cp-reveal flex flex-col gap-3 rounded-panel border border-l-[3px] border-line bg-refused-soft p-4 md:p-6", edge)}>
       <AnswerHeader question={question} meta={meta} badge={<LabelBadge label={response.label} />} />
       <p className="max-w-[70ch] font-display text-[18px]/[30px] text-ink">{response.answer_text}</p>
       {children}
@@ -165,7 +165,7 @@ export function Answer({ response, question, meta }: { response: AskResponse; qu
           />
         </div>
       ) : null}
-      <div className="-mx-4 -mb-4 flex flex-col gap-3 rounded-b-[16px] border-t border-line bg-surface px-4 py-4 md:-mx-6 md:-mb-6 md:px-6">
+      <div className="-mx-4 -mb-4 flex flex-col gap-3 rounded-b-panel border-t border-line bg-surface px-4 py-4 md:-mx-6 md:-mb-6 md:px-6">
         <p className="flex items-start gap-2 text-sm text-ink">
           <CheckCircle size={18} {...ICON} className="mt-px shrink-0 text-accent" aria-hidden />
           <span>

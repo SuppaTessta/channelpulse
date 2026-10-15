@@ -56,7 +56,7 @@ function Scorecard({ answers }: { answers: ReplayAnswer[] }) {
     ["Governed answers", fmtNumber(answers.filter((a) => a.response.label === "governed_metric").length)],
   ];
   return (
-    <dl className="cp-sheet grid shrink-0 grid-cols-3 gap-px overflow-clip rounded-[14px] border border-line bg-line">
+    <dl className="cp-sheet grid shrink-0 grid-cols-3 gap-px overflow-clip rounded-panel border border-line bg-line">
       {figures.map(([label, value]) => (
         <div key={label} className="flex min-w-0 flex-col gap-0.5 bg-surface px-3.5 py-2.5">
           <dt className="text-[11.5px]/4 text-muted">{label}</dt>

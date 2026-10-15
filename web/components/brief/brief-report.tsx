@@ -45,14 +45,14 @@ function CheckLine({ brief }: { brief: Brief }) {
   const n = brief.check.queries_rechecked;
   if (brief.status === "verified") {
     return (
-      <p role="status" className="flex items-center gap-2.5 rounded-[10px] bg-accent-soft px-3 py-2 text-sm font-medium text-ink print:bg-transparent print:px-0">
+      <p role="status" className="flex items-center gap-2.5 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-ink print:bg-transparent print:px-0">
         <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_var(--accent-soft)] animate-[cp-breathe_2.4s_ease-in-out_infinite_alternate]" />
         Numbers check passed: {n} {n === 1 ? "query" : "queries"} re-executed
       </p>
     );
   }
   return (
-    <div role="status" className="flex flex-col gap-2 rounded-[10px] bg-danger-soft px-3 py-2.5 text-sm text-ink">
+    <div role="status" className="flex flex-col gap-2 rounded-control bg-danger-soft px-3 py-2.5 text-sm text-ink">
       <p className="flex items-center gap-2 font-medium">
         <ShieldWarning size={18} {...ICON} weight="regular" className="shrink-0 text-danger" aria-hidden />
         Numbers check failed, so this brief is withheld
@@ -99,7 +99,7 @@ export async function BriefReport({ week, region }: { week: string; region: Regi
   const r = await getBrief(week, region);
   if (!r.ok) {
     return (
-      <section aria-label="Weekly Brief" className="mx-auto w-full max-w-[800px] rounded-[18px] border border-line bg-raised px-4 md:px-6">
+      <section aria-label="Weekly Brief" className="mx-auto w-full max-w-[800px] rounded-panel border border-line bg-raised px-4 md:px-6">
         <ErrorState error={r.error} />
       </section>
     );
@@ -112,7 +112,7 @@ export async function BriefReport({ week, region }: { week: string; region: Regi
   return (
     <article
       aria-labelledby="brief-title"
-      className="cp-paper mx-auto flex w-full max-w-[800px] flex-col gap-8 rounded-[18px] border border-line bg-raised p-6 shadow-raised md:p-10 print:max-w-none print:border-0 print:p-0 print:shadow-none"
+      className="cp-paper mx-auto flex w-full max-w-[800px] flex-col gap-8 rounded-panel border border-line bg-raised p-6 shadow-raised md:p-10 print:max-w-none print:border-0 print:p-0 print:shadow-none"
     >
       <header className={cx("flex flex-col gap-4", verified && "border-b border-line pb-6")}>
         <div>
@@ -141,13 +141,17 @@ export async function BriefReport({ week, region }: { week: string; region: Regi
                   {s.sentences.map((sentence, i) => (
                     <span key={i}>
                       {sentence.text}
-                      {sentence.facts
-                        .filter((id) => numbers.has(id))
-                        .map((id) => (
-                          <FactRef key={id} n={numbers.get(id)!} label={brief.facts[id].label}>
-                            <FactCard n={numbers.get(id)!} fact={brief.facts[id]} />
-                          </FactRef>
-                        ))}{" "}
+                      {/* The markers stay together and with their sentence: a word joiner, then no breaks inside. */}
+                      <span className="whitespace-nowrap">
+                        {"\u2060"}
+                        {sentence.facts
+                          .filter((id) => numbers.has(id))
+                          .map((id) => (
+                            <FactRef key={id} n={numbers.get(id)!} label={brief.facts[id].label}>
+                              <FactCard n={numbers.get(id)!} fact={brief.facts[id]} />
+                            </FactRef>
+                          ))}
+                      </span>{" "}
                     </span>
                   ))}
                 </p>
@@ -184,7 +188,7 @@ export async function BriefReport({ week, region }: { week: string; region: Regi
 
 export function BriefSkeleton({ className }: { className?: string }) {
   return (
-    <div aria-busy="true" className={cx("mx-auto flex w-full max-w-[800px] flex-col gap-4 rounded-[18px] border border-line bg-raised p-6 md:p-10", className)}>
+    <div aria-busy="true" className={cx("mx-auto flex w-full max-w-[800px] flex-col gap-4 rounded-panel border border-line bg-raised p-6 md:p-10", className)}>
       <span className="sr-only">Loading the brief, and re-running the queries behind its numbers</span>
       <Skeleton className="h-4 w-64" />
       <Skeleton className="h-8 w-3/4" />
@@ -202,5 +206,5 @@ export function BriefSkeleton({ className }: { className?: string }) {
 }
 
 export function BriefUnavailable({ children }: { children: ReactNode }) {
-  return <section className="mx-auto w-full max-w-[800px] rounded-[18px] border border-line bg-raised px-4 md:px-6">{children}</section>;
+  return <section className="mx-auto w-full max-w-[800px] rounded-panel border border-line bg-raised px-4 md:px-6">{children}</section>;
 }

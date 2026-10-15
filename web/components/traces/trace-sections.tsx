@@ -148,7 +148,7 @@ export async function TraceListPanel({
   const { traces, total, withheld } = r.value;
   const empty = traces.length === 0;
   return (
-    <section aria-labelledby="traces-heading" className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-4 md:p-5" data-dim="">
+    <section aria-labelledby="traces-heading" className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 md:p-5" data-dim="">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="traces-heading" className={TYPE.panelTitle}>
           Traces

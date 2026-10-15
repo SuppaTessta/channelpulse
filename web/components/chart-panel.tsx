@@ -63,7 +63,7 @@ export function ChartPanel({
         {footer || actions ? (
           <footer className="mt-auto flex flex-col gap-2">
             {footer}
-            {actions ? <div className="-mx-4 -mb-4 flex flex-wrap items-center justify-end gap-x-3 border-t border-line bg-[color-mix(in_oklab,var(--surface),var(--surface-sunken)_50%)] px-2 py-1.5 md:-mx-5 md:-mb-5 md:px-3">{actions}</div> : null}
+            {actions ? <div className="-mx-4 -mb-4 flex items-center justify-end gap-x-3 border-t border-line bg-[color-mix(in_oklab,var(--surface),var(--surface-sunken)_50%)] px-2 py-1.5 md:-mx-5 md:-mb-5 md:px-3">{actions}</div> : null}
           </footer>
         ) : null}
       </Tabs.Root>

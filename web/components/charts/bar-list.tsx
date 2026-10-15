@@ -109,13 +109,13 @@ export function BarList({
                 active === i && "bg-[var(--band)]",
               )}
             >
-              <span className="truncate text-[13px] text-ink" title={r.label}>
+              <span className="text-[13px] text-ink max-md:leading-tight md:truncate" title={r.label}>
                 {r.label}
               </span>
               {mirrored ? (
                 <div className="grid grid-cols-2">
-                  <div className="border-r border-[var(--axis)] pl-16">{bar(series[0], series[0].values[i], "left", "h-4", i)}</div>
-                  <div className="pr-16">{bar(series[1], series[1].values[i], "right", "h-4", i)}</div>
+                  <div className="border-r border-[var(--axis)] pl-10 md:pl-16">{bar(series[0], series[0].values[i], "left", "h-4", i)}</div>
+                  <div className="pr-10 md:pr-16">{bar(series[1], series[1].values[i], "right", "h-4", i)}</div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-0.5 pr-20" style={lo < 0 ? { paddingLeft: "5rem" } : undefined}>

@@ -10,7 +10,7 @@ export default function PageFailure({ error, reset }: { error: Error & { digest?
   const stale = error.name === "ChunkLoadError" || /loading (css )?chunk/i.test(error.message);
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
-      <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start gap-3 rounded-[16px] border border-line bg-surface p-6 shadow-highlight cp-reveal">
+      <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start gap-3 rounded-panel border border-line bg-surface p-6 shadow-highlight cp-reveal">
         <Illustration kind="error" />
         <div>
           <h1 className={TYPE.stateTitle}>{stale ? "The dashboard was updated" : "This page failed to render"}</h1>

@@ -115,3 +115,15 @@ test("a filter change that never applies falls back to loading the page in full"
   await expect(page).toHaveURL(/region=assam/, { timeout: 30_000 });
   await expect(page.getByRole("combobox", { name: "Viewing as" })).toHaveText("Assam");
 });
+
+// Links stall the same way (D53): about one in four cold distributor pages never opened from the list.
+test("a link that never applies falls back to loading the page in full", async ({ page }) => {
+  await page.goto("/distributors?q=D0001");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  await page.route(/[?&]_rsc=/, async (route) => {
+    if (!route.request().url().includes("/distributors/D0001")) await route.continue(); // the link's fetch never answers
+  });
+  await page.getByRole("link", { name: "Tarun Sharma Trading Co." }).click();
+  await expect(page).toHaveURL(/\/distributors\/D0001/, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tarun Sharma Trading Co.");
+});

@@ -426,8 +426,9 @@ Superseded on the model by D50.
 **D53. A filter change that Next never applies falls back to a full page load (2026-10-15).**
 - **Found** while clicking through the redesign: on a cold result cache, about half of region switches never applied. The page stayed on the old render, dimmed as "Updating", with no error and no end. Warm switches always applied.
 - **Cause, as far as it can be traced:** Next 15.5's client navigation itself. A bare `router.push` from the console stalled the same way, outside the app's transition. In the stalled runs, the RSC response either finished streaming and was never committed, or the browser cancelled it mid-stream; nothing in the app dispatched another navigation or touched `history`. D49's waking-up refresh, which sometimes was never applied, is the same behaviour.
-- **Workaround:** `setParams` (every filter on every page) starts a 12 s watchdog. If the URL still hasn't moved by then, the browser loads the new URL in full, as Next does itself when an RSC fetch fails. A change made in the meantime, or a move to another page, cancels it. Links between pages don't go through it; none stalled in testing.
-- **Test:** a fault test stalls the navigation's RSC fetch and expects the region to apply by a full load.
+- **Workaround:** every in-app navigation starts a 12 s watchdog: `setParams` (every filter on every page) and every same-origin link click (a capture-phase listener, since Next's Link handler prevents the default). If the URL still hasn't moved by then, the browser loads the new URL in full, as Next does itself when an RSC fetch fails. A newer navigation, or arriving anywhere else first, cancels it.
+- **Links too:** clicking through the redesigned Distributor 360 later stalled one link in four to a cold distributor page (D0004 waited 180 s), so the watchdog was extended from filters to links the same day.
+- **Tests:** two fault tests stall the navigation's RSC fetch, one for a region change and one for a link, and expect each to land by a full load.
 - **Revisit** on the next Next upgrade: drop the watchdog if region switches on a cold cache always apply.
 
 ## Environment

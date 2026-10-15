@@ -104,7 +104,7 @@ export async function HealthPanel({ ctx, flag, pastFlag, className }: { ctx: Ctx
             <h3 className="mb-2 text-xs font-medium text-muted">Components: percentile among region peers, weighted into the score</h3>
             <div className="grid grid-cols-1 gap-px overflow-clip rounded-control border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
               {series.slice(1).map((s, i) => (
-                <div key={s.key} className="flex min-w-0 flex-col gap-1 bg-surface p-3">
+                <div key={s.key} className="flex min-w-0 flex-col gap-1 bg-surface p-3 sm:last:odd:col-span-2 lg:last:odd:col-span-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-xs font-medium text-ink" title={s.label}>
                       {s.label}

@@ -568,6 +568,19 @@
   @page {
     margin: 16mm;
   }
+  /* Print is still ink on white: no light layers, no half-finished entrances, the brief on plain paper. */
+  .cp-aurora,
+  .cp-grain {
+    display: none !important;
+  }
+  * {
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  .cp-paper {
+    background: #fff !important;
+    border-color: #d9dce1 !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -474,6 +474,30 @@
   color: var(--text-subtle);
   background: transparent;
 }
+/* Chart draw-in (charts/core.tsx animateEnter) and glow. */
+.cp-enter g[aria-label="line"]:not([stroke-dasharray]) path {
+  stroke-dasharray: 1;
+  animation: cp-draw 900ms var(--ease-out-expo) both;
+}
+.cp-enter g[aria-label="line"][stroke-dasharray],
+.cp-enter g[aria-label="area"],
+.cp-enter g[aria-label="dot"],
+.cp-enter g[aria-label="text"] {
+  animation: cp-fade-in 600ms var(--ease-out-expo) both 350ms;
+}
+/* Bars and the hatched provisional band are both Plot "rect" groups; the band's fill is the pattern. */
+.cp-enter g[aria-label="rect"][fill^="url("] {
+  animation: cp-fade-in 600ms var(--ease-out-expo) both;
+}
+.cp-enter g[aria-label="rect"]:not([fill^="url("]) > * {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cp-grow 650ms var(--ease-out-expo) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+:root[data-theme="dark"] .cp-plot g[aria-label="line"] {
+  filter: drop-shadow(0 0 5px color-mix(in oklab, currentColor 55%, transparent));
+}
 
 /* Print (the Weekly Brief is meant to be printed): light ink on paper whatever the screen theme, no chrome. */
 @media print {

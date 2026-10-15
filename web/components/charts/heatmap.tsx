@@ -159,12 +159,13 @@ export function Heatmap({
                       data-cell={`${r}-${ci}`}
                       data-row={r}
                       className={cx(
-                        "h-4 cursor-pointer rounded-[2px]",
+                        "h-4 cursor-pointer rounded-[2px] animate-[cp-fade-in_500ms_var(--ease-out-expo)_both]",
                         v == null && "shadow-[inset_0_0_0_1px_var(--grid)]",
-                        isActive && "outline-2 outline-offset-1 outline-[var(--text)]",
+                        isActive && "relative z-[1] shadow-[var(--glow-accent)] outline-2 outline-offset-1 outline-[var(--text)]",
                         activeRow === row.key && v != null && !isActive && "shadow-[inset_0_0_0_1px_var(--surface)]",
                       )}
-                      style={v == null ? undefined : { background: `var(--seq-${bin(v, thresholds) + 1})` }}
+                      // Columns fade in left to right, months since shipment unrolling.
+                      style={{ animationDelay: `${ci * 30}ms`, ...(v == null ? null : { background: `var(--seq-${bin(v, thresholds) + 1})` }) }}
                     />
                   );
                 })}

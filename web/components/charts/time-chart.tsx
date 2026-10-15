@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { formatTick, formatValue, type Kind } from "@/lib/format";
-import { ChartTooltip, labelWidth, Legend, loadPlot, niceScale, seriesColor, useWidth, type LegendItem } from "./core";
+import { animateEnter, chartDefs, ChartTooltip, decorate, labelWidth, Legend, loadPlot, niceScale, seriesColor, useWidth, type LegendItem } from "./core";
 
 export type Bucket = {
   start: string;
@@ -62,6 +62,9 @@ export function TimeChart({
   const [geom, setGeom] = useState<Geometry | null>(null);
   const [active, setActive] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  const gid = useId().replace(/:/g, "");
+  // The data last drawn in: a redraw for a new width keeps the chart still, a redraw for new data draws it in.
+  const drawnKey = useRef("");
   const n = buckets.length;
   const firstProvisional = series.some((s) => s.horizonBound) ? buckets.findIndex((b) => b.provisional) : -1;
   const dim = (i: number, s: ChartSeries) => isDim(buckets[i], s);
@@ -99,9 +102,11 @@ export function TimeChart({
       const tickText = new Map<number, string>();
       tickIdx.forEach((i, k) => tickText.set(i, k === 0 || buckets[i].year !== buckets[tickIdx[k - 1]].year ? buckets[i].tickYear : buckets[i].tick));
 
+      // Fill references for the area gradient and provisional hatch; chartDefs puts their defs in the SVG once drawn.
+      const defs = { area: `url(#${gid}-area)`, hatch: `url(#${gid}-hatch)` };
       const marks: import("@observablehq/plot").Markish[] = [];
       if (firstProvisional >= 0) {
-        marks.push(Plot.rect([{ x1: firstProvisional - 0.5, x2: n - 0.5 }], { x1: "x1", x2: "x2", fill: "var(--band)" }));
+        marks.push(Plot.rect([{ x1: firstProvisional - 0.5, x2: n - 0.5 }], { x1: "x1", x2: "x2", fill: defs.hatch }));
         marks.push(
           Plot.text([{ x: n - 0.5 }], {
             x: "x",
@@ -148,6 +153,10 @@ export function TimeChart({
           const solid = dashFrom < 0 ? points : points.slice(0, Math.max(0, dashFrom));
           const dashed = dashFrom < 0 ? [] : points.slice(Math.max(0, dashFrom - 1));
           const line = { x: "i", y: "v", stroke, strokeWidth: 2, strokeLinejoin: "round", strokeLinecap: "round" } as const;
+          // A lone line gets a soft fill down to the baseline; with several, fills would stack into mud.
+          if (series.length === 1 && solid.length) {
+            marks.push(Plot.areaY(solid, { x: "i", y1: domain[0] < 0 ? 0 : domain[0], y2: "v", fill: defs.area }));
+          }
           if (solid.length) marks.push(Plot.line(solid, line));
           if (dashed.length) marks.push(Plot.line(dashed, { ...line, strokeDasharray: "4 3" }));
           const end = ends[k];
@@ -177,9 +186,16 @@ export function TimeChart({
         x: { type: "linear", domain: [-0.5, n - 0.5], axis: null },
         y: { domain, axis: null },
         marks,
-      });
+      }) as SVGSVGElement; // no legend or caption, so Plot returns the bare SVG
       svg.setAttribute("aria-hidden", "true");
       host.replaceChildren(svg);
+      chartDefs(svg, gid);
+      decorate(svg);
+      const key = JSON.stringify([mark, buckets.map((b) => b.start), series.map((s) => s.values)]);
+      if (drawnKey.current !== key) {
+        animateEnter(svg);
+        drawnKey.current = key;
+      }
       setGeom({
         xs: buckets.map((_, i) => marginLeft + (i + 0.5) * step),
         y,
@@ -196,7 +212,7 @@ export function TimeChart({
     return () => {
       cancelled = true;
     };
-  }, [width, n, buckets, series, mark, barMode, kind, yDomain, height, endLabels, firstProvisional, refLine, title]);
+  }, [width, n, buckets, series, mark, barMode, kind, yDomain, height, endLabels, firstProvisional, refLine, title, gid]);
 
   const pick = (e: PointerEvent<HTMLDivElement>) => {
     if (!geom) return;

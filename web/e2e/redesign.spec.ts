@@ -130,3 +130,21 @@ test("sparklines land as whole lines, without dash gaps", async ({ page }) => {
   await page.waitForTimeout(2500);
   expect(await lines.evaluateAll((els) => els.map((e) => getComputedStyle(e).strokeDasharray))).toEqual(Array(5).fill("none"));
 });
+
+test("charts draw in when their data changes, not when the window resizes", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+  const sales = page.locator('section[aria-labelledby="sales"] .cp-plot svg');
+  await expect(sales).toHaveClass(/cp-enter/);
+  // Plot draws rounded bars as paths and square ones as rects: every bar grows, whichever element draws it.
+  const grows = await sales.locator('g[aria-label="rect"]:not([fill^="url("]) > *').evaluateAll((bars) => bars.map((b) => getComputedStyle(b).animationName));
+  expect(grows.length).toBeGreaterThan(0);
+  expect([...new Set(grows)]).toEqual(["cp-grow"]);
+  await page.evaluate(() => document.querySelectorAll(".cp-enter").forEach((s) => s.classList.remove("cp-enter")));
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.waitForTimeout(500);
+  await expect(page.locator('section[aria-labelledby="sales"] .cp-plot svg.cp-enter')).toHaveCount(0);
+  await page.getByRole("button", { name: /^Date range/ }).click();
+  await page.getByRole("group", { name: "Presets" }).getByRole("button").nth(1).click();
+  await expect(page.locator('section[aria-labelledby="sales"] .cp-plot svg.cp-enter')).toHaveCount(1);
+});

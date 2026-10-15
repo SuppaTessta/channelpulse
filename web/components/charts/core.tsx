@@ -38,6 +38,50 @@ export function niceScale(values: number[], count = 4, fixed?: [number, number],
   return { domain: [lo, hi], ticks };
 }
 
+/** Line groups take their series colour as currentColor, so the dark edition's glow matches each line. */
+export function decorate(svg: SVGSVGElement) {
+  svg.querySelectorAll<SVGGElement>('g[aria-label="line"]').forEach((g) => {
+    const stroke = g.getAttribute("stroke");
+    if (stroke) g.style.color = stroke;
+  });
+}
+
+// Plot labels each mark's group by its type, so bars and the provisional band are both "rect": the band is the one
+// filled with the hatch pattern. globals.css uses the same two selectors.
+const BARS = 'g[aria-label="rect"]:not([fill^="url("])';
+
+/**
+ * Draw-in for a chart whose data just changed (DESIGN.md motion): lines trace in, bars grow from the baseline in
+ * sequence, dots and labels fade in. Callers skip it on a resize redraw. Nothing runs under reduced motion.
+ */
+export function animateEnter(svg: SVGSVGElement) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  svg.querySelectorAll<SVGPathElement>('g[aria-label="line"] path').forEach((p) => p.setAttribute("pathLength", "1"));
+  svg.querySelectorAll<SVGGElement>(BARS).forEach((g) =>
+    // Rounded bars come out of Plot as paths, square ones as rects: every child is a bar.
+    [...g.children].forEach((bar, i) => (bar as SVGElement).style.setProperty("--i", String(i))),
+  );
+  svg.classList.add("cp-enter");
+}
+
+/** An area gradient and a provisional hatch, defined inside one chart's SVG; returns their fill references. */
+export function chartDefs(svg: SVGSVGElement, id: string) {
+  const ns = "http://www.w3.org/2000/svg";
+  const defs = document.createElementNS(ns, "defs");
+  defs.innerHTML =
+    `<linearGradient id="${id}-area" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="var(--series-1)" stop-opacity="0.28"/><stop offset="1" stop-color="var(--series-1)" stop-opacity="0"/>` +
+    `</linearGradient>` +
+    `<pattern id="${id}-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">` +
+    `<rect width="6" height="6" fill="var(--band)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--marigold)" stroke-opacity="0.35" stroke-width="1.5"/>` +
+    `</pattern>`;
+  svg.prepend(defs);
+  return { area: `url(#${id}-area)`, hatch: `url(#${id}-hatch)` };
+}
+
+/** The provisional hatch as CSS, for the legend swatch beside a chart that draws it in SVG. */
+export const HATCH_CSS = "repeating-linear-gradient(135deg, color-mix(in oklab, var(--marigold) 35%, var(--band)) 0 1.5px, var(--band) 1.5px 4.2px)";
+
 /** Pixel width of a tick label in 12px Plus Jakarta Sans, near enough to size the margin that holds it. */
 export const labelWidth = (text: string) => Math.ceil(text.length * 7.1);
 
@@ -99,7 +143,7 @@ export function Legend({ items, children }: { items: LegendItem[]; children?: Re
           {i.shape === "rect" ? (
             <span aria-hidden className="size-2.5 rounded-[2px]" style={{ background: i.color }} />
           ) : i.shape === "band" ? (
-            <span aria-hidden className="h-3 w-4 rounded-[2px] border border-line" style={{ background: i.color }} />
+            <span aria-hidden className="h-3 w-4 rounded-[2px] border border-line" style={{ background: HATCH_CSS }} />
           ) : i.shape === "dashed" ? (
             <span aria-hidden className="w-4 border-t-2 border-dashed" style={{ borderColor: i.color }} />
           ) : (

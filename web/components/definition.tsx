@@ -115,7 +115,7 @@ export function DefinitionButton({
   if (!source || !metrics.length) return dialog;
   return (
     <>
-      <p className="mr-auto flex min-w-0 items-center gap-1.5 pl-2 text-xs text-subtle">
+      <p className="mr-auto flex min-w-0 items-center gap-1.5 pl-2 text-xs text-muted">
         <SealCheck size={14} {...ICON} className="shrink-0 text-accent" aria-hidden />
         <span className="sr-only">Governed metrics:</span>
         <span className="truncate font-mono text-[11.5px]" title={metrics.map((m) => m.name).join(", ")}>

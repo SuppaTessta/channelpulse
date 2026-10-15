@@ -42,7 +42,9 @@ export function BarList({
     setActive((i) => move(i ?? 0));
   };
 
-  const bar = (s: BarSeries, v: number | null, side: "left" | "right" | "auto", thick: string) => {
+  // Bars grow out from their zero edge, row after row, when the list first shows.
+  const bar = (s: BarSeries, v: number | null, side: "left" | "right" | "auto", thick: string, row: number) => {
+    const grow = { animationDelay: `${row * 50}ms` };
     if (v == null) return <div className={cx("text-xs text-subtle", thick)}>No value</div>;
     const text = formatValue(kind, v);
     if (side === "auto") {
@@ -52,8 +54,8 @@ export function BarList({
       return (
         <div className={cx("relative", thick)}>
           <div
-            className={cx("absolute inset-y-0", negative ? "rounded-l-[4px]" : "rounded-r-[4px]")}
-            style={{ left: `${start}%`, width: `${width}%`, background: seriesColor(s.slot) }}
+            className={cx("absolute inset-y-0 animate-[cp-grow-x_700ms_var(--ease-out-expo)_both]", negative ? "origin-right rounded-l-[4px]" : "origin-left rounded-r-[4px]")}
+            style={{ left: `${start}%`, width: `${width}%`, background: seriesColor(s.slot), ...grow }}
           />
           <span
             className="absolute top-1/2 -translate-y-1/2 text-xs font-semibold whitespace-nowrap text-ink"
@@ -68,8 +70,8 @@ export function BarList({
     return (
       <div className={cx("relative", thick)}>
         <div
-          className={cx("absolute inset-y-0", side === "left" ? "right-0 rounded-l-[4px]" : "left-0 rounded-r-[4px]")}
-          style={{ width: `${width}%`, background: seriesColor(s.slot) }}
+          className={cx("absolute inset-y-0 animate-[cp-grow-x_700ms_var(--ease-out-expo)_both]", side === "left" ? "right-0 origin-right rounded-l-[4px]" : "left-0 origin-left rounded-r-[4px]")}
+          style={{ width: `${width}%`, background: seriesColor(s.slot), ...grow }}
         />
         <span
           className="absolute top-1/2 -translate-y-1/2 text-xs font-semibold whitespace-nowrap text-ink"
@@ -112,13 +114,13 @@ export function BarList({
               </span>
               {mirrored ? (
                 <div className="grid grid-cols-2">
-                  <div className="border-r border-[var(--axis)] pl-16">{bar(series[0], series[0].values[i], "left", "h-4")}</div>
-                  <div className="pr-16">{bar(series[1], series[1].values[i], "right", "h-4")}</div>
+                  <div className="border-r border-[var(--axis)] pl-16">{bar(series[0], series[0].values[i], "left", "h-4", i)}</div>
+                  <div className="pr-16">{bar(series[1], series[1].values[i], "right", "h-4", i)}</div>
                 </div>
               ) : (
                 <div className="flex flex-col gap-0.5 pr-20" style={lo < 0 ? { paddingLeft: "5rem" } : undefined}>
                   {series.map((s) => (
-                    <div key={s.key}>{bar(s, s.values[i], "auto", series.length > 1 ? "h-3" : "h-4")}</div>
+                    <div key={s.key}>{bar(s, s.values[i], "auto", series.length > 1 ? "h-3" : "h-4", i)}</div>
                   ))}
                 </div>
               )}

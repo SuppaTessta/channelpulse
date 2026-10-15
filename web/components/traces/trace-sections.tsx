@@ -9,7 +9,7 @@ import { categoryText, facetPairs, fmtLatency, fmtUsd, tokenCounts, tokenLabel, 
 import { LabelBadge } from "../ask/answer";
 import { SqlBlock } from "../sql";
 import { EmptyState, ErrorState } from "../states";
-import { Badge, buttonClass, cx, Figure, ICON, Sheet, Skeleton } from "../ui";
+import { Badge, buttonClass, cx, Figure, ICON, Sheet, Skeleton, TYPE } from "../ui";
 import { TraceTable } from "./trace-table";
 
 /** Label colours for the mix bar, the same family as each label's badge. The legend always carries the text. */
@@ -24,7 +24,7 @@ function Tile({ label, value, note, className }: { label: string; value: string;
   return (
     <div className={cx("flex min-w-0 flex-col gap-1.5 bg-surface p-4 md:p-5", className)}>
       <p className="text-[13px] font-medium text-muted">{label}</p>
-      <Figure text={value} className="text-[26px]/8 font-semibold tracking-[-0.03em] text-ink md:text-[28px]/9" />
+      <Figure text={value} className={TYPE.figureLg} animate />
       {note ? <p className="text-xs text-subtle">{note}</p> : null}
     </div>
   );
@@ -38,8 +38,12 @@ function LabelMix({ pairs, className }: { pairs: [string, number][]; className?:
       {total ? (
         <>
           <div aria-hidden className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full">
-            {pairs.map(([label, n]) => (
-              <span key={label} style={{ flexGrow: n, background: LABEL_COLOR[label as AskLabel] ?? "var(--deemph)" }} />
+            {pairs.map(([label, n], i) => (
+              <span
+                key={label}
+                className="origin-left animate-[cp-grow-x_700ms_var(--ease-out-expo)_both]"
+                style={{ flexGrow: n, background: LABEL_COLOR[label as AskLabel] ?? "var(--deemph)", animationDelay: `${i * 60}ms` }}
+              />
             ))}
           </div>
           <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2 xl:grid-cols-1">
@@ -80,7 +84,7 @@ export async function TraceSummary({ params, region }: { params: string; region:
   return (
     <section aria-labelledby="trace-totals" className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="trace-totals" className="text-sm font-semibold text-ink">
+        <h2 id="trace-totals" className={TYPE.panelTitle}>
           Totals over the filtered traces
         </h2>
         <p className="flex items-center gap-1.5 text-xs text-muted">
@@ -144,9 +148,9 @@ export async function TraceListPanel({
   const { traces, total, withheld } = r.value;
   const empty = traces.length === 0;
   return (
-    <section aria-labelledby="traces-heading" className="flex flex-col gap-4 rounded-panel border border-line bg-surface p-4 md:p-5" data-dim="">
+    <section aria-labelledby="traces-heading" className="flex flex-col gap-4 rounded-[14px] border border-line bg-surface p-4 md:p-5" data-dim="">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="traces-heading" className="text-sm font-semibold text-ink">
+        <h2 id="traces-heading" className={TYPE.panelTitle}>
           Traces
         </h2>
         <p className="text-xs text-muted">Open a question to see its tool calls, SQL, tokens and verdict.</p>
@@ -224,7 +228,7 @@ export async function TraceDetailView({ id, region }: { id: string; region: Regi
             {t.category ? `, ${categoryText(t.category)}` : ""}
           </span>
         </div>
-        <h3 className="text-[17px]/6 font-semibold tracking-[-0.01em] text-pretty text-ink">{t.question}</h3>
+        <h3 className={TYPE.question}>{t.question}</h3>
         {t.answer_text ? <p className="max-w-[70ch] text-[15px]/7 text-ink">{t.answer_text}</p> : null}
         {t.eval_correct != null ? (
           <p className={cx("flex items-center gap-1.5 text-xs", t.eval_correct ? "text-good" : "text-danger")}>
@@ -256,7 +260,7 @@ export async function TraceDetailView({ id, region }: { id: string; region: Regi
 
       {t.final_sql.length ? (
         <section className="flex flex-col gap-2">
-          <h4 className="text-sm font-semibold text-ink">{t.final_sql.length === 1 ? "Final SQL" : `Final SQL (${t.final_sql.length} queries)`}</h4>
+          <h4 className={TYPE.subhead}>{t.final_sql.length === 1 ? "Final SQL" : `Final SQL (${t.final_sql.length} queries)`}</h4>
           {t.final_sql.map((sql, i) => (
             <SqlBlock key={i} sql={sql} />
           ))}
@@ -264,7 +268,7 @@ export async function TraceDetailView({ id, region }: { id: string; region: Regi
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h4 className="text-sm font-semibold text-ink">Tool calls</h4>
+        <h4 className={TYPE.subhead}>Tool calls</h4>
         {t.tool_calls.length === 0 ? (
           <p className="text-sm text-muted">The analyst answered without calling a tool.</p>
         ) : (

@@ -148,3 +148,11 @@ test("charts draw in when their data changes, not when the window resizes", asyn
   await page.getByRole("group", { name: "Presets" }).getByRole("button").nth(1).click();
   await expect(page.locator('section[aria-labelledby="sales"] .cp-plot svg.cp-enter')).toHaveCount(1);
 });
+
+// A dollar figure (the traces' estimated cost) is a figure like any rupee one, not muted as if it had no value.
+test("the trace totals set every value as a figure, the dollar cost included", async ({ page }) => {
+  await page.goto("/traces");
+  const totals = page.locator("section[aria-labelledby=trace-totals]");
+  await expect(totals.getByText("Estimated cost")).toBeVisible();
+  await expect(totals.locator("[data-figure]")).toHaveCount(4);
+});

@@ -77,7 +77,7 @@ export function Badge({ tone, icon, children, className }: { tone: Tone; icon?: 
   );
 }
 
-const FIGURE = /^(₹?)([−+-]?[\d.,]+)\s?(.*)$/;
+const FIGURE = /^([₹$]?)([−+-]?[\d.,]+)\s?(.*)$/;
 
 /**
  * A formatted figure set like an instrument readout: the digits carry the weight, the currency sign and unit step

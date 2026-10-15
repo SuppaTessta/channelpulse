@@ -42,7 +42,7 @@ One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); s
 
 | Moment | What moves |
 |---|---|
-| Page load | Header, KPI band and panels rise 8px and fade in, staggered 60ms apart. The brand mark draws. |
+| Page load | The page body (KPI band, then each panel row) rises 8px and fades in, staggered 60ms apart; the header stays put. The brand mark draws. |
 | KPI band | Figures count up (900ms). Sparklines wipe in left to right, 80ms apart per tile, over a fading fill; the latest point lands, pings once, then breathes. |
 | Charts, on a data change | Lines trace in (900ms); bars grow from the baseline, 45ms apart; areas, dots, labels and the hatched provisional band fade in. A redraw for a new width doesn't animate. |
 | Bar lists and heatmap | Bars grow from their zero edge, row by row; heatmap cells fade in by column, 30ms apart. |
@@ -125,5 +125,5 @@ Plain, specific, sentence case:
 - `prefers-reduced-motion` turns every animation off, figures included.
 - Visible focus rings, a keyboard-reachable everything, and labelled icon buttons. Short triggers get a full accessible name that includes their visible text.
 - Charts have text alternatives, such as a summary sentence and a data table toggle, and read point by point with the arrow keys.
-- Touch targets are at least 40px on mobile; the brief's footnote markers widen theirs with an invisible hit area.
+- Touch targets are at least 40px on mobile; the brief's footnote markers reach 40px tall with an invisible hit area that never overlaps the next marker's.
 - A failed API call or render degrades one panel (`Panel`, a Suspense boundary around `PanelBoundary`), never the page.

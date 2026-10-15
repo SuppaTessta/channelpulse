@@ -423,13 +423,21 @@ Superseded on the model by D50.
 - **Kept:** `toDefMetric`, because passing a whole `Metric` to the client-side definition drawer would ship its dimensions to the browser; the two `month_add` copies, because merging them would couple the black-box acceptance suite to the detectors; `/api/meta`, which the smoke test uses to detect a stale API process (D28).
 - **Verified:** after each change. At the end: 800 tests, ruff, eslint, typecheck, dbt parse and the production build, plus the Ask, traces and brief pages against the live API.
 
-**D53. A filter change that Next never applies falls back to a full page load (2026-10-15).**
+**D53. Navigation that Next never applies (a filter change or a link) falls back to a full page load (2026-10-15).**
 - **Found** while clicking through the redesign: on a cold result cache, about half of region switches never applied. The page stayed on the old render, dimmed as "Updating", with no error and no end. Warm switches always applied.
 - **Cause, as far as it can be traced:** Next 15.5's client navigation itself. A bare `router.push` from the console stalled the same way, outside the app's transition. In the stalled runs, the RSC response either finished streaming and was never committed, or the browser cancelled it mid-stream; nothing in the app dispatched another navigation or touched `history`. D49's waking-up refresh, which sometimes was never applied, is the same behaviour.
 - **Workaround:** every in-app navigation starts a 12 s watchdog: `setParams` (every filter on every page) and every same-origin link click (a capture-phase listener, since Next's Link handler prevents the default). If the URL still hasn't moved by then, the browser loads the new URL in full, as Next does itself when an RSC fetch fails. A newer navigation, or arriving anywhere else first, cancels it.
 - **Links too:** clicking through the redesigned Distributor 360 later stalled one link in four to a cold distributor page (D0004 waited 180 s), so the watchdog was extended from filters to links the same day.
 - **Tests:** two fault tests stall the navigation's RSC fetch, one for a region change and one for a link, and expect each to land by a full load.
 - **Revisit** on the next Next upgrade: drop the watchdog if region switches on a cold cache always apply.
+
+**D54. The "Monsoon Editorial" redesign: dark by default, a light edition, motion with reduced motion honoured (owner decision, 2026-10-15).**
+- **Direction:** the owner asked for a more animated, premium look with new colour, graphics and type. Of three directions mocked in Stitch, the owner chose a mix of two: Monsoon Night's dark luxe with Ganga Editorial's type and hairline rules. Dark is the default and a toggle switches to a warm-paper light edition; the choice is remembered and applied before first paint. Print always uses the light values. `web/DESIGN.md` is the full system.
+- **Type:** Newsreader for titles, figures and the brief's prose; Plus Jakarta Sans for the interface; JetBrains Mono for SQL and IDs. Each was checked in the font files for the ₹ sign and tabular figures. `geist` was removed; no dependency was added.
+- **Colour:** teal accent and a marigold second; the chart palettes were re-stepped for both editions and validated with the dataviz method (worst adjacent CVD ΔE 14.0 light, 12.4 dark). Every text token clears WCAG AA on every surface in both editions, checked by a test.
+- **Motion:** staggered entrances, counting figures, charts that draw in when their data changes (not on a resize), wiping sparklines, glowing dark-mode lines, hatched provisional periods, a drifting header aurora and canvas grain. `prefers-reduced-motion` stops all of it, figures included.
+- **Found and fixed on the way** (each with a test): navigation that Next never applies (D53); sparklines left with permanent gaps by a dash draw on a non-scaling stroke; a dollar figure set as if it had no value; and layout breaks at 1024px (titles, the KPI band) and at 390px (a cut title, cut chart labels).
+- **Checked:** after every task, the full e2e suite (32 tests at the end: smoke, faults and 11 redesign tests); ruff and 800 Python tests; a 64-shot matrix (8 pages, 4 widths, both editions) with no horizontal overflow; a click-through of every control on every page in both editions at 1440 and 390px; and an independent design review, whose six material fixes (radii, type sizes and the aurora to the spec, the brief's footnotes, phone bar labels, panel footers) are in.
 
 ## Environment
 

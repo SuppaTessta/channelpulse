@@ -224,15 +224,18 @@
   }
 }
 
-/* The top bar is sticky from 768px (two rows until 1024px): keep focused and anchored content clear of it. */
+/*
+  The top bar is sticky from 768px: keep focused and anchored content clear of it. It is two rows until 1280px (the
+  pill under the title) and grows with a back link or a two-line title, so the padding leaves headroom.
+*/
 @media (min-width: 768px) {
   html {
-    scroll-padding-top: 112px;
+    scroll-padding-top: 200px;
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   html {
-    scroll-padding-top: 72px;
+    scroll-padding-top: 150px;
   }
 }
 

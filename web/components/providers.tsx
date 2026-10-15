@@ -13,14 +13,26 @@ const NavContext = createContext<Nav>({ pending: false, setParams: () => {} });
 // ponytail: a watchdog, not a fix; if the URL still hasn't moved after STUCK_MS the browser loads the new one in full,
 // as Next itself does when an RSC fetch fails. Drop it once a Next release applies every navigation.
 const STUCK_MS = 12_000;
-let stuck: ReturnType<typeof setTimeout> | undefined;
+let stuck: ReturnType<typeof setInterval> | undefined;
 const here = () => window.location.pathname + window.location.search;
 
-/** Watches one in-app navigation to `href`; a newer one, or arriving anywhere else first, cancels it. */
+/**
+ * Watches one in-app navigation to `href`. It stands down the moment the URL moves by any route (the navigation
+ * landing, Back, a drawer closing), so it can only ever fire while the page is still stuck where it started. A
+ * newer navigation replaces it. A link that deliberately doesn't navigate would be loaded after STUCK_MS.
+ */
 function watch(href: string) {
   const from = here();
-  clearTimeout(stuck);
-  if (href !== from) stuck = setTimeout(() => here() === from && window.location.assign(href), STUCK_MS);
+  clearInterval(stuck);
+  if (href === from) return;
+  const deadline = Date.now() + STUCK_MS;
+  stuck = setInterval(() => {
+    if (here() !== from) clearInterval(stuck);
+    else if (Date.now() >= deadline) {
+      clearInterval(stuck);
+      window.location.assign(href);
+    }
+  }, 250);
 }
 
 /** Same-origin link clicks the router will handle (not new tabs, downloads or modified clicks). */

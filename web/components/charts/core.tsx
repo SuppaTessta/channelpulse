@@ -56,7 +56,8 @@ const BARS = 'g[aria-label="rect"]:not([fill^="url("])';
  */
 export function animateEnter(svg: SVGSVGElement) {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  svg.querySelectorAll<SVGPathElement>('g[aria-label="line"] path').forEach((p) => p.setAttribute("pathLength", "1"));
+  // Solid lines only: a pathLength of 1 would stretch a dashed line's dash over its whole length.
+  svg.querySelectorAll<SVGPathElement>('g[aria-label="line"]:not([stroke-dasharray]) path').forEach((p) => p.setAttribute("pathLength", "1"));
   svg.querySelectorAll<SVGGElement>(BARS).forEach((g) =>
     // Rounded bars come out of Plot as paths, square ones as rects: every child is a bar.
     [...g.children].forEach((bar, i) => (bar as SVGElement).style.setProperty("--i", String(i))),

@@ -127,3 +127,30 @@ test("a link that never applies falls back to loading the page in full", async (
   await expect(page).toHaveURL(/\/distributors\/D0001/, { timeout: 30_000 });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tarun Sharma Trading Co.");
 });
+
+// The watchdog stands down once the URL has moved by any route (final review #1): it used to fire 12 s later even
+// after the user had arrived and gone back, yanking them forward with a full reload.
+test.describe("the navigation watchdog never fires after the URL has moved", () => {
+  test.setTimeout(90_000);
+  test("closing a trace drawer stays closed", async ({ page }) => {
+    await page.goto("/traces");
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await page.locator("table tbody tr a").first().click();
+    await expect(page).toHaveURL(/trace=/);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page).not.toHaveURL(/trace=/);
+    await page.waitForTimeout(13_000);
+    await expect(page).not.toHaveURL(/trace=/);
+  });
+  test("going back from a distributor stays on the list", async ({ page }) => {
+    await page.goto("/distributors");
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await page.locator("table tbody tr a").first().click();
+    await expect(page).toHaveURL(/\/distributors\/D\d+/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/distributors$/);
+    await page.waitForTimeout(13_000);
+    await expect(page).toHaveURL(/\/distributors$/);
+  });
+});

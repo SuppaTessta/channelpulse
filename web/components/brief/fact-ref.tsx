@@ -10,10 +10,10 @@ import type { ReactNode } from "react";
 export function FactRef({ n, label, children }: { n: number; label: string; children: ReactNode }) {
   return (
     <Popover.Root>
-      <sup className="ml-px align-[0.4em] leading-[0]">
+      <sup className="ml-1 align-[0.4em] leading-[0]">
         <Popover.Trigger
           aria-label={`Source ${n}: ${label}`}
-          className="relative inline-block rounded-[3px] px-[2px] font-sans text-[11px] leading-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] font-semibold text-accent tabular-nums transition-colors duration-150 hover:bg-accent-soft data-[state=open]:bg-accent-soft print:text-ink"
+          className="relative inline-block rounded-[3px] px-[2px] font-sans text-[11px] leading-none after:absolute after:-inset-x-0.5 after:-inset-y-[15px] after:content-[''] font-semibold text-accent tabular-nums transition-colors duration-150 hover:bg-accent-soft data-[state=open]:bg-accent-soft print:text-ink"
         >
           {n}
         </Popover.Trigger>

@@ -156,3 +156,35 @@ test("the trace totals set every value as a figure, the dollar cost included", a
   await expect(totals.getByText("Estimated cost")).toBeVisible();
   await expect(totals.locator("[data-figure]")).toHaveCount(4);
 });
+
+// The draw-in traces solid lines only: a pathLength of 1 on the dashed provisional segment stretched its 4px dash
+// over the whole line, so provisional periods lost their dashes (final review #2).
+test("dashed provisional lines stay dashed after the draw-in", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".cp-plot svg.cp-enter").first()).toBeVisible();
+  const dashed = page.locator('.cp-plot g[aria-label="line"][stroke-dasharray] path');
+  await expect(dashed.first()).toBeAttached();
+  expect(await dashed.evaluateAll((ps) => ps.map((p) => p.getAttribute("pathLength")))).toEqual(Array(await dashed.count()).fill(null));
+});
+
+// Neighbouring footnote markers must not cover each other's hit areas: clicking "1" opened Source 2 (final review #3).
+test("a footnote marker opens its own source", async ({ page }) => {
+  await page.goto("/brief");
+  const first = page.getByRole("button", { name: /^Source 1:/ });
+  await expect(first).toBeVisible();
+  const box = (await first.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.getByRole("dialog")).toContainText("Source 1");
+  await expect(page.getByRole("dialog")).not.toContainText("Source 2");
+});
+
+// Keyboard focus scrolled into view must land below the sticky header, which grew to two rows below 1280px (review #4).
+for (const width of [768, 1024, 1440]) {
+  test(`scroll padding clears the sticky header at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/distributors/D0001");
+    const header = await page.locator("header").first().boundingBox();
+    const padding = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop));
+    expect(padding).toBeGreaterThanOrEqual(header!.height);
+  });
+}

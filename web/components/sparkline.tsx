@@ -38,7 +38,7 @@ export function Sparkline({ values, label, index = 0 }: { values: (number | null
       </svg>
       <span
         aria-hidden
-        className="cp-spark-dot absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="cp-spark-dot cp-pulse absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{ left: `${x(last.i)}%`, top: `${(y(last.v) / 32) * 100}%`, background: "var(--series-1)", ["--i" as string]: index }}
       />
     </div>

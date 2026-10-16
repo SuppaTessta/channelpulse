@@ -62,6 +62,7 @@
   --shadow-segment: 0 1px 2px rgb(0 0 0 / 0.4), 0 0 0 1px var(--border-strong);
   --highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
   --glow-accent: 0 0 0 1px rgb(45 212 191 / 0.35), 0 0 24px -4px rgb(45 212 191 / 0.45);
+  --glow-marigold: 0 0 0 1px rgb(245 165 36 / 0.35), 0 0 24px -6px rgb(245 165 36 / 0.45);
   --spotlight: rgb(45 212 191 / 0.1);
   --aurora-1: rgb(45 212 191 / 0.3);
   --aurora-2: rgb(56 120 248 / 0.22);
@@ -122,6 +123,7 @@
   --shadow-segment: 0 1px 2px rgb(60 45 20 / 0.08), 0 0 0 1px var(--border-strong);
   --highlight: inset 0 1px 0 rgb(255 255 255 / 0.8);
   --glow-accent: 0 0 0 1px rgb(11 110 114 / 0.3), 0 0 18px -6px rgb(11 110 114 / 0.35);
+  --glow-marigold: 0 0 0 1px rgb(143 91 0 / 0.3), 0 0 18px -6px rgb(143 91 0 / 0.3);
   --spotlight: rgb(11 110 114 / 0.06);
   --aurora-1: rgb(11 110 114 / 0.12);
   --aurora-2: rgb(199 127 0 / 0.1);
@@ -166,6 +168,7 @@
   --breakpoint-wide: 90rem;
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 @layer base {
@@ -222,6 +225,11 @@
     font-variant-numeric: lining-nums tabular-nums;
     font-optical-sizing: auto;
   }
+}
+
+/* A scrollbar appearing while panels stream in must not change the page width (charts would redraw without the draw-in). */
+html {
+  scrollbar-gutter: stable;
 }
 
 /*
@@ -301,28 +309,22 @@
     transform: scaleX(0);
   }
 }
-@keyframes cp-ping {
-  from {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
-  }
-  to {
-    box-shadow: 0 0 0 10px transparent;
-  }
-}
-@keyframes cp-breathe {
-  from {
-    box-shadow: 0 0 0 2px var(--surface), 0 0 4px 1px color-mix(in oklab, var(--accent) 30%, transparent);
-  }
-  to {
-    box-shadow: 0 0 0 2px var(--surface), 0 0 12px 3px color-mix(in oklab, var(--accent) 55%, transparent);
-  }
-}
 @keyframes cp-shimmer {
   from {
-    background-position: 100% 0;
+    transform: translateX(-100%);
   }
   to {
-    background-position: -100% 0;
+    transform: translateX(100%);
+  }
+}
+@keyframes cp-halo {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
   }
 }
 @keyframes cp-drift {
@@ -350,19 +352,19 @@
   animation: cp-rise 600ms var(--ease-out-expo) both;
 }
 .cp-stagger > :nth-child(2) {
-  animation-delay: 60ms;
+  animation-delay: 40ms;
 }
 .cp-stagger > :nth-child(3) {
-  animation-delay: 120ms;
+  animation-delay: 80ms;
 }
 .cp-stagger > :nth-child(4) {
-  animation-delay: 180ms;
+  animation-delay: 120ms;
 }
 .cp-stagger > :nth-child(5) {
-  animation-delay: 240ms;
+  animation-delay: 160ms;
 }
 .cp-stagger > :nth-child(n + 6) {
-  animation-delay: 300ms;
+  animation-delay: 200ms;
 }
 
 .cp-fade[data-state="open"] {
@@ -400,11 +402,29 @@
   transform: translateX(120%);
   transition: transform 800ms var(--ease-out-expo);
 }
-/* Loading placeholders: a slow light sweep across the sunken tone. */
+/* Loading placeholders: a slow light sweep across the sunken tone, moved by transform alone. */
 .cp-shimmer {
-  background: linear-gradient(100deg, var(--surface-sunken) 30%, color-mix(in oklab, var(--surface-sunken), var(--text) 7%) 50%, var(--surface-sunken) 70%);
-  background-size: 200% 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+.cp-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--surface-sunken), var(--text) 7%) 50%, transparent 70%);
   animation: cp-shimmer 1.8s linear infinite;
+}
+/* A live dot (the as-of, the numbers check, a sparkline's latest point): its halo swells and fades on a slow loop. */
+/* The dot must be positioned (relative or absolute) for its halo. */
+.cp-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: cp-halo 2.4s var(--ease-in-out) infinite;
+  animation-delay: inherit;
 }
 
 /* The theme switch reveals the new edition from the toggle (theme-toggle.tsx). */
@@ -461,10 +481,9 @@
   animation-delay: calc(500ms + var(--i, 0) * 80ms);
 }
 .cp-spark-dot {
-  animation:
-    cp-fade-in 300ms both calc(1100ms + var(--i, 0) * 80ms),
-    cp-ping 900ms var(--ease-out-expo) calc(1100ms + var(--i, 0) * 80ms),
-    cp-breathe 2.6s ease-in-out calc(2000ms + var(--i, 0) * 80ms) infinite alternate;
+  box-shadow: 0 0 0 2px var(--surface);
+  animation: cp-fade-in 300ms both;
+  animation-delay: calc(1100ms + var(--i, 0) * 80ms);
 }
 
 /* Observable Plot output: tokens in, library defaults out. */
@@ -557,6 +576,7 @@
     --shadow-segment: 0 1px 2px rgb(60 45 20 / 0.08), 0 0 0 1px var(--border-strong);
     --highlight: inset 0 1px 0 rgb(255 255 255 / 0.8);
     --glow-accent: 0 0 0 1px rgb(11 110 114 / 0.3), 0 0 18px -6px rgb(11 110 114 / 0.35);
+    --glow-marigold: 0 0 0 1px rgb(143 91 0 / 0.3), 0 0 18px -6px rgb(143 91 0 / 0.3);
     --spotlight: rgb(11 110 114 / 0.06);
     --aurora-1: rgb(11 110 114 / 0.12);
     --aurora-2: rgb(199 127 0 / 0.1);
@@ -578,6 +598,7 @@
   * {
     animation: none !important;
     box-shadow: none !important;
+    filter: none !important;
   }
   .cp-paper {
     background: #fff !important;

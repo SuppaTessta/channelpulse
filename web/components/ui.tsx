@@ -31,7 +31,7 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANT = {
   primary: "cp-sheen bg-accent text-on-accent shadow-[var(--highlight),0_8px_24px_-12px_color-mix(in_oklab,var(--accent)_70%,transparent)] hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-surface/70 text-ink shadow-highlight backdrop-blur-sm hover:border-control hover:bg-hover",
+  secondary: "border border-line-strong bg-surface text-ink shadow-highlight hover:border-control hover:bg-hover",
   ghost: "text-muted hover:bg-hover hover:text-ink",
 } as const;
 
@@ -90,7 +90,7 @@ export function Figure({ text, className, animate = false }: { text: string; cla
   return (
     <span data-figure="" data-final={animate ? digits : undefined} className={cx("tabular-nums", className)}>
       {currency ? <span className="mr-[0.08em] align-[0.12em] text-[0.62em] font-medium text-muted">{currency}</span> : null}
-      {animate ? <CountUp value={digits} /> : digits}
+      {animate ? <CountUp key={currency + unit} value={digits} /> : digits}
       {unit ? <span className={cx("text-[0.5em] font-medium tracking-normal text-muted", unit === "%" || unit === "×" ? "ml-[0.04em]" : "ml-[0.22em]")}>{unit}</span> : null}
     </span>
   );

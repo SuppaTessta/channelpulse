@@ -67,15 +67,15 @@ function TraceId({ id, className }: { id: string; className?: string }) {
 /** The plate's edge light names the answer's family: teal for governed, amber for ad hoc, plain while pending. */
 const GLOW = {
   governed: "shadow-[var(--glow-accent)]",
-  adhoc: "shadow-[0_0_0_1px_color-mix(in_oklab,var(--adhoc)_40%,transparent),0_0_24px_-6px_color-mix(in_oklab,var(--adhoc)_45%,transparent)]",
+  adhoc: "shadow-[var(--glow-marigold)]",
   plain: "shadow-raised",
 };
 
-/** Shared frame for an answer: an outer tray and an inner glass plate, because the answer is the one elevated thing here. */
+/** Shared frame for an answer: an outer tray and an inner plate, because the answer is the one elevated thing here. */
 function Frame({ children, className, glow = "plain" }: { children: ReactNode; className?: string; glow?: keyof typeof GLOW }) {
   return (
     <div className="rounded-[16px] bg-sunken p-1 ring-1 ring-line">
-      <div className={cx("cp-reveal flex flex-col gap-5 rounded-panel border border-line-strong/70 bg-raised/90 p-4 backdrop-blur-xl md:p-6", GLOW[glow], className)}>
+      <div className={cx("cp-reveal flex flex-col gap-5 rounded-panel border border-line-strong/70 bg-raised p-4 md:p-6", GLOW[glow], className)}>
         {children}
       </div>
     </div>

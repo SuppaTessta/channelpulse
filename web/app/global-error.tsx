@@ -2,6 +2,7 @@
 
 import { Newsreader, Plus_Jakarta_Sans } from "next/font/google";
 import { Illustration } from "@/components/illustration";
+import { THEME_SCRIPT } from "@/components/theme-toggle";
 import { TYPE } from "@/components/ui";
 import "./globals.css";
 
@@ -15,7 +16,10 @@ const sans = Plus_Jakarta_Sans({ subsets: ["latin", "latin-ext"], variable: "--f
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const stale = error.name === "ChunkLoadError" || /loading (css )?chunk/i.test(error.message);
   return (
-    <html lang="en-IN" data-theme="dark" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en-IN" data-theme="dark" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-dvh bg-canvas font-sans text-ink">
         <main className="mx-auto max-w-[1440px] px-4 py-10 md:px-6">
           <section role="alert" data-panel-error="" className="flex max-w-[68ch] flex-col items-start rounded-panel border border-line bg-surface p-6 shadow-highlight cp-reveal">

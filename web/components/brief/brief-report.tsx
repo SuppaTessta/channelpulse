@@ -46,7 +46,7 @@ function CheckLine({ brief }: { brief: Brief }) {
   if (brief.status === "verified") {
     return (
       <p role="status" className="flex items-center gap-2.5 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-ink print:bg-transparent print:px-0">
-        <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_var(--accent-soft)] animate-[cp-breathe_2.4s_ease-in-out_infinite_alternate]" />
+        <span aria-hidden className="cp-pulse relative size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_0_3px_var(--accent-soft)]" />
         Numbers check passed: {n} {n === 1 ? "query" : "queries"} re-executed
       </p>
     );

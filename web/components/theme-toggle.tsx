@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "@phosphor-icons/react";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useSyncExternalStore, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 import { cx, ICON } from "./ui";
 
@@ -10,12 +10,15 @@ type Theme = "dark" | "light";
 const CHROME: Record<Theme, string> = { dark: "#070b14", light: "#f6f3ec" };
 export const THEME_KEY = "cp-theme";
 
-/** Runs in <head> before first paint, so a remembered light choice never flashes dark (layout.tsx). */
-export const THEME_SCRIPT = `try{document.documentElement.dataset.theme=localStorage.getItem("${THEME_KEY}")==="light"?"light":"dark"}catch(e){}`;
+/**
+ * Runs in <head> before first paint, so a remembered light choice never flashes dark (layout.tsx). It sets the
+ * browser chrome colour too, which the server always renders dark.
+ */
+export const THEME_SCRIPT = `try{var t=localStorage.getItem("${THEME_KEY}")==="light"?"light":"dark";document.documentElement.dataset.theme=t;if(t==="light")document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content","${CHROME.light}")})})}catch(e){}`;
 
 function apply(theme: Theme) {
   document.documentElement.dataset.theme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", CHROME[theme]);
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", CHROME[theme]));
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch {
@@ -23,17 +26,24 @@ function apply(theme: Theme) {
   }
 }
 
+// The page's own attribute is the one source of truth, so the rail, sidebar and sheet toggles always agree.
+const current = (): Theme => (document.documentElement.dataset.theme === "light" ? "light" : "dark");
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+
 /** Switches between the dark (Monsoon) and light (paper) editions; the new one is revealed from the button. */
 export function ThemeToggle({ variant }: { variant: "rail" | "sidebar" | "sheet" }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  useEffect(() => setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark"), []);
+  const theme = useSyncExternalStore(subscribe, current, () => "dark" as Theme);
+  // The server renders the chrome colour dark, and streaming can add a second tag after the head script ran.
+  useEffect(() => document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", CHROME[current()])), []);
   const next: Theme = theme === "dark" ? "light" : "dark";
 
   function toggle(e: MouseEvent<HTMLButtonElement>) {
-    const commit = () => {
-      apply(next);
-      setTheme(next);
-    };
+    const target: Theme = current() === "dark" ? "light" : "dark"; // read at click time, never a stale render
+    const commit = () => apply(target);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce || !document.startViewTransition) return commit();
     const r = e.currentTarget.getBoundingClientRect();

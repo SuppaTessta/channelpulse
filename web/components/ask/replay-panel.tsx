@@ -136,7 +136,7 @@ function QuestionList({ answers, active, hrefFor }: { answers: ReplayAnswer[]; a
         const correct = items.filter((a) => a.eval.correct).length;
         return (
           <div key={key} className="border-b border-line pb-2 last:border-0">
-            <h3 className="sticky top-0 z-[1] flex items-baseline justify-between gap-2 bg-surface/95 px-4 pt-3 pb-1.5 text-xs font-semibold text-ink backdrop-blur-sm">
+            <h3 className="sticky top-0 z-[1] flex items-baseline justify-between gap-2 bg-surface px-4 pt-3 pb-1.5 text-xs font-semibold text-ink">
               {label}
               <span className="font-normal text-subtle">
                 {correct} of {items.length} correct

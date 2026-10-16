@@ -28,7 +28,7 @@ Hero sections, scroll reveals and marketing copy don't apply to a dashboard and 
 - **Colour roles:** teal is the accent (primary actions, focus, the active page, the governed state); marigold is the warm second (the second chart series, the hatch, the aurora). Status colours are semantic: governed (accent), ad-hoc (amber), refused (neutral surface, rose edge), needs clarification (neutral surface, grey edge), plus good and danger for deltas and flags. Colour never carries meaning alone: deltas carry a sign and an arrow, verdicts a check or a cross, flags text.
 - **Chart palettes** (dataviz method): one hue order in both editions (teal, marigold, pink, blue, green, violet, rose, cyan), each edition stepped into its lightness band and validated against its chart surface. Worst adjacent pair: CVD ΔE 14.0 and normal vision 22.5 in light, 12.4 and 21.0 in dark. The heatmap uses a single-hue sequential teal scale.
 - **Shape:** one radius scale. Controls 8px, panels and the sheet 12px, drawers 16px on the leading edge, badges full pill. Trays are concentric with what they hold (a 12px plate in a 4px tray is 16px); chart marks keep 2–4px.
-- **Depth and light:** borders and light carry depth; shadows appear only on raised layers. Panels carry a faint inner top highlight. Floating layers (tooltips, selects, the date popover, chart tooltips) and drawers are glass: translucent raised surface, a stronger hairline, background blur. Dark mode adds glow: the active nav marker, the open select, the selected heatmap cell, the governed answer plate (teal) and the ad-hoc plate (amber), and every chart line, which glows in its own series colour.
+- **Depth and light:** borders and light carry depth; shadows appear only on raised layers. Panels carry a faint inner top highlight. Floating layers (tooltips, selects, the date popover, chart tooltips) and drawers are glass: translucent raised surface, a stronger hairline, background blur. Blur is used only there and on the sticky header; plates and controls are solid. Dark mode adds glow: the active nav marker, the open select, the selected heatmap cell, the governed answer plate (teal) and the ad-hoc plate (amber), and every chart line, which glows in its own series colour.
 - **Graphics:**
   - **Aurora:** a slow-drifting field of blurred radial gradients (teal, deep blue, a touch of marigold) behind the page header only; a faint watercolour wash in light.
   - **Grain:** a fixed SVG-noise layer over the canvas (3.5% dark, 5% light), `pointer-events: none`.
@@ -38,11 +38,11 @@ Hero sections, scroll reveals and marketing copy don't apply to a dashboard and 
 - **Browser surfaces:** caret, `accent-color` (checkboxes, date fields), thin scrollbars and text selection all come from the palette.
 
 ## Motion
-One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); state changes use `--ease-out`.
+One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); state changes use `--ease-out` and loops `--ease-in-out`. Endless loops animate only `transform` and `opacity`, so nothing repaints on every frame; figures count through a ref, never a re-render.
 
 | Moment | What moves |
 |---|---|
-| Page load | The page body (KPI band, then each panel row) rises 8px and fades in, staggered 60ms apart; the header stays put. The brand mark draws. |
+| Page load | The header, the filter row, the KPI band and each panel row rise 8px and fade in, 40ms apart. The brand mark draws. |
 | KPI band | Figures count up (900ms). Sparklines wipe in left to right, 80ms apart per tile, over a fading fill; the latest point lands, pings once, then breathes. |
 | Charts, on a data change | Lines trace in (900ms); bars grow from the baseline, 45ms apart; areas, dots, labels and the hatched provisional band fade in. A redraw for a new width doesn't animate. |
 | Bar lists and heatmap | Bars grow from their zero edge, row by row; heatmap cells fade in by column, 30ms apart. |
@@ -50,7 +50,7 @@ One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); s
 | Floating layers | Popovers and selects drop in (200ms); drawers slide from the right (420ms); overlays fade. |
 | Hover | Panels catch the pointer's spotlight; the primary button's sheen sweeps across it. |
 | Loading | Skeletons shimmer slowly. |
-| Live states | The "data as of" dot and the brief's numbers-check dot breathe. |
+| Live states | The "data as of" dot, the brief's numbers-check dot and each sparkline's latest point send out a slow, fading halo. |
 | Theme switch | A circular reveal from the toggle. |
 
 `prefers-reduced-motion` zeroes every duration and delay and stops every loop: figures show their final value at once and nothing moves (tested in `e2e/redesign.spec.ts`).
@@ -78,11 +78,11 @@ One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); s
 - **Distributor 360:** four headline figures from the list query (count, at risk now, primary sales, top-10 share), then the sortable, searchable, paged table.
   - At phone width, region and tier fold under the name.
   - Each distributor page has profile facts (an at-risk badge with a dot when flagged now), then the health score as a counting serif figure with its five components, sell-in and sell-out, stock, collections (receivables as readouts), field visits and schemes.
-- **Batch cohort heatmap:** the heatmap is the primary view. Beside it sit the drill-down (a tray and a glass plate) and the resin-lot flags, each led by the scan's own measure, the ratio to the peer rate. That ratio is in the danger colour only while the lot is flagged now.
+- **Batch cohort heatmap:** the heatmap is the primary view. Beside it sit the drill-down (a tray and a plate) and the resin-lot flags, each led by the scan's own measure, the ratio to the peer rate. That ratio is in the danger colour only while the lot is flagged now.
 - **Ask ChannelPulse:**
   - Replay mode opens with the notice and the recording's scorecard (scored correct, traps handled, governed answers) as counting figures, counted from the answers shown.
   - The question list scrolls on its own beside the pinned answer from 1024px, with category names pinned and a per-category tally.
-  - The answer is a glass plate lit by its label: teal for governed, amber for ad hoc. The question and the answer are set in Newsreader.
+  - The answer is a plate lit by its label: teal for governed (`--glow-accent`), marigold for ad hoc (`--glow-marigold`). The question and the answer are set in Newsreader.
 - **Weekly Brief** reads like a printed one-page report: night paper in dark, real paper in light, one 800px column.
   - A week picker and a Print button sit in the filter row.
   - The paper shows the title, the week, the as-of and whether the week is provisional.

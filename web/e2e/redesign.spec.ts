@@ -188,3 +188,117 @@ for (const width of [768, 1024, 1440]) {
     expect(padding).toBeGreaterThanOrEqual(header!.height);
   });
 }
+
+// Leftovers from the final review (decisions D54 follow-up).
+test.describe("leftovers", () => {
+  test("every theme toggle agrees after a switch, whatever the width", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Switch to the light theme" }).filter({ visible: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.setViewportSize({ width: 1024, height: 900 });
+    const rail = page.getByRole("button", { name: /Switch to the (light|dark) theme/ }).filter({ visible: true });
+    await expect(rail).toHaveAccessibleName("Switch to the dark theme");
+    await rail.click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  });
+
+  test("a remembered light choice sets the browser chrome colour on load", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("cp-theme", "light"));
+    await page.goto("/");
+    // Every theme-color tag: Next renders the viewport's one, and the stream can add another.
+    expect(await page.locator('meta[name="theme-color"]').evaluateAll((ms) => [...new Set(ms.map((m) => m.getAttribute("content")))])).toEqual(["#f6f3ec"]);
+  });
+
+  test("printing from dark drops the chart glow", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('.cp-plot g[aria-label="line"]').first()).toBeAttached();
+    await page.emulateMedia({ media: "print" });
+    await page.waitForTimeout(800); // print layout is narrower: let the charts redraw at its width first
+    const filters = await page.locator('.cp-plot g[aria-label="line"]').evaluateAll((gs) => [...new Set(gs.map((g) => getComputedStyle(g).filter))]);
+    expect(filters).toEqual(["none"]);
+  });
+
+  test("backdrop blur only on the header, drawers and popovers", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    const blur = (sel: string) => page.locator(sel).first().evaluate((e) => getComputedStyle(e).backdropFilter);
+    expect(await blur("button[aria-label^='Date range']")).toBe("none");
+    expect(await blur("[role=combobox]")).toBe("none");
+    expect(await blur("header .rounded-panel")).toBe("none");
+    expect(await blur("header")).not.toBe("none");
+  });
+
+  test("endless loops animate only transform and opacity", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(3000);
+    const props = await page.evaluate(() =>
+      [...new Set(document.getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations === Infinity)
+        .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes().flatMap((k) => Object.keys(k)))
+        .filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k)))],
+    );
+    expect(props.length).toBeGreaterThan(0);
+    expect(props.filter((p) => p !== "transform" && p !== "opacity")).toEqual([]);
+  });
+
+  test("the header and filter row rise with the page, 40ms apart", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.locator("header > div.relative").first().evaluate((e) => getComputedStyle(e).animationName)).toBe("cp-rise");
+    expect(await page.locator("header + div > div").first().evaluate((e) => getComputedStyle(e).animationDelay)).toBe("0.04s");
+    const delays = await page.locator("section[aria-labelledby=kpi-heading] .cp-stagger").evaluate((s) => [...s.children].slice(0, 3).map((c) => getComputedStyle(c).animationDelay));
+    expect(delays).toEqual(["0s", "0.04s", "0.08s"]);
+  });
+
+  test("the marigold glow is a token", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--glow-marigold").trim())).not.toBe("");
+  });
+
+  test("the scrollbar gutter is reserved, so a late scrollbar doesn't redraw the charts", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarGutter)).toBe("stable");
+  });
+
+  for (const width of [390, 1024, 1440]) {
+    test(`the loading header is the height of the real one at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+      // Hold the next page's data back so the loading state stays up long enough to measure.
+      await page.route(/\/distributors\?.*_rsc=|\/distributors\?_rsc=/, async (route) => {
+        await new Promise((r) => setTimeout(r, 2500));
+        await route.continue().catch(() => {});
+      });
+      if (width < 768) {
+        await page.getByRole("button", { name: "Open page menu" }).click();
+        await page.getByRole("dialog").getByRole("link", { name: "Distributor 360" }).click();
+      } else {
+        await page.getByRole("navigation", { name: "Pages" }).locator('a[href^="/distributors"]').first().click();
+      }
+      const skeleton = page.locator('div[aria-busy="true"] > div.border-b').first();
+      await expect(skeleton).toBeVisible();
+      const loading = (await skeleton.boundingBox())!.height;
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Distributor 360", { timeout: 30_000 });
+      const real = (await page.locator("header").first().boundingBox())!.height;
+      expect(Math.abs(loading - real), `loading ${loading}px vs header ${real}px`).toBeLessThanOrEqual(8);
+    });
+  }
+
+  test("figures settle on exactly the formatted digits, before and after a filter change", async ({ page }) => {
+    await page.goto("/");
+    const digits = page.locator("section[aria-labelledby=kpi-heading] [data-figure] [data-digits]");
+    await expect(digits).toHaveCount(5);
+    const settle = async () => {
+      await page.waitForTimeout(1500);
+      return page.locator("section[aria-labelledby=kpi-heading] [data-figure]").evaluateAll((els) => els.map((e) => [e.getAttribute("data-final"), e.querySelector("[data-digits]")?.textContent]));
+    };
+    const before = await settle();
+    for (const [final, shown] of before) expect(shown).toBe(final);
+    await page.getByRole("button", { name: /^Date range/ }).click();
+    await page.getByRole("group", { name: "Presets" }).getByRole("button").nth(1).click();
+    await expect(page.locator("section[aria-labelledby=kpi-heading] [data-figure]").first()).not.toHaveAttribute("data-final", before[0][0]!, { timeout: 60_000 });
+    const after = await settle();
+    for (const [final, shown] of after) expect(shown).toBe(final);
+  });
+});

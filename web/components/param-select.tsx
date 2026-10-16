@@ -43,7 +43,7 @@ export function ParamSelect({
         <Select.Trigger
           aria-labelledby={labelId}
           className={cx(
-            "inline-flex h-10 min-w-0 items-center gap-2 rounded-control border border-line-strong bg-surface/70 pr-2 pl-3 text-sm font-medium text-ink shadow-highlight backdrop-blur-sm data-[state=open]:shadow-[var(--glow-accent)] md:h-9",
+            "inline-flex h-10 min-w-0 items-center gap-2 rounded-control border border-line-strong bg-surface pr-2 pl-3 text-sm font-medium text-ink shadow-highlight data-[state=open]:shadow-[var(--glow-accent)] md:h-9",
             "transition-colors duration-150 ease-out hover:border-control hover:bg-hover data-[state=open]:border-control",
           )}
         >

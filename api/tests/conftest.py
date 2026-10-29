@@ -2,18 +2,15 @@
 
 import copy
 import dataclasses
-import functools
 import json
 from types import SimpleNamespace
 
-import psycopg
 import pytest
 from anthropic.types.beta import BetaMessage
 from fastapi.testclient import TestClient
 
 from app import config, main, semantic
 from app.agent.providers import AnthropicProvider
-from app.db import agent_conninfo, ops_conninfo
 from app.guardrails import rate_limit, readonly_db
 
 METRICS = [  # the shape semantic.list_metrics() returns
@@ -41,25 +38,6 @@ METRICS = [  # the shape semantic.list_metrics() returns
     },
 ]
 GOVERNED_SQL = "select month, dso_days from marts.fct_invoice_collections where region = %(region)s"
-
-
-def pytest_configure(config):
-    config.addinivalue_line("markers", "db: needs local Postgres with api/sql/roles.sql applied; skipped otherwise")
-
-
-@functools.cache
-def _db_unavailable() -> str | None:
-    for role, conninfo in (("channelpulse_agent", agent_conninfo()), ("channelpulse_ops", ops_conninfo())):
-        try:
-            psycopg.connect(conninfo, connect_timeout=2).close()
-        except psycopg.Error as e:
-            return f"{role} can't connect ({type(e).__name__}); run `python api/app/admin.py roles` with Postgres up"
-    return None
-
-
-def pytest_runtest_setup(item):
-    if item.get_closest_marker("db") and (reason := _db_unavailable()):
-        pytest.skip(reason)
 
 
 class FakeDB:

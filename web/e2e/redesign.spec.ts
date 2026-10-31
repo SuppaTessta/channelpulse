@@ -183,6 +183,9 @@ for (const width of [768, 1024, 1440]) {
   test(`scroll padding clears the sticky header at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/distributors/D0001");
+    // boundingBox() doesn't wait: on a slow runner it read the header before the page settled and got null (CI).
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await expect(page.locator("header").first()).toBeVisible();
     const header = await page.locator("header").first().boundingBox();
     const padding = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop));
     expect(padding).toBeGreaterThanOrEqual(header!.height);

@@ -14,20 +14,27 @@ const NavContext = createContext<Nav>({ pending: false, setParams: () => {} });
 // as Next itself does when an RSC fetch fails. Drop it once a Next release applies every navigation.
 const STUCK_MS = 12_000;
 let stuck: ReturnType<typeof setInterval> | undefined;
+const standDown = () => clearInterval(stuck);
 const here = () => window.location.pathname + window.location.search;
 
 /**
- * Watches one in-app navigation to `href`. It stands down the moment the URL moves by any route (the navigation
- * landing, Back, a drawer closing), so it can only ever fire while the page is still stuck where it started. A
- * newer navigation replaces it. A link that deliberately doesn't navigate would be loaded after STUCK_MS.
+ * Watches one in-app navigation to `href`. It stands down on the first of three signs that the page has moved:
+ * - the URL has changed (the navigation landing, a drawer closing);
+ * - history.length has changed (a navigation landed, even one undone again before the next check);
+ * - a popstate (Back or Forward).
+ * So it can only ever fire while the page is still stuck where it started. A newer navigation replaces it. A link
+ * that deliberately doesn't navigate would be loaded after STUCK_MS.
  */
 function watch(href: string) {
   const from = here();
-  clearInterval(stuck);
+  const entries = history.length;
+  standDown();
   if (href === from) return;
   const deadline = Date.now() + STUCK_MS;
   stuck = setInterval(() => {
-    if (here() !== from) clearInterval(stuck);
+    // A landed navigation adds a history entry and a stuck one never does: that catches a round trip quick enough to
+    // fit between two checks, where the URL looks unmoved.
+    if (here() !== from || history.length !== entries) clearInterval(stuck);
     else if (Date.now() >= deadline) {
       clearInterval(stuck);
       window.location.assign(href);
@@ -87,9 +94,11 @@ export function Providers({ children }: { children: ReactNode }) {
     document.addEventListener("pointermove", onMove, { passive: true });
     // Capture phase: Next's Link handler prevents the default, so a bubbling listener couldn't tell its clicks apart.
     document.addEventListener("click", onLinkClick, true);
+    window.addEventListener("popstate", standDown);
     return () => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("click", onLinkClick, true);
+      window.removeEventListener("popstate", standDown);
     };
   }, []);
   return (

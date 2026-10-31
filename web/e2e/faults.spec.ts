@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { API } from "./env";
 
 // Fault injection. Each block starts a second `next start` (same build) that talks to the real API through a proxy
@@ -152,5 +152,39 @@ test.describe("the navigation watchdog never fires after the URL has moved", () 
     await expect(page).toHaveURL(/\/distributors$/);
     await page.waitForTimeout(13_000);
     await expect(page).toHaveURL(/\/distributors$/);
+  });
+
+  // On a slow CI runner the whole round trip once fitted between two of the watchdog's 250 ms checks, so every check
+  // saw the starting URL and it reloaded the page the user had just left. The page's clock is paused for the trip, so
+  // no check can run until the user is back; then 13 s pass, and no full load may start.
+  async function roundTrip(page: Page, start: string, trip: () => Promise<void>) {
+    await page.clock.install();
+    await page.goto(start);
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    await page.clock.pauseAt(Date.now() + 1_000);
+    await trip();
+    const loads: string[] = [];
+    page.on("request", (r) => {
+      if (r.isNavigationRequest()) loads.push(r.url());
+    });
+    await page.clock.runFor(13_000);
+    await page.waitForTimeout(1_000); // real time, for a load the watchdog started to show up
+    expect(loads).toEqual([]);
+  }
+  test("a trace drawer opened and closed between two checks stays closed", async ({ page }) => {
+    await roundTrip(page, "/traces", async () => {
+      await page.locator("table tbody tr a").first().click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page).not.toHaveURL(/trace=/);
+    });
+  });
+  test("a distributor opened and left between two checks stays left", async ({ page }) => {
+    await roundTrip(page, "/distributors", async () => {
+      await page.locator("table tbody tr a").first().click();
+      await expect(page).toHaveURL(/\/distributors\/D\d+/);
+      await page.goBack();
+      await expect(page).toHaveURL(/\/distributors$/);
+    });
   });
 });

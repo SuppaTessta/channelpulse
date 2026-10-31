@@ -9,17 +9,27 @@ async function themeOf(page: Page) {
   return page.locator("html").getAttribute("data-theme");
 }
 
+/**
+ * Clicks a theme toggle until the page shows `to`. A click right after a load can land before hydration, and the switch
+ * commits a frame later inside a view transition, so one click and one read raced on CI. A repeated click is harmless:
+ * the toggle reads the current theme at click time.
+ */
+async function switchTheme(page: Page, to: "light" | "dark", toggle = page.getByRole("button", { name: `Switch to the ${to} theme` })) {
+  await expect(async () => {
+    if ((await themeOf(page)) !== to) await toggle.click({ timeout: 2_000 });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", to, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 test("opens in the dark theme, and a light choice survives reloads", async ({ page }) => {
   await page.goto("/");
   expect(await themeOf(page)).toBe("dark");
-  await page.getByRole("button", { name: "Switch to the light theme" }).click();
-  expect(await themeOf(page)).toBe("light");
+  await switchTheme(page, "light");
   await page.reload();
   expect(await themeOf(page)).toBe("light"); // set before paint by the inline script, no click needed
   await page.goto("/quality");
   expect(await themeOf(page)).toBe("light");
-  await page.getByRole("button", { name: "Switch to the dark theme" }).click();
-  expect(await themeOf(page)).toBe("dark");
+  await switchTheme(page, "dark");
 });
 
 for (const theme of ["dark", "light"] as const) {
@@ -116,6 +126,7 @@ test("the header carries the aurora and the canvas the grain, and neither takes 
   await expect(page.locator("header .cp-aurora")).toHaveCount(1);
   await expect(page.locator(".cp-grain")).toHaveCount(1);
   const toggle = page.getByRole("button", { name: /Switch to the (light|dark) theme/ });
+  await expect(toggle).toBeVisible(); // boundingBox() doesn't wait
   const box = (await toggle.boundingBox())!;
   const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("button")?.getAttribute("aria-label") ?? null, [box.x + box.width / 2, box.y + box.height / 2]);
   expect(hit).toMatch(/Switch to the (light|dark) theme/);
@@ -197,8 +208,7 @@ test.describe("leftovers", () => {
   test("every theme toggle agrees after a switch, whatever the width", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    await page.getByRole("button", { name: "Switch to the light theme" }).filter({ visible: true }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await switchTheme(page, "light", page.getByRole("button", { name: "Switch to the light theme" }).filter({ visible: true }));
     await page.setViewportSize({ width: 1024, height: 900 });
     const rail = page.getByRole("button", { name: /Switch to the (light|dark) theme/ }).filter({ visible: true });
     await expect(rail).toHaveAccessibleName("Switch to the dark theme");

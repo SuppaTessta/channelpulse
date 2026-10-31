@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowClockwise, CaretRight, ChatCenteredText, Key, PaperPlaneRight, PlugsConnected, Warning, X } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AskResponse, FreeAllowance } from "@/lib/ask";
 import { API_URL, keySafe, regionName, type Region } from "@/lib/config";
@@ -226,7 +225,6 @@ export function AskPanel({ region, pagesQuery }: { region: Region; pagesQuery: s
   const [keyOpen, setKeyOpen] = useState(false);
   const keyRef = useRef<HTMLInputElement>(null);
   const [questionError, setQuestionError] = useState("");
-  const router = useRouter();
   const busy = entries.some((e) => e.state === "pending");
   const offline = entries.find((e) => e.state !== "pending") as Entry | undefined;
   const lastKnownOffline = !!offline && offline.state === "failed" && isUnconfigured(offline.error);
@@ -356,7 +354,9 @@ export function AskPanel({ region, pagesQuery }: { region: Region; pagesQuery: s
           showFree({ limit: 0, remaining: 0, available: false, reason: freeError.reason }); // until the re-read lands
           openKeyPanel();
         } else if (isUnconfigured(error)) {
-          router.refresh(); // the page asks for status again and shows the replay view
+          // A full load, not router.refresh(): Next 15.5 sometimes never applies a refresh (D53), which left the page on
+          // the ask box for good. The reloaded page asks for status again and shows the replay view.
+          window.location.reload();
         }
         setAnnounce(
           isUnconfigured(error)

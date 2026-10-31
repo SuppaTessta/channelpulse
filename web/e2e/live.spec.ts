@@ -561,4 +561,17 @@ test.describe("live mode", () => {
     await expect(questionBox(page)).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Recorded answers" })).toBeVisible(); // the stub has no recording to replay
   });
+
+  // Next 15.5 sometimes never applies a refresh (D53), and CI caught this fallback stuck on the ask box for good.
+  test("live_off falls back to the replay view even when Next never applies a refresh", async ({ page }) => {
+    await mockApi(page, () => {
+      mode = "replay";
+      return failed(503, "live_off");
+    });
+    await page.goto(`${SITE}/ask`);
+    await page.route(/[?&]_rsc=/, () => {}); // every server-component fetch from now on stalls
+    await ask(page, "What's the owner's phone number?");
+    await expect(questionBox(page)).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("region", { name: "Recorded answers" })).toBeVisible();
+  });
 });

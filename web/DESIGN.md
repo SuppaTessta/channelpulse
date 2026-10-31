@@ -80,6 +80,7 @@ One easing for entrances, `--ease-out-expo` (`cubic-bezier(0.16, 1, 0.3, 1)`); s
   - Each distributor page has profile facts (an at-risk badge with a dot when flagged now), then the health score as a counting serif figure with its five components, sell-in and sell-out, stock, collections (receivables as readouts), field visits and schemes.
 - **Batch cohort heatmap:** the heatmap is the primary view. Beside it sit the drill-down (a tray and a plate) and the resin-lot flags, each led by the scan's own measure, the ratio to the peer rate. That ratio is in the danger colour only while the lot is flagged now.
 - **Ask ChannelPulse:**
+  - Live mode leads with the ask box (a large Newsreader textarea), then three starter chips (one a trap; a chip fills the box and never asks), the free-questions line with "Use your own key" and its key panel, the answers, and the scored examples collapsed underneath.
   - Replay mode opens with the notice and the recording's scorecard (scored correct, traps handled, governed answers) as counting figures, counted from the answers shown.
   - The question list scrolls on its own beside the pinned answer from 1024px, with category names pinned and a per-category tally.
   - The answer is a plate lit by its label: teal for governed (`--glow-accent`), marigold for ad hoc (`--glow-marigold`). The question and the answer are set in Newsreader.

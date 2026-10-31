@@ -1,5 +1,6 @@
 """Shared fakes. Nothing here needs a database or an Anthropic key; @pytest.mark.db tests skip without Postgres."""
 
+import contextlib
 import copy
 import dataclasses
 import json
@@ -123,19 +124,43 @@ def claude():
     return SimpleNamespace(client=FakeAnthropic, message=_message, tool_use=_tool_use, answer=_answer)
 
 
+OWNER_LLM = main.llm_provider  # the dependency key, kept before any test patches the module attribute
+
+
 @pytest.fixture
 def api(monkeypatch, fake_db, fake_semantic):
-    """TestClient with fakes behind every endpoint; captured traces in api.traces, LLM via api.use_llm(client)."""
-    traces = []
-    monkeypatch.setattr(main, "write_trace", traces.append)
-    monkeypatch.setattr(rate_limit, "spent_today_usd", lambda: 0.0)
+    """TestClient with fakes behind every endpoint; captured traces in api.traces, LLM via api.use_llm(client).
+    The trace table's guards read the captured traces: no owner spend, and each visitor's owner-paid questions.
+    Each connection they open to it is counted in api.ops_connections."""
+    traces, connections = [], []
+
+    def write_trace(trace, conn=None):
+        """Like the real upsert: a free question's final write replaces its reservation, matched by trace_id."""
+        ids = [t.trace_id for t in traces]
+        if trace.trace_id in ids:
+            traces[ids.index(trace.trace_id)] = trace
+        else:
+            traces.append(trace)
+
+    def ops_connect():
+        connections.append(SimpleNamespace(execute=lambda *_args: None))
+        return contextlib.nullcontext(connections[-1])
+
+    monkeypatch.setattr(main, "write_trace", write_trace)
+    monkeypatch.setattr(rate_limit, "write_trace", write_trace)
+    monkeypatch.setattr(rate_limit, "ops_connect", ops_connect)
+    monkeypatch.setattr(rate_limit, "owner_spend_usd", lambda conn: (0.0, 0.0))
+    monkeypatch.setattr(rate_limit, "free_questions_used",
+                        lambda conn, visitor: sum(t.paid_by == "owner" and t.visitor == visitor for t in traces))
     monkeypatch.setattr(rate_limit, "ask_bucket", rate_limit.TokenBucket(rate_per_min=600, burst=100))
 
     def use_llm(client, live=True):
-        """Serve `client` as the credentials; `live` is the ASK_LIVE switch (on unless a test turns it off)."""
+        """Serve `client` as the owner's credentials; `live` is the ASK_LIVE switch (on unless a test turns it off)."""
         provider = AnthropicProvider(client) if client is not None else None
-        main.app.dependency_overrides[main.llm_provider] = lambda: provider
+        main.app.dependency_overrides[OWNER_LLM] = lambda: provider  # status and brief take it as a dependency
+        monkeypatch.setattr(main, "llm_provider", lambda: provider)  # /api/ask's owner path resolves it itself
         monkeypatch.setattr(config, "ASK_LIVE", live)
 
-    yield SimpleNamespace(http=TestClient(main.app), traces=traces, db=fake_db, use_llm=use_llm)
+    yield SimpleNamespace(http=TestClient(main.app), traces=traces, db=fake_db, use_llm=use_llm,
+                          ops_connections=connections)
     main.app.dependency_overrides.clear()

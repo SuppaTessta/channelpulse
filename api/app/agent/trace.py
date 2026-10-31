@@ -37,6 +37,8 @@ class Trace:
     est_cost_usd: float = 0.0
     answer_text: str | None = None
     error: str | None = None
+    paid_by: str = "owner"  # or "visitor", for a question asked with the visitor's own key (decisions D55)
+    visitor: str | None = None  # guardrails/rate_limit.visitor_id: the same address on the same UTC day
 
     def add_usage(self, turn) -> None:
         """Add one model turn. Its usage covers the attempt that produced it, priced at the model that served it
@@ -55,16 +57,23 @@ class Trace:
         ) / 1_000_000
 
 _COLUMNS = [f.name for f in fields(Trace)]
-_INSERT = sql.SQL("insert into ops.agent_traces ({}) values ({})").format(
-    sql.SQL(", ").join(map(sql.Identifier, _COLUMNS)),
+_COLUMN_LIST = sql.SQL(", ").join(map(sql.Identifier, _COLUMNS))
+_UPSERT = sql.SQL("insert into ops.agent_traces ({}) values ({}) on conflict (trace_id) do update set ({}) = ({})").format(
+    _COLUMN_LIST,
     sql.SQL(", ").join(map(sql.Placeholder, _COLUMNS)),
+    _COLUMN_LIST,
+    sql.SQL(", ").join(sql.SQL("excluded.{}").format(sql.Identifier(c)) for c in _COLUMNS),
 )
 
 
-def write_trace(trace: Trace) -> None:
-    """Insert the trace as channelpulse_ops, the only role that can write ops.agent_traces."""
+def write_trace(trace: Trace, conn: psycopg.Connection | None = None) -> None:
+    """Insert the trace as channelpulse_ops, the only role that can write ops.agent_traces, or replace the row a free
+    question reserved under the same trace_id (guardrails/rate_limit). On `conn`, inside the caller's transaction."""
     row = asdict(trace)
     row["tool_calls"] = Jsonb(row["tool_calls"])
     row["est_cost_usd"] = round(row["est_cost_usd"], 5)
-    with psycopg.connect(ops_conninfo(), connect_timeout=3) as conn:
-        conn.execute(_INSERT, row)
+    if conn is not None:
+        conn.execute(_UPSERT, row)
+        return
+    with psycopg.connect(ops_conninfo(), connect_timeout=3) as own:
+        own.execute(_UPSERT, row)

@@ -56,6 +56,12 @@ alter table ops.agent_traces add column if not exists provider text not null def
 alter table ops.agent_traces drop constraint if exists agent_traces_label_check;
 alter table ops.agent_traces add constraint agent_traces_label_check
     check (label in ('governed_metric', 'ad_hoc_sql_verify', 'refused', 'needs_clarification', 'error'));
+-- Who paid for the model calls, and which daily visitor id asked: the owner's caps and free allowance count the
+-- owner's rows only (decisions D55). No index: the table is small and created_at is indexed.
+alter table ops.agent_traces add column if not exists paid_by text not null default 'owner';
+alter table ops.agent_traces drop constraint if exists agent_traces_paid_by_check;
+alter table ops.agent_traces add constraint agent_traces_paid_by_check check (paid_by in ('owner', 'visitor'));
+alter table ops.agent_traces add column if not exists visitor text;
 
 -- PUBLIC's defaults would otherwise reach both roles: temp tables in this database and USAGE on schema public.
 do $$ begin execute format('revoke temporary on database %I from public', current_database()); end $$;
@@ -88,6 +94,7 @@ $$;
 revoke all on schema ops from public;
 revoke all on ops.agent_traces from public;
 grant usage on schema ops to channelpulse_ops;
-grant insert, select on ops.agent_traces to channelpulse_ops;
+-- Update, so a free question's row, reserved before its model call, can take its real values (decisions D55).
+grant insert, select, update on ops.agent_traces to channelpulse_ops;
 revoke all on schema marts from channelpulse_ops;
 revoke all on all tables in schema marts from channelpulse_ops;

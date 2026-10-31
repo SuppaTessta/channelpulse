@@ -258,8 +258,12 @@ export const getDataWindow = cache(async (region: Region): Promise<Result<DataWi
   return { ok: true, value: { asOf, dataStart: monthStarts[0], provisionalFrom: provisional[0] ?? null, queries } };
 });
 
-/** GET /api/ask/status: whether the analyst answers live, why not, and which eval run can be replayed instead. */
-export const getAskStatus = cache(() => call<AskStatus>("/api/ask/status", { method: "GET", cache: "no-store" }, "ALL", isAskStatus));
+/**
+ * GET /api/ask/status: whether the analyst answers live, why not, and which eval run can be replayed instead. Never
+ * reused across requests: after the API answers live_off, the Ask page reloads and must see replay at once. free=0
+ * skips the allowance, which would be this server's and not the visitor's: the Ask panel fetches that from the browser.
+ */
+export const getAskStatus = cache(() => callOnce<AskStatus>("/api/ask/status?free=0", { method: "GET", cache: "no-store" }, "ALL", isAskStatus));
 
 /** GET /api/ask/replay: the recorded answers, withheld by the API unless the region claim matches the recording's. */
 export const getReplay = cache((region: Region) => call<Replay>("/api/ask/replay", { method: "GET", cache: "no-store" }, region, isReplay));

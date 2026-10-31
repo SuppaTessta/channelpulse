@@ -72,9 +72,16 @@ def test_the_agent_role_defaults_to_read_only_marts_with_a_timeout():
     assert settings == {"default_transaction_read_only": "on", "statement_timeout": "5s", "search_path": "marts"}
 
 
-@pytest.mark.parametrize("statement", ["update ops.agent_traces set label = 'error'", "delete from ops.agent_traces"])
-def test_the_ops_role_can_append_and_read_traces_but_not_change_them(statement):
+def test_the_ops_role_can_append_read_and_update_traces_but_never_delete_them():
+    """Update, so a free question's reserved row can take its real values (decisions D55)."""
     with psycopg.connect(ops_conninfo()) as ops:
         ops.execute("select count(*) from ops.agent_traces")
+        ops.execute("update ops.agent_traces set label = label where false")
         with pytest.raises(psycopg.errors.InsufficientPrivilege):
-            ops.execute(statement)
+            ops.execute("delete from ops.agent_traces")
+
+
+def test_a_trace_is_paid_for_by_the_owner_or_a_visitor_and_no_one_else():
+    with psycopg.connect(ops_conninfo()) as ops, pytest.raises(psycopg.errors.CheckViolation):
+        ops.execute("insert into ops.agent_traces (trace_id, question, region_claim, model, label, paid_by)"
+                    " values (%s, 'q', 'ALL', 'm', 'error', 'a friend')", (uuid.uuid4(),))

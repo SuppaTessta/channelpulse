@@ -173,7 +173,7 @@ Ground truth says post-window orders are θ × trailing-30 sell-out, with θ = 1
 - `web/e2e/faults.spec.ts` proves the containment against the real API. A proxy breaks two metrics, one with the wrong shape and one with HTTP 500. Exactly those panels show errors, and the rest of the page draws.
 
 **D29. The agent's model, live mode and replay (Phase 2, A3; owner-approved 2026-09-27).**
-Superseded on the model by D50.
+Superseded on the model by D50, and on the public demo's replay-only mode by D55.
 - **Model:** `claude-opus-5-5` by default (`CHANNELPULSE_MODEL`), with no separate routing model.
   - It was chosen from Anthropic's models and pricing pages on 2026-09-27. Opus 5.5 is the docs' recommended default, at $4 / $20 per million input/output tokens with cache reads at $0.20. The old default, `claude-opus-5`, is $5 / $25 / $0.50 and now legacy. Sonnet 5 is $2 / $10 / $0.20.
   - Haiku 4.5 was ruled out: its retirement can come as soon as 2026-10-15.
@@ -199,7 +199,7 @@ Superseded on the model by D50.
   1. The first nightly publish must run before the API can answer, and it is also what creates the roles.
   2. Render's `CORS_ORIGINS` can only be set once the Vercel URL exists.
   3. A replay recording should be committed before deploying.
-- **The public demo starts in replay mode.** `render.yaml` pins `ASK_LIVE=0`. Live mode needs a key *and* `ASK_LIVE=1`, and then the per-IP rate limit and the daily spend cap (00:00 UTC reset) apply to every question.
+- **The public demo starts in replay mode.** `render.yaml` pins `ASK_LIVE=0`. Live mode needs a key *and* `ASK_LIVE=1`, and then the per-IP rate limit and the daily spend cap (00:00 UTC reset) apply to every question. *Superseded (D55):* the demo now launches live.
 - **A model key is never a repository secret.** The README had listed it as one.
 - **A repeatable identifying-information check,** `make identity-check` (`scripts/identity_check.py`):
   - It searches tracked files at every commit, commit messages, and author and committer identities.
@@ -270,7 +270,7 @@ Superseded on the model by D50.
 - **Two sources, one shape:**
   - Recorded: each answer in the eval's replay recordings carries the trace the eval wrote: tool calls with SQL, row counts, durations and errors; tokens; latency; cost; label; and the eval's verdict.
   - Live: `ops.agent_traces`, written by `POST /api/ask`.
-- **Why recorded traces:** the public demo is replay-only (D29), so `ops.agent_traces` there stays empty. The recordings are the traces reviewers can actually inspect. Like replayed answers, they're served only under the region claim they were recorded with, because their tool outputs can hold rows another claim may not see.
+- **Why recorded traces:** the public demo is replay-only (D29), so `ops.agent_traces` there stays empty. *Amended (D55):* the demo now answers live, so the table fills with visitors' questions, which stay behind the token. The recordings are the traces reviewers can actually inspect. Like replayed answers, they're served only under the region claim they were recorded with, because their tool outputs can hold rows another claim may not see.
 - **Why the token:** live rows are questions real visitors typed. `GET /api/traces` includes them only when the request carries `X-Admin-Token` equal to `ADMIN_TOKEN`, compared in constant time. With the variable unset, the default, they're never served. The dashboard sends the token server-side only.
 - **API:** `GET /api/traces` filters by source, label, provider, model, category, and a text search over the question and SQL. It's paged, with facets over all rows and totals over the filtered ones. `GET /api/traces/{id}` returns the tool calls.
 
@@ -279,6 +279,7 @@ Superseded on the model by D50.
   - **Facts.** Each is one query under the viewer's region claim: a governed metric for the chosen Monday-to-Sunday week and the week before, or, for new anomaly flags, the detector-flags query. Each fact carries its SQL.
   - **Sentences.** Each one cites the facts it states, so every figure on the page links to the query behind it.
 - **Narration.** In live mode, the model narrates, told to copy each fact's display text exactly and never to compute. Otherwise, or when its narration is unusable, a deterministic template does. The demo is replay-only, so it serves the template.
+  - *Amended (D55):* the demo's Ask is live now, but narration also needs `BRIEF_NARRATE=1`, which the demo doesn't set, so the demo still serves the template.
 - **The numbers check** runs before a brief is served. It re-executes every cited query, then reads each sentence's figures back (`response.figures`, the Ask agent's own tracer) and requires each to match one of its cited facts.
   - A model narration that fails is blocked. The template is served in its place, and the reasons come with the brief.
   - A template that fails, because the data changed underneath it, blocks the brief outright.
@@ -428,6 +429,11 @@ Superseded on the model by D50.
 - **Cause, as far as it can be traced:** Next 15.5's client navigation itself. A bare `router.push` from the console stalled the same way, outside the app's transition. In the stalled runs, the RSC response either finished streaming and was never committed, or the browser cancelled it mid-stream; nothing in the app dispatched another navigation or touched `history`. D49's waking-up refresh, which sometimes was never applied, is the same behaviour.
 - **Workaround:** every in-app navigation starts a 12 s watchdog: `setParams` (every filter on every page) and every same-origin link click (a capture-phase listener, since Next's Link handler prevents the default). If the URL still hasn't moved by then, the browser loads the new URL in full, as Next does itself when an RSC fetch fails. It stands down the moment the URL moves by any route (the navigation landing, Back, a drawer closing), so it only ever fires while the page is still stuck where it started; a newer navigation replaces it. (The first version checked only when its 12 s ran out, so Back or closing a trace drawer within 12 s was yanked forward; the final review caught it, and two tests pin it.)
 - **Links too:** clicking through the redesigned Distributor 360 later stalled one link in four to a cold distributor page (D0004 waited 180 s), so the watchdog was extended from filters to links the same day.
+- **A sampling race (found by CI, 2026-10-31):**
+  - The watchdog learned that a navigation had landed by reading the URL every 250 ms. A quick round trip could fit between two reads: open a distributor and go Back, or open a trace drawer and close it. On CI's slower runners it did, once per run. Every read then saw the starting URL, and 12 s later the watchdog full-loaded the page just left.
+  - It now also stands down when `history.length` changes, because a navigation that lands pushes an entry and a stuck one never does, and on `popstate`.
+  - Two tests pause the page clock across the round trip, which reproduced both CI failures, and now pass. The stall tests still fall back to a full load.
+  - Known ceiling: a round trip made only of pushes, from a page with exactly two forward history entries, leaves `history.length` unchanged.
 - **Tests:** two fault tests stall the navigation's RSC fetch, one for a region change and one for a link, and expect each to land by a full load.
 - **Revisit** on the next Next upgrade: drop the watchdog if region switches on a cold cache always apply.
 
@@ -438,6 +444,39 @@ Superseded on the model by D50.
 - **Motion:** staggered entrances, counting figures, charts that draw in when their data changes (not on a resize), wiping sparklines, glowing dark-mode lines, hatched provisional periods, a drifting header aurora and canvas grain. `prefers-reduced-motion` stops all of it, figures included.
 - **Found and fixed on the way** (each with a test): navigation that Next never applies (D53); sparklines left with permanent gaps by a dash draw on a non-scaling stroke; a dollar figure set as if it had no value; and layout breaks at 1024px (titles, the KPI band) and at 390px (a cut title, cut chart labels).
 - **Checked:** after every task, the full e2e suite (32 tests at the end: smoke, faults and 11 redesign tests); ruff and 800 Python tests; a 64-shot matrix (8 pages, 4 widths, both editions) with no horizontal overflow; a click-through of every control on every page in both editions at 1440 and 390px; and an independent design review, whose six material fixes (radii, type sizes and the aurora to the spec, the brief's footnotes, phone bar labels, panel footers) are in.
+
+**D55. Live Ask on the public demo: a small owner-paid allowance plus bring-your-own-key (owner decision, 2026-10-29).**
+Supersedes D29's "the public demo stays replay-only", and the old section 6 of `docs/deploy-checklist.md`, which kept live mode out of the deploy.
+- **Why:** the demo's visitors, mostly interviewers, can ask their own questions and get live answers, with the metric definition, the SQL and the trace id behind each one. The eval's scored examples sit collapsed under the ask box. The owner's model spend stays under $10 a month.
+- **Model:** both paths use `claude-sonnet-5-5` (D50).
+- **Free questions:** 5 per visitor per UTC day (`FREE_QUESTIONS_PER_DAY`), paid by the owner.
+  - A visitor is `hmac_sha256(VISITOR_SALT, "<UTC date>|<client ip>")`, as 32 hex characters. The same IP on the same day gets the same id, and the next day an unlinkable one. The raw IP is never stored.
+  - Render generates `VISITOR_SALT`. Unset, as in local dev and tests, each process picks a random salt and logs a warning once.
+  - The 6th question answers 429 `free_used`, with `Retry-After` until 00:00 UTC.
+- **Owner caps,** on owner-paid traced cost only (`paid_by = 'owner'`):
+  - $1.00 since 00:00 UTC (`DAILY_SPEND_CAP_USD`, down from a $5 default) and $10.00 since the 1st of the month, UTC (`MONTHLY_SPEND_CAP_USD`). Past either, free questions pause (503 `free_paused`) until the day or month turns.
+  - **They fail closed:** a database error in either cap or the allowance pauses free questions too. Unknown spend is not an allowance.
+  - When Anthropic refuses the owner's key over a rate, spend or credit limit, free questions pause as well.
+  - **Reserved before the call.** Each free question takes one database lock, checks the caps and then the allowance, and inserts its trace row with a reserved $0.30 (`OWNER_RESERVE_USD`, above the costliest recorded question, $0.266), all in one transaction, before the model is called. Its real cost replaces the reservation afterwards, which is why `channelpulse_ops` can now update its rows (it still can't delete them). If the reservation can't be written, free questions pause and the model isn't called. If the final write fails, the reservation stays counted.
+  - The review before deploy found the first version summed costs only after each answer: a failed trace write went uncounted, and 20 concurrent questions from forged addresses spent $6 against the $1 cap. With the reservation, 12 concurrent questions with room for 3 answer exactly 3 (a test). The ceiling left: a question costing more than its reservation can carry a cap past by the difference, per question in flight.
+- **Backstop:** the owner's key lives in its own Anthropic Console workspace with a $10 monthly spend limit, because Anthropic limits spend per workspace, not per key. The owner enters it on Render; it never goes into GitHub.
+- **Bring your own key:** a non-empty `X-Anthropic-Key` header takes the visitor path.
+  - It counts toward neither the allowance nor the caps. The per-IP rate limit still applies to everyone.
+  - A key that doesn't match `^sk-ant-[A-Za-z0-9_-]{20,200}$` answers 400 `key_invalid`, and nothing is sent to Anthropic.
+  - The API builds a client for that one request, runs the same agent, and closes the client. It's never cached, stored or handed to anything that outlives the request, and the owner's cached client isn't touched. The trace records `paid_by = 'visitor'`.
+  - Anthropic's refusals become errors the visitor can act on: `key_rejected` (401) for a key it won't accept, `key_limited` (402) for a key at its rate or spend limit.
+- **Threat model for the key:**
+  - **Server:** read only from the header, never the body, the query string or a cookie. Nothing logs request headers. Any occurrence of the key in error text, `trace.error` included, is replaced with `[redacted]`, as defence in depth: Anthropic's errors don't echo keys today. The key sits in the connection, not the prompt, so no question can make the model repeat it. A test runs a canary key through success and every error path, and finds it in no response, log record or trace.
+  - **Browser:** the key lives in the ask component's React state only: never storage, a cookie or the URL. It's gone on reload, and "Forget key" clears it at once. The page won't send it over an unencrypted connection.
+  - **Headers:** the dashboard's production CSP limits where page code can connect (`connect-src 'self'` plus the API's origin) and forbids framing, and React escapes all model output. It still allows inline scripts, because the App Router and the theme script emit them; a nonce CSP would need middleware and dynamic rendering on every page. So the CSP fences fetches and subresources, not script: a script that got onto the page could still carry the key off by navigating away. What keeps scripts off the page is React's escaping and having no third-party scripts at all; no injection point was found in review. The API sends HSTS on every response and `Cache-Control: no-store` on the two ask endpoints, and its CORS lets browsers send `X-Anthropic-Key` only from `CORS_ORIGINS`.
+- **Residual risks,** stated in the page's copy too:
+  - The visitor trusts the server and Render's TLS termination with the key for that one request.
+  - A malicious browser extension on the visitor's own machine can read any page, this one included.
+  - The copy's advice: make a key in its own Anthropic workspace with a $1 spend limit, and revoke it afterwards.
+- **Known limit, not fixed:** `client_ip()` takes the first `X-Forwarded-For` hop, as it always has. A visitor who forges that header looks new on every request, so they can get past 5 free questions, but never past the $1 daily cap. Kept up, it can use up that $1 and pause free questions for everyone until 00:00 UTC; visitors' own keys keep working. It's marked `ponytail:` in the code.
+- **Traces:** `ops.agent_traces` gains `paid_by` and `visitor` (`api/sql/roles.sql`, re-applied nightly). Live traces stay admin-only (D40).
+- **Off switch:** `ASK_LIVE=0` answers 503 `live_off` on both paths, and the Ask page goes back to replay.
+- **The Weekly Brief stays on its template.** Its model narration (D41) would bill the owner's key on every Brief view, with no rate limit, trace or cap, so live Ask doesn't turn it on. It needs `BRIEF_NARRATE=1` as well as `ASK_LIVE=1`, and `render.yaml` doesn't set `BRIEF_NARRATE`. Found by the docs review before deploy, and pinned by a test.
 
 ## Environment
 

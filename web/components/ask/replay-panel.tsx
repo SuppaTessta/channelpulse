@@ -78,17 +78,21 @@ function ModeNotice({ status, recording, answers }: { status: AskStatus; recordi
         </span>
         <div>
         <h2 id="mode-title" className={TYPE.stateTitle}>
-          {recording
-            ? "Replay mode: recorded answers, not live ones"
-            : status.reason === "live_off"
-              ? "The live analyst is switched off on this server"
-              : "The live analyst isn't configured on this server"}
+          {status.mode === "live"
+            ? "Scored answers from the evaluation run"
+            : recording
+              ? "Replay mode: recorded answers, not live ones"
+              : status.reason === "live_off"
+                ? "The live analyst is switched off on this server"
+                : "The live analyst isn't configured on this server"}
         </h2>
         <p className="mt-1 text-sm text-muted">
           {status.reason ? WHY_NOT_LIVE[status.reason] : null}{" "}
           {recording
             ? `The answers below were recorded by the evaluation run on ${day(recording.recorded_at)} with ${recording.model} (${recording.effort} effort), on data as of ${fmtDate(recording.as_of)}. Each is shown exactly as the API returned it, with the eval's verdict.`
-            : "Replay mode shows answers recorded by a full evaluation run, and none has been recorded yet."}
+            : status.mode === "live"
+              ? "A full evaluation run records its answers here, each with the eval's verdict. None has been recorded yet."
+              : "Replay mode shows answers recorded by a full evaluation run, and none has been recorded yet."}
         </p>
         </div>
       </div>

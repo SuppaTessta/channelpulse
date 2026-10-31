@@ -1,7 +1,7 @@
 // Shape checks where API responses enter the dashboard. A response that fails one becomes an ApiError of kind
 // "shape" for its own panel, instead of a crash somewhere downstream (typically an API and a dashboard from
 // different commits).
-import type { AskResponse, AskStatus, Replay } from "./ask";
+import type { AskResponse, AskStatus, FreeAllowance, Replay } from "./ask";
 import type { Governed, Metric } from "./api";
 import type { Brief, BriefWeeks } from "./brief";
 import type { TraceDetail, TraceList } from "./traces";
@@ -75,6 +75,17 @@ export function isAskStatus(v: unknown): v is AskStatus {
     (v.reason === null || v.reason === "no_credentials" || v.reason === "live_off") &&
     isStrOrNull(v.model) &&
     (v.recording === null || isRecording(v.recording))
+  );
+}
+
+// Checked on its own, in the browser: a malformed allowance costs the allowance line, not the whole Ask page.
+export function isFreeAllowance(v: unknown): v is FreeAllowance {
+  return (
+    isObj(v) &&
+    typeof v.limit === "number" &&
+    typeof v.remaining === "number" &&
+    typeof v.available === "boolean" &&
+    (v.reason === null || v.reason === "no_credentials" || v.reason === "paused" || v.reason === "used")
   );
 }
 

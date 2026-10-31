@@ -40,14 +40,32 @@ def test_cost_is_priced_at_the_model_that_served_the_response():
 def test_a_trace_row_is_written_and_readable_by_the_ops_role():
     trace = Trace(question="pytest probe", region_claim="Assam", model="claude-sonnet-5-5", label="refused",
                   tool_calls=[{"id": "toolu_1", "name": "list_metrics", "error": None}], final_sql=["select 1"],
-                  est_cost_usd=0.000123456)
+                  est_cost_usd=0.000123456, paid_by="visitor", visitor="0f" * 16)
     write_trace(trace)
     try:
         with psycopg.connect(ops_conninfo()) as ops:
             row = ops.execute(
-                "select question, region_claim, label, tool_calls, final_sql, est_cost_usd::float, created_at is not null"
-                " from ops.agent_traces where trace_id = %s", (trace.trace_id,)).fetchone()
-        assert row == ("pytest probe", "Assam", "refused", trace.tool_calls, ["select 1"], 0.00012, True)
+                "select question, region_claim, label, tool_calls, final_sql, est_cost_usd::float, created_at is not null,"
+                " paid_by, visitor from ops.agent_traces where trace_id = %s", (trace.trace_id,)).fetchone()
+        assert row == ("pytest probe", "Assam", "refused", trace.tool_calls, ["select 1"], 0.00012, True, "visitor",
+                       "0f" * 16)
+    finally:
+        with psycopg.connect(db_conninfo()) as admin:
+            admin.execute("delete from ops.agent_traces where trace_id = %s", (trace.trace_id,))
+
+
+@pytest.mark.db
+def test_writing_a_trace_again_replaces_its_row():
+    """A free question's reservation, then its real values (guardrails/rate_limit)."""
+    trace = Trace(question="pytest probe", region_claim="ALL", model="claude-sonnet-5-5", est_cost_usd=0.3)
+    write_trace(trace)
+    trace.label, trace.est_cost_usd = "refused", 0.01
+    write_trace(trace)
+    try:
+        with psycopg.connect(ops_conninfo()) as ops:
+            rows = ops.execute("select label, est_cost_usd::float from ops.agent_traces where trace_id = %s",
+                               (trace.trace_id,)).fetchall()
+        assert rows == [("refused", 0.01)]
     finally:
         with psycopg.connect(db_conninfo()) as admin:
             admin.execute("delete from ops.agent_traces where trace_id = %s", (trace.trace_id,))

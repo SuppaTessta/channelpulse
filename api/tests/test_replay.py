@@ -40,17 +40,15 @@ def recordings(tmp_path, monkeypatch):
 def test_credentials_alone_do_not_make_the_agent_live(api, claude, recordings):
     api.use_llm(claude.client(), live=False)
     response = api.http.post("/api/ask", json=QUESTION)
-    assert response.status_code == 503 and "live mode is off" in response.json()["detail"].lower()
+    assert (response.status_code, response.json()["detail"]["code"]) == (503, "live_off")
     assert api.http.get("/api/ask/status").json()["mode"] == "replay"
 
 
 def test_status_says_why_the_agent_is_not_live(api, claude, recordings):
-    api.use_llm(None)
-    assert api.http.get("/api/ask/status").json() == {
-        "mode": "replay", "reason": "no_credentials", "model": None, "recording": None}
     api.use_llm(claude.client(), live=False)
-    assert api.http.get("/api/ask/status").json()["reason"] == "live_off"
-    api.use_llm(claude.client(), live=True)
+    assert api.http.get("/api/ask/status").json() == {
+        "mode": "replay", "reason": "live_off", "model": None, "recording": None, "free": None, "byok": False}
+    api.use_llm(None)  # a visitor's own key needs no owner credentials
     assert api.http.get("/api/ask/status").json()["mode"] == "live"
 
 

@@ -4,6 +4,8 @@ CHANNELPULSE_BUILD_PROMPT.md
 CHANNELPULSE_PHASE2_PROMPT.md
 CHANNELPULSE_REDESIGN_SPEC.md
 CHANNELPULSE_REDESIGN_PLAN.md
+CHANNELPULSE_BYOK_SPEC.md
+CHANNELPULSE_BYOK_PLAN.md
 .claude/
 # Terms the pre-publish identity check searches for (make identity-check). Never commit them.
 .identity-patterns

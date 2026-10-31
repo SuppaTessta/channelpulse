@@ -248,7 +248,7 @@ def build(start: dt.date, region: str, as_of: dt.date, provider: AnthropicProvid
     provisional = end > as_of - dt.timedelta(days=config.PROVISIONAL_DAYS)
     narration = {"by": "template", "model": None, "blocked": []}
     sections = None
-    if provider is not None and config.ASK_LIVE:
+    if provider is not None and config.ASK_LIVE and config.BRIEF_NARRATE:
         try:
             sections = narrate(provider, fs)
             narration |= {"by": "model", "model": provider.model}

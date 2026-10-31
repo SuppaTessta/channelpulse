@@ -65,8 +65,13 @@ def test_the_template_brief_passes_the_check(fake_facts):
     assert b["provisional"] and b["facts"]["primary"]["display"] == "₹8.22 crore"
 
 
-def test_a_narration_stating_a_number_no_query_returned_is_blocked(fake_facts, monkeypatch):
+def narrating(monkeypatch):
     monkeypatch.setattr(config, "ASK_LIVE", True)
+    monkeypatch.setattr(config, "BRIEF_NARRATE", True)
+
+
+def test_a_narration_stating_a_number_no_query_returned_is_blocked(fake_facts, monkeypatch):
+    narrating(monkeypatch)
     invented = [{"title": "Channel", "sentences": [
         {"text": "Sell-in was ₹8.22 crore, up 17% on the week before.", "facts": ["primary", "primary_prev"]}]}]
     b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(invented))
@@ -75,7 +80,7 @@ def test_a_narration_stating_a_number_no_query_returned_is_blocked(fake_facts, m
 
 
 def test_a_faithful_narration_is_served(fake_facts, monkeypatch):
-    monkeypatch.setattr(config, "ASK_LIVE", True)
+    narrating(monkeypatch)
     good = [{"title": "Channel", "sentences": [{"text": "Sell-in reached ₹8.22 crore.", "facts": ["primary"]}]}]
     b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(good))
     assert (b["narration"], b["sections"]) == ({"by": "model", "model": "m-1", "blocked": []}, good)
@@ -87,8 +92,16 @@ def test_without_live_mode_the_model_is_never_called(fake_facts, monkeypatch):
     assert b["narration"]["by"] == "template"
 
 
-def test_an_unusable_narration_falls_back_to_the_template(fake_facts, monkeypatch):
+def test_live_ask_alone_never_narrates_the_brief(fake_facts, monkeypatch):
+    """D55: narration bills the owner's key outside the Ask caps and traces, so live Ask doesn't turn it on."""
     monkeypatch.setattr(config, "ASK_LIVE", True)
+    monkeypatch.setattr(config, "BRIEF_NARRATE", False)
+    b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(error=AssertionError("called")))
+    assert b["narration"]["by"] == "template"
+
+
+def test_an_unusable_narration_falls_back_to_the_template(fake_facts, monkeypatch):
+    narrating(monkeypatch)
     b = brief.build(WEEK, "ALL", dt.date(2026, 9, 23), provider(error=ProviderError("down")))
     assert b["narration"]["by"] == "template" and b["narration"]["blocked"] and b["status"] == "verified"
 

@@ -44,7 +44,7 @@ def test_a_selected_profile_that_cannot_load_counts_as_not_configured(no_credent
 def test_ask_without_credentials_is_503_and_nothing_else_breaks(api):
     api.use_llm(None)
     response = api.http.post("/api/ask", json=QUESTION)
-    assert (response.status_code, response.json()) == (503, {"detail": "LLM not configured"})
+    assert (response.status_code, response.json()["detail"]["code"]) == (503, "free_unavailable")
     assert api.http.get("/api/anomalies").status_code == 200
 
 
@@ -69,6 +69,7 @@ def test_an_agent_failure_is_502_and_still_traced(api, claude):
     response = api.http.post("/api/ask", json=QUESTION)
     (trace,) = api.traces
     assert response.status_code == 502 and trace.label == "error" and "max_tokens" in trace.error
+    assert response.json()["detail"]["code"] == "agent_error"
 
 
 @pytest.mark.parametrize("question", ["", "x" * 2001])
@@ -151,13 +152,34 @@ def test_meta_frames_the_data(api, monkeypatch):
                                 "Odisha", "ALL"]}
 
 
-def test_the_dashboard_origin_may_call_the_api(api):
-    preflight = {"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST",
-                 "Access-Control-Request-Headers": "content-type,x-demo-region"}
+@pytest.mark.parametrize(("origin", "allowed"), [("http://localhost:3000", True), ("https://evil.example", False)])
+def test_only_the_dashboard_origin_may_send_a_key(api, origin, allowed):
+    preflight = {"Origin": origin, "Access-Control-Request-Method": "POST",
+                 "Access-Control-Request-Headers": "content-type,x-demo-region,x-anthropic-key"}
     response = api.http.options("/api/ask", headers=preflight)
-    assert response.status_code == 200 and response.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert (response.status_code, response.headers.get("access-control-allow-origin")) == (
+        (200, origin) if allowed else (400, None))
 
 
 def test_other_origins_get_no_cors_grant(api):
     response = api.http.get("/api/anomalies", headers={"Origin": "https://evil.example"})
     assert "access-control-allow-origin" not in response.headers
+
+
+def test_the_dashboard_can_read_retry_after(api):
+    response = api.http.get("/api/anomalies", headers={"Origin": "http://localhost:3000"})
+    assert response.headers["access-control-expose-headers"] == "Retry-After"
+
+
+def test_every_response_carries_hsts_and_the_ask_endpoints_are_never_stored(api):
+    api.use_llm(None)
+    responses = {
+        "/api/metrics": api.http.get("/api/metrics"),
+        "/api/ask/status": api.http.get("/api/ask/status"),
+        "/api/ask": api.http.post("/api/ask", json=QUESTION),  # a 503: errors too
+        "/api/ask 422": api.http.post("/api/ask", json={"question": ""}),
+    }
+    assert {path: r.headers.get("strict-transport-security") for path, r in responses.items()} == dict.fromkeys(
+        responses, "max-age=63072000; includeSubDomains")
+    assert {path: r.headers.get("cache-control") for path, r in responses.items()} == {
+        "/api/metrics": None, "/api/ask/status": "no-store", "/api/ask": "no-store", "/api/ask 422": "no-store"}

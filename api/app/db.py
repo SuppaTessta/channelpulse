@@ -37,5 +37,5 @@ def agent_conninfo() -> str:
 
 
 def ops_conninfo() -> str:
-    """channelpulse_ops: INSERT/SELECT on ops.agent_traces only."""
+    """channelpulse_ops: INSERT/SELECT/UPDATE on ops.agent_traces only."""
     return _conninfo("OPS_DATABASE_URL", "channelpulse_ops", role_password("channelpulse_ops"))

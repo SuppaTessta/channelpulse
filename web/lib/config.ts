@@ -3,6 +3,11 @@
 /** The API's default port is 8000 (`make api`); override with NEXT_PUBLIC_API_URL, e.g. in web/.env.local. */
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
+/** A visitor's Anthropic key is only ever sent over HTTPS, or to an API on this machine. */
+export function keySafe(apiUrl: string) {
+  const { protocol, hostname } = new URL(apiUrl);
+  return protocol === "https:" || hostname === "localhost" || hostname === "127.0.0.1";
+}
 /** The region claims the API accepts in X-Demo-Region (api/app/guardrails/region.py). No endpoint lists them. */
 export const REGIONS = ["South Bengal", "North Bengal & Sikkim", "Assam", "North East", "Bihar & Jharkhand", "Odisha"] as const;
 export type Region = "ALL" | (typeof REGIONS)[number];

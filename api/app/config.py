@@ -23,10 +23,22 @@ TRUST_PROXY = env("TRUST_PROXY") == "1"
 # Sale dates newer than this are still filling in (decisions D12; dbt var secondary_horizon_days).
 PROVISIONAL_DAYS = 17
 
-DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "5.00"))
-# Paid model calls are opt-in: /api/ask answers live only when this is "1" AND credentials resolve. Otherwise the
-# Ask page replays answers recorded by an eval run (decisions D29).
+# The owner pays for each visitor's first FREE_QUESTIONS_PER_DAY questions a UTC day, until owner-paid spend reaches
+# either cap; then free questions pause. A visitor's own key counts toward none of them (decisions D55).
+DAILY_SPEND_CAP_USD = float(env("DAILY_SPEND_CAP_USD", "1.00"))
+MONTHLY_SPEND_CAP_USD = float(env("MONTHLY_SPEND_CAP_USD", "10.00"))
+FREE_QUESTIONS_PER_DAY = int(env("FREE_QUESTIONS_PER_DAY", "5"))
+# What a free question counts toward the caps from before its model call until its real cost replaces it. Above the
+# costliest recorded question ($0.266), so concurrent questions can't spend past a cap (guardrails/rate_limit).
+OWNER_RESERVE_USD = float(env("OWNER_RESERVE_USD", "0.30"))
+# Keys the daily visitor ids the allowance counts by. Render generates it; unset, each process picks a random one.
+VISITOR_SALT = env("VISITOR_SALT") or None
+# Paid model calls are opt-in: /api/ask answers live only when this is "1", with the visitor's own key or, when the
+# owner's credentials resolve, a free question. Otherwise the Ask page replays answers recorded by an eval run (D29).
 ASK_LIVE = env("ASK_LIVE") == "1"
+# The Weekly Brief's model narration bills the owner's key with no rate limit, trace or spend cap, so live Ask doesn't
+# turn it on: it needs this as well as ASK_LIVE. Unset, the brief is told by its template (decisions D41, D55).
+BRIEF_NARRATE = env("BRIEF_NARRATE") == "1"
 # The traces view serves live ops.agent_traces rows (visitors' questions) only to a request carrying this token in
 # X-Admin-Token. Unset, they're never served; the eval's recorded traces are served either way (decisions D40).
 ADMIN_TOKEN = env("ADMIN_TOKEN") or None

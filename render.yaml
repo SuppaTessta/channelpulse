@@ -19,15 +19,24 @@ services:
         sync: false
       - key: OPS_DATABASE_URL
         sync: false
-      # The public demo stays in replay mode: no model is ever called, and no model key is set here. Live mode would
-      # need ANTHROPIC_API_KEY and ASK_LIVE=1 (decisions D29); the rate limit and the daily spend cap below then apply.
+      # The public demo answers live (decisions D55). Each visitor gets FREE_QUESTIONS_PER_DAY questions a UTC day on
+      # the owner's key, until owner-paid spend reaches either cap; a visitor's own key counts toward none of them.
+      # ASK_LIVE=0 switches live answers off and the Ask page goes back to replay.
       - key: ASK_LIVE
-        value: "0"
+        value: "1"
+      - key: ANTHROPIC_API_KEY     # the owner's key, from its own Anthropic workspace with a $10 monthly spend limit
+        sync: false
+      - key: DAILY_SPEND_CAP_USD
+        value: "1.00"
+      - key: MONTHLY_SPEND_CAP_USD
+        value: "10.00"
+      - key: FREE_QUESTIONS_PER_DAY
+        value: "5"
+      - key: VISITOR_SALT          # keys the daily visitor ids the free questions are counted by
+        generateValue: true
       - key: CORS_ORIGINS          # the Vercel URL of the web app
         sync: false
-      - key: TRUST_PROXY           # take the client IP from X-Forwarded-For for the rate limit
+      - key: TRUST_PROXY           # take the client IP from X-Forwarded-For for the rate limit and the visitor id
         value: "1"
-      - key: DAILY_SPEND_CAP_USD
-        value: "2.00"
       - key: ASK_RATE_PER_MIN
         value: "4"

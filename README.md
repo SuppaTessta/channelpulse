@@ -36,7 +36,7 @@ web/ (Next.js 15): Executive KPIs · Distributor 360 · Batch cohort heatmap · 
 | Warehouse | dbt Core 1.12 on Postgres 17: 20 staging, 3 intermediate and 16 mart models, with 125 tests (schema plus business logic). |
 | Semantic layer | dbt 1.12 inline semantic models: 13 semantic models, 51 metrics, including the 12 below, with calendar and Indian fiscal (April–March) time grains. MetricFlow compiles the SQL at query time. |
 | Agent | A hand-rolled tool-use loop with five tools on Anthropic's Messages API (D50): `claude-sonnet-5-5` at `medium` effort by default (`CHANNELPULSE_MODEL`, `CHANNELPULSE_EFFORT`), and `claude-haiku-5-5` as the comparison model. Live answers are opt-in (`ASK_LIVE=1`); otherwise the Ask page replays answers recorded by the eval. |
-| Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, a daily spend cap, and a trace of every question. |
+| Guardrails | A read-only Postgres role (marts only), Postgres RLS by region, a sqlglot validator, a rate limit, daily and monthly spend caps, and a trace of every question. |
 
 ## Quickstart
 Requires Docker, Python 3.12, Node 24 and GNU make (Windows: `winget install ezwinports.make`).
@@ -57,7 +57,7 @@ make acceptance        # black-box check that the planted anomalies are in the d
 make down
 ```
 
-All Python runs from the repo-root `.venv`. Nothing needs a model key except `make eval` and live mode. Without both `ANTHROPIC_API_KEY` and `ASK_LIVE=1`, the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists. It replays Sonnet 5.5's governed run of 2026-10-14.
+All Python runs from the repo-root `.venv`. Nothing needs a model key except `make eval` and live mode's free questions. Without `ASK_LIVE=1`, the Ask page shows replay mode: the answers recorded by the last full eval run, labelled with its date and model, or an honest empty state until one exists. It replays Sonnet 5.5's governed run of 2026-10-14. With `ASK_LIVE=1` it answers live: on a visitor's own key, and also on `ANTHROPIC_API_KEY` as free questions when that's set (D55).
 
 Timings are from a clean clone on the Windows build machine (decisions E2); the sequence above was run end to end there, finishing with `make smoke`.
 
@@ -184,7 +184,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 
 ## Cost
 - **Per eval run (measured, 102 questions):** Sonnet 5.5 $5.96 governed and $1.83 raw; Haiku 5.5 $0.12 governed and $0.08 raw. Governed costs more because the glossary and the five tools make a larger cached prompt, and the agent makes more calls.
-- **Guardrails on spend:** a per-IP rate limit (6/minute) and a daily spend cap ($5 default, $2 in `render.yaml`), computed from the traced cost.
+- **Guardrails on spend:** a per-IP rate limit (6/minute by default, 4 in `render.yaml`), and caps of $1 a day and $10 a month on the owner-paid questions' traced cost, which fail closed. Questions on a visitor's own key count toward neither cap.
 - **Infrastructure:** free tiers. Render (API), Vercel (web), Supabase (marts only, about 400 MB), and GitHub Actions (CI plus the daily refresh).
 
 ## Security model
@@ -201,7 +201,10 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 ## Deployment
 - **Topology** (decisions D25): the web app on Vercel from `web/`; the API on Render from [`render.yaml`](render.yaml); Supabase holding only the `marts` schema, reached through its Session pooler.
 - **The daily job** ([`daily.yml`](.github/workflows/daily.yml)) regenerates the simulation through yesterday in a throwaway CI Postgres, rebuilds and tests it, runs the detectors, and publishes `marts`. This keeps the demo current and the Supabase project awake.
-- **Replay by default:** the public demo never calls a model unless you set both `ANTHROPIC_API_KEY` and `ASK_LIVE=1` on Render. In live mode, the per-IP rate limit and the daily spend cap apply to every question (D29).
+- **The demo's Ask answers live** (D55). The page leads with the ask box and three starter questions, one of them a trap it should refuse. The eval's scored examples sit collapsed underneath.
+  - **Free questions:** each visitor gets 5 a UTC day on the owner's key, until the owner's spend reaches $1 that day or $10 that month. Past either cap, or when spend can't be read, free questions pause.
+  - **Bring your own key:** a visitor who wants more pastes their own Anthropic key. It goes to the API with each question, in a header, and is used for that one request. It's never stored, logged or traced, and it counts toward neither cap. The page keeps it in memory only, so it's gone on reload.
+  - The per-IP rate limit applies to everyone. `ASK_LIVE=0` on Render switches live answers off, and the Ask page goes back to replaying the eval's recorded answers.
 - **Not deployed yet.** The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
   - The repository needs three secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`.
   - A model key never goes into GitHub: a test fails if any workflow references one.

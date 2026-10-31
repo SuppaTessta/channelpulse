@@ -31,7 +31,15 @@ export type Recording = {
   git_commit: string | null;
   count: number;
 };
-export type AskStatus = { mode: "live" | "replay"; reason: "no_credentials" | "live_off" | null; model: string | null; recording: Recording | null };
+/** Live mode's owner-paid allowance for the asking visitor; null in replay mode, absent from an older API. */
+export type FreeAllowance = { limit: number; remaining: number; available: boolean; reason: "no_credentials" | "paused" | "used" | null };
+export type AskStatus = {
+  mode: "live" | "replay";
+  reason: "no_credentials" | "live_off" | null;
+  model: string | null;
+  recording: Recording | null;
+  free?: FreeAllowance | null;
+};
 export type ReplayAnswer = {
   id: string;
   category: string;

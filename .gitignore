@@ -25,3 +25,6 @@ warehouse/logs/
 warehouse/dbt_packages/
 warehouse/.user.yml
 logs/
+
+# /brag launch-video output (rendered media, local only)
+brag-output*/

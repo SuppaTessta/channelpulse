@@ -77,14 +77,16 @@ def chart_spec(hint: dict, data: dict | None) -> dict | None:
 
 _SCALES = {
     "k": 1e3, "thousand": 1e3, "lakh": 1e5, "lakhs": 1e5, "lac": 1e5, "lacs": 1e5,
-    "cr": 1e7, "crore": 1e7, "crores": 1e7, "mn": 1e6, "million": 1e6, "bn": 1e9, "billion": 1e9,
+    "cr": 1e7, "crore": 1e7, "crores": 1e7, "m": 1e6, "mn": 1e6, "million": 1e6, "b": 1e9, "bn": 1e9, "billion": 1e9,
 }
+# Millions and billions only after a currency (₹1,229.4M); a bare 6m is more likely metres or minutes.
+_CURRENCY_ONLY_UNITS = {"m", "b"}
 # A figure: optional sign and currency, a number (1,23,456 grouping allowed), optional unit. Not part of an
 # identifier (Q3, FY25, DIST-0042), a date (2025-09-30) or a time, and not an ordinal (3rd).
 _FIGURE = re.compile(
     r"(?<![\w.,/:-])[-−]?(?P<currency>₹|rs\.? ?|inr ?|\$)?"
     r"(?P<number>\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+(?:\.\d+)?)"
-    r"(?: ?(?P<unit>%|percent|crores?|cr|lakhs?|lacs?|k|thousand|mn|million|bn|billion|x|×))?"
+    r"(?: ?(?P<unit>%|percent|crores?|cr|lakhs?|lacs?|k|thousand|mn|million|m|bn|billion|b|x|×))?"
     r"(?![\w/:]|[-.,]\d)",
     re.IGNORECASE,
 )
@@ -107,7 +109,7 @@ def figures(text: str) -> list[Figure]:
         number, unit = match["number"], (match["unit"] or "").lower()
         value = float(number.replace(",", ""))
         bare = not (match["currency"] or unit) and not set(number) & {",", "."}
-        if bare and (value < 10 or 1900 <= value <= 2100):
+        if bare and (value < 10 or 1900 <= value <= 2100) or unit in _CURRENCY_ONLY_UNITS and not match["currency"]:
             continue
         decimals = len(number.partition(".")[2])
         scale = _SCALES.get(unit, 1.0)

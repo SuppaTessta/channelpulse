@@ -102,6 +102,18 @@ def test_figures_are_found_with_currency_scale_and_indian_grouping():
         "₹4.8 crore", "Rs. 1,23,456", "12.5%", "3.2x", "45"]
 
 
+def test_currency_figures_with_a_bare_m_or_b_suffix_are_millions_and_billions():
+    """As in a live answer: "South Bengal ₹1,229.4M". Without a currency, 6m stays a length or a duration."""
+    assert [(f.text, f.value) for f in figures("₹1,229.4M and $2.5B; a 6m pipe")] == [
+        ("₹1,229.4M", 1_229_400_000.0), ("$2.5B", 2_500_000_000.0)]
+
+
+def test_a_currency_figure_in_millions_traces_to_the_raw_value():
+    data = {"columns": ["region", "primary_sales_value"], "rows": [["South Bengal", 1_229_412_345.0]]}
+    note = confidence_note("South Bengal ₹1,229.4M.", [call("t1", data=data)], None)
+    assert note == "1/1 figure traced to query results."
+
+
 def test_years_dates_ids_ordinals_and_single_digits_are_not_figures():
     assert texts("In 2026, Q3 FY25 on 2025-09-30, DIST-0042 ranked 3rd; the top 5 on Line 2 of 500L tanks.") == []
 

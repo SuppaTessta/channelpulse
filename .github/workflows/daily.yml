@@ -56,12 +56,13 @@ jobs:
           test -n "$AGENT_DB_PASSWORD" && test -n "$OPS_DB_PASSWORD" || { echo "set AGENT_DB_PASSWORD and OPS_DB_PASSWORD secrets"; exit 1; }
           # pg_dump must match the server's major version, so use the image rather than the runner's client.
           docker run --rm --network host -e PGPASSWORD=channelpulse postgres:17-alpine \
-            pg_dump -h 127.0.0.1 -U channelpulse -d channelpulse --schema=marts --no-owner --no-privileges --clean --if-exists \
+            pg_dump -h 127.0.0.1 -U channelpulse -d channelpulse --schema=marts --no-owner --no-privileges \
             > marts.sql
-          # The schema must exist first: the dump's leading "DROP POLICY IF EXISTS ... ON marts.x" errors on Supabase
-          # when the schema is missing (a first publish), though newer Postgres only skips it with a notice.
-          { echo "create schema if not exists marts;"; cat marts.sql; } |
-            docker run --rm --network host -i postgres:17-alpine psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q --echo-errors
+          # No --clean: Supabase's Postgres rejects the dump's "DROP POLICY IF EXISTS ... ON marts.x" when the table is
+          # missing (a first publish). Nothing outside marts depends on it, so drop it whole, and restore in one
+          # transaction so a failed publish leaves the previous day's data serving.
+          { echo "drop schema if exists marts cascade;"; cat marts.sql; } |
+            docker run --rm --network host -i postgres:17-alpine psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q --echo-errors --single-transaction
           DATABASE_URL="$SUPABASE_DB_URL" .venv/bin/python api/app/admin.py roles
       - name: Freshness check
         if: env.SUPABASE_DB_URL != ''

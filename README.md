@@ -8,6 +8,8 @@ ChannelPulse is a portfolio project with four parts:
 
 The analyst answers through a governed semantic layer, cites the SQL behind every answer, refuses what it can't answer, and is scored by a published evaluation harness. The point is trust engineering, not a chatbot: the project is deliberately built to look nothing like a thin "LLM writes SQL against raw tables" wrapper. It holds the same standard as the rest of the portfolio: it ships in Docker, has tests, runs in CI, and has no notebooks as deliverables.
 
+**Live demo: https://channelpulse-tau.vercel.app**. The API runs on Render's free tier, so the first page after a quiet spell can take about a minute while it wakes up.
+
 > **All data is synthetic. No employer data, schema or code was used.** No real company's data, schema, code or identifying information appears anywhere in this repo. The company, Gangasagar Polymers Pvt. Ltd. of Kolkata, is fictional. Place names are public geography, and pincodes are synthetic.
 
 ## The problem

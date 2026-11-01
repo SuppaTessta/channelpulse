@@ -20,9 +20,20 @@ begin
 end
 $$;
 
--- nobypassrls keeps the region policies on distributor-level marts in force for the agent.
-alter role channelpulse_agent with login nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls;
-alter role channelpulse_ops   with login nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls;
+alter role channelpulse_agent with login nocreatedb nocreaterole noinherit;
+alter role channelpulse_ops   with login nocreatedb nocreaterole noinherit;
+
+-- Superuser, replication and RLS bypass are off by default on a new role, and only a superuser may name them in
+-- ALTER ROLE, even to turn them off (Supabase's admin isn't one). So check them instead: a role that can bypass RLS
+-- would void the region policies on distributor-level marts.
+do $$
+begin
+    if exists (select from pg_roles where rolname in ('channelpulse_agent', 'channelpulse_ops')
+               and (rolsuper or rolreplication or rolbypassrls)) then
+        raise exception 'channelpulse_agent or channelpulse_ops holds superuser, replication or RLS bypass';
+    end if;
+end
+$$;
 
 alter role channelpulse_agent set default_transaction_read_only = on;
 alter role channelpulse_agent set statement_timeout = '5s';

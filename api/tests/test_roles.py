@@ -1,11 +1,12 @@
 """The database roles from api/sql/roles.sql, checked against the local Postgres."""
 
+import re
 import uuid
 
 import psycopg
 import pytest
 
-from app.admin import apply_roles
+from app.admin import API_DIR, apply_roles
 from app.db import agent_conninfo, db_conninfo, ops_conninfo
 from app.guardrails import readonly_db
 
@@ -33,6 +34,20 @@ def probe_mart():
 def test_the_roles_script_is_idempotent():
     apply_roles()
     apply_roles()
+
+
+@pytest.mark.parametrize("attribute", ["superuser", "replication", "bypassrls"])
+def test_the_roles_script_sets_no_attribute_only_a_superuser_may_set(attribute):
+    """Supabase's admin isn't a superuser, and Postgres 16+ refuses even `nosuperuser` from it."""
+    script = re.sub(r"--[^\n]*", "", (API_DIR / "sql" / "roles.sql").read_text(encoding="utf-8").lower())
+    assert not re.search(rf"\b(create|alter) role\b[^;]*\b(no)?{attribute}\b", script)
+
+
+def test_the_api_roles_are_not_superusers_and_cannot_replicate_or_bypass_rls():
+    with psycopg.connect(db_conninfo()) as admin:
+        rows = admin.execute("select rolname, rolsuper, rolreplication, rolbypassrls from pg_roles"
+                             " where rolname in ('channelpulse_agent', 'channelpulse_ops') order by rolname").fetchall()
+    assert rows == [("channelpulse_agent", False, False, False), ("channelpulse_ops", False, False, False)]
 
 
 def test_the_agent_can_read_marts_tables_created_later(probe_mart):

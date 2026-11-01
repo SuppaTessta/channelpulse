@@ -72,7 +72,8 @@ flowchart LR
 
 The Ask panel's agent uses the same function through the `query_metric` tool, so the dashboard and the agent can't disagree about a metric.
 
-## Deployment (decisions D25)
+## Deployment (decisions D25, D56)
+Live since 2026-11-01: the dashboard at https://channelpulse-tau.vercel.app, the API at https://channelpulse-api.onrender.com.
 - **Web:** Vercel, deployed from `web/`.
 - **API:** Render, as the Docker image from `api/`, via `render.yaml`.
 - **Database:** Supabase, holding only the `marts` schema. The daily GitHub Action regenerates the data through yesterday (IST) in a throwaway Postgres, rebuilds and tests the warehouse, runs the detectors, and publishes `marts`. Raw data never leaves CI.

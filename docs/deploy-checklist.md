@@ -38,6 +38,7 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
 
 ## 3. Render (API)
 - [ ] New → Blueprint → pick the repository. `render.yaml` defines `channelpulse-api`, a free Docker web service built from `api/`.
+  - Pick it through Render's GitHub app (give the app access to this repository only) and Render redeploys on every push. A blueprint made from the repository's public URL works too, but never redeploys by itself: every API change then needs **Manual Deploy → Deploy latest commit** (D56).
 - [ ] Fill in the variables it asks for, each through the **Session pooler**, where the username carries the project ref:
   - `AGENT_DATABASE_URL`: `postgresql://channelpulse_agent.<ref>:<AGENT_DB_PASSWORD>@aws-0-<region>.pooler.supabase.com:5432/postgres`
   - `DATABASE_URL`: the same agent string. It's used only by `/health`, so it never needs admin rights.
@@ -49,10 +50,13 @@ Placeholders: `<ref>` is the Supabase project ref, `<region>` its pooler host re
     - You enter it here, on Render, and nowhere else. It never goes into GitHub.
 - [ ] Leave the rest as the blueprint sets them: `ASK_LIVE=1`, the caps, and `VISITOR_SALT`, which Render generates.
 - [ ] Check that `https://<render-url>/health` returns `{"status":"ok","db":"ok"}`.
+  - `"db":"unreachable"` with `ECIRCUITBREAKER` in Render's logs means Supabase's pooler has blocked the roles after repeated failed sign-ins: the health check polls every 5 s, so it happens when the service starts before step 2's refresh has created the roles, or with a mistyped password. Once the roles exist and the passwords are right, it lifts by itself within a few minutes (D56).
 - [ ] Expect the free plan to sleep after about 15 idle minutes. The first request after a quiet spell can take up to a minute to wake it. The dashboard shows "The API is waking up" and re-runs the page by itself every 15 seconds (D49). Measured at the free instance's 0.1 CPU, a full page then takes about 20–25 seconds.
 
 ## 4. Vercel (dashboard)
 - [ ] Add a new project from the repository, with **Root Directory** `web`. The framework is detected as Next.js; choose Node 24 if asked.
+  - Vercel needs its GitHub app installed for the repository first (Installed GitHub Apps, not Authorized). It may offer several detected apps: import `web` as a single project.
+  - If the project's name is taken as a `vercel.app` subdomain, Vercel adds a suffix: read the real URL under Settings → Domains before step 4's `CORS_ORIGINS`.
 - [ ] Add the environment variable `NEXT_PUBLIC_API_URL=https://<render-url>`, then deploy.
   - This value is compiled into the browser code, so changing it later needs a redeploy.
   - Optionally, also set `CHANNELPULSE_API_URL` if the server-side calls should use a different base URL.

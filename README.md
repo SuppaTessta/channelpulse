@@ -56,7 +56,7 @@ make dbt               # build + test the warehouse, run the detectors, apply th
 make api               # FastAPI on :$API_PORT (default 8000)
 make web               # dashboard dev server on :3000 (set NEXT_PUBLIC_API_URL if the API isn't on :8000)
 make web-start         # or: production build, then serve it (restart it after every rebuild)
-make test lint         # 800 Python tests (incl. the eval's free tier), ruff, dbt parse, eslint
+make test lint         # 904 Python tests (incl. the eval's free tier), ruff, dbt parse, eslint
 make smoke             # browser smoke test of every page against the running API and dashboard (SMOKE_URL if not :3000)
 make eval              # golden-set eval on Claude; prints an estimated cost and asks before spending (MODE= MODEL= BUDGET= YES=1)
 make acceptance        # black-box check that the planted anomalies are in the data (slow: extra seeds)
@@ -196,7 +196,7 @@ The data contains planted anomalies, and the pre-registered detectors look for t
 ## Security model
 - **Least-privilege roles** ([`api/sql/roles.sql`](api/sql/roles.sql)):
   - `channelpulse_agent` has read-only access to marts, a 5 s default statement timeout (10 s inside API transactions), and `search_path = marts`;
-  - `channelpulse_ops` can only insert and select traces;
+  - `channelpulse_ops` can only insert, select and update traces (update so a free question's reserved cost can take its real value, D55), never delete them;
   - PUBLIC defaults are revoked.
 - **Region RLS on every distributor-level mart.** The claim comes from `X-Demo-Region`. This is a stub with no real authentication, suited to a public synthetic demo.
 - **SQL fallback:** a sqlglot AST validator (one SELECT on allow-listed marts; no write verbs, catalogs, dangerous functions or data-modifying CTEs; capped rows), then execution on the read-only role.
@@ -211,16 +211,17 @@ The data contains planted anomalies, and the pre-registered detectors look for t
   - **Free questions:** each visitor gets 5 a UTC day on the owner's key, until the owner's spend reaches $1 that day or $10 that month. Past either cap, or when spend can't be read, free questions pause.
   - **Bring your own key:** a visitor who wants more pastes their own Anthropic key. It goes to the API with each question, in a header, and is used for that one request. It's never stored, logged or traced, and it counts toward neither cap. The page keeps it in memory only, so it's gone on reload.
   - The per-IP rate limit applies to everyone. `ASK_LIVE=0` on Render switches live answers off, and the Ask page goes back to replaying the eval's recorded answers.
-- **Not deployed yet.** The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
+- **Deployed on 2026-11-01** (D56): the dashboard at https://channelpulse-tau.vercel.app and the API at https://channelpulse-api.onrender.com. The steps, in order, are in [docs/deploy-checklist.md](docs/deploy-checklist.md), starting with `make identity-check` before anything is pushed publicly.
   - The repository needs three secrets: `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`.
   - A model key never goes into GitHub: a test fails if any workflow references one.
+  - Vercel redeploys on every push to `main`. Render here was connected by the repository's public URL, so it doesn't: an API change needs **Manual Deploy** on Render.
 
 ## Known limitations
 - **Scope:** no real auth (the RLS stub only), and no forecasting. The Weekly Brief and the Agent traces page arrived in Phase 2 (D40, D41).
 - **Claim rates are higher than a real manufacturer's**, to give the anomaly tests statistical power within the row budget (D19).
 - **The inventory metrics are served weekly** (D24), and the deployed copy keeps only 60 days of daily inventory detail.
 - **Some detector rules underperform**, as the case study reports, because they're kept pre-registered. The three 2024 lot-scan flags are false positives from thin peer data. The v1 stuffing rule is loose, and the v1 health rule flagged the churning account late. Detector v2 (D46, D47) improves both on the seed of record and on a holdout seed nobody had inspected, and it's in production since D48. The holdout churn flag lands only 6 days before its target, and stuffers in their overhang still cross the health flag more often than the acceptance target allows.
-- **Refactors deferred, deliberately (D44).** Deployment comes first. These are future work:
+- **Refactors deferred, deliberately (D44).** Deployment came first. These are future work:
   - `evals/run_eval.py`'s `main()`, 131 lines, could split into setup, run and report;
   - `generator/acceptance.py`, about 1,000 lines, and a few long generator functions (`tables.build_tables`, `fates.serial_fates`);
   - `web/components/quality-sections.tsx`, about 540 lines, could split by section;

@@ -133,7 +133,7 @@ Trade-offs:
 - **API on Render**, as a Docker web service from `render.yaml`. It bundles MetricFlow, its agent turns run 10–40 s, and it builds its semantic engine once per process. That's a poor fit for serverless Python function limits.
 - **Web on Vercel**, from `web/`.
 - **Supabase** holds only `marts`, published nightly by `.github/workflows/daily.yml` from a throwaway CI Postgres. Raw data never leaves CI. The database stays well inside the free tier, and the nightly write keeps the project from auto-pausing.
-- **Not yet deployed.** Deploying needs the owner's Render, Vercel and Supabase accounts, plus the repository secrets `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`. *Amended in Phase 2 (D30):* a model key is never a repository secret; it goes only on Render, and only for live mode.
+- **Not yet deployed.** Deploying needs the owner's Render, Vercel and Supabase accounts, plus the repository secrets `SUPABASE_DB_URL`, `AGENT_DB_PASSWORD` and `OPS_DB_PASSWORD`. *Amended in Phase 2 (D30):* a model key is never a repository secret; it goes only on Render, and only for live mode. *Amended (D56):* deployed on 2026-11-01.
 
 **D26. Generator implementation deviations** (reported by the generator build; verified independently by the acceptance suite).
 1. Distributors order against the 28-day mean of true demand. Trailing lumpy purchases ratcheted stock to 113 days of cover.
@@ -433,6 +433,7 @@ Superseded on the model by D50, and on the public demo's replay-only mode by D55
   - The watchdog learned that a navigation had landed by reading the URL every 250 ms. A quick round trip could fit between two reads: open a distributor and go Back, or open a trace drawer and close it. On CI's slower runners it did, once per run. Every read then saw the starting URL, and 12 s later the watchdog full-loaded the page just left.
   - It now also stands down when `history.length` changes, because a navigation that lands pushes an entry and a stuck one never does, and on `popstate`.
   - Two tests pause the page clock across the round trip, which reproduced both CI failures, and now pass. The stall tests still fall back to a full load.
+  - *Amended (2026-11-02):* with the clock paused the watchdog can't rescue a navigation Next never applies, so a round trip that hit this stall waited until the test timed out: 12 of 30 local runs, and CI twice in a row. A stalled trip is now abandoned after 15 s and retried from a fresh load, up to three times. The distributor round trip became a trace drawer left with Back, which still covers the `popstate` stand-down: the link to a cold distributor page stalled on every retry. 15 of 16 local repeats then passed, the miss being a slow machine running out of test time after its trip had landed, and CI passed.
   - Known ceiling: a round trip made only of pushes, from a page with exactly two forward history entries, leaves `history.length` unchanged.
 - **Tests:** two fault tests stall the navigation's RSC fetch, one for a region change and one for a link, and expect each to land by a full load.
 - **Revisit** on the next Next upgrade: drop the watchdog if region switches on a cold cache always apply.
@@ -477,6 +478,16 @@ Supersedes D29's "the public demo stays replay-only", and the old section 6 of `
 - **Traces:** `ops.agent_traces` gains `paid_by` and `visitor` (`api/sql/roles.sql`, re-applied nightly). Live traces stay admin-only (D40).
 - **Off switch:** `ASK_LIVE=0` answers 503 `live_off` on both paths, and the Ask page goes back to replay.
 - **The Weekly Brief stays on its template.** Its model narration (D41) would bill the owner's key on every Brief view, with no rate limit, trace or cap, so live Ask doesn't turn it on. It needs `BRIEF_NARRATE=1` as well as `ASK_LIVE=1`, and `render.yaml` doesn't set `BRIEF_NARRATE`. Found by the docs review before deploy, and pinned by a test.
+
+**D56. The demo deployed, and what the first deploy needed (2026-11-01).**
+- **Live:** the dashboard at https://channelpulse-tau.vercel.app (Vercel; `channelpulse.vercel.app` was taken) and the API at https://channelpulse-api.onrender.com (Render free tier). Supabase (Mumbai, Session pooler) holds `marts` and `ops`. `main` is the only branch: `phase2` was merged and deleted on 2026-11-02.
+- **Checked end to end:** `/health` reported `"db":"ok"`, `/api/ask/status` reported live mode with 5 free questions, the KPI page loaded, and one free question was answered as a governed metric, with its SQL and trace id, and the allowance dropped to 4 of 5.
+- **The nightly publish failed on an empty Supabase database, twice:**
+  - Supabase's Postgres rejected the dump's `DROP POLICY IF EXISTS … ON marts.x` when the schema, and then the table, didn't exist yet; local Postgres 17.11 only skips them with a notice. The publish now dumps without `--clean`, drops `marts` with `cascade` itself (nothing outside it depends on it), and restores with `--single-transaction`, so a failed publish leaves the previous day's data serving.
+  - `roles.sql` named `nosuperuser`, `noreplication` and `nobypassrls` in `ALTER ROLE`. Supabase's admin isn't a superuser, and Postgres 16+ lets only a superuser name those attributes, even to turn them off. They're off by default on a new role, so the script now checks them and raises if either API role holds one; a test keeps them out of `CREATE`/`ALTER ROLE`.
+- **Render was connected by the repository's public URL,** because its GitHub app had access only to another repository. A public-URL blueprint doesn't redeploy on push, so API changes need Manual Deploy. Vercel's GitHub app is installed for this repository only and redeploys `main`.
+- **A lockout to know about:** Render's health check polls the database every 5 s. Before the nightly job had created the two roles, those failed sign-ins tripped Supavisor's `ECIRCUITBREAKER`, which blocked both roles for a few minutes and lifted on its own once they existed.
+- **Found in the first live answer:** its confidence note said "No figures stated" although the answer gave figures like ₹1,229.4M. The figure finder knew `mn` and `million` but not a bare `M`. `M` and `B` now count as millions and billions after a currency, and a bare `6m` stays out (metres, minutes). Five answers recorded by the 2026-10-14 eval still carry the old note; the owner chose to leave the recordings as they are.
 
 ## Environment
 

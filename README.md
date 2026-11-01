@@ -1,8 +1,8 @@
 # ChannelPulse
 
-[![ChannelPulse in 22 seconds: a question typed into Ask, the answer traced to its SQL, a prompt injection refused, and the eval scores. Click to play.](docs/media/channelpulse-demo.jpg)](docs/media/channelpulse-demo.mp4)
+https://github.com/user-attachments/assets/8fea1064-7ac0-4e19-82ee-ecd2d0c8024e
 
-<sub>▶ Click the image to play the 22-second demo. Music: Sascha Ende, ende.app (CC BY 4.0).</sub>
+<sub>Music: Sascha Ende, ende.app (CC BY 4.0).</sub>
 
 ChannelPulse is a portfolio project with four parts:
 - a synthetic but realistic Indian building-products manufacturer;
